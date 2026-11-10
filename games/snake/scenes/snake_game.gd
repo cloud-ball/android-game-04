@@ -159,17 +159,9 @@ func _finish() -> void:
 	var won := logic.result == SnakeLogic.Result.PLAYER_WON
 	var info := _result_text()
 	_hud.banner(info.title, info.cause, info.color)
-	_save["played"] = int(_save["played"]) + 1
-	match logic.result:
-		SnakeLogic.Result.PLAYER_WON:
-			_save["wins"] = int(_save["wins"]) + 1
-		SnakeLogic.Result.CPU_WON:
-			_save["losses"] = int(_save["losses"]) + 1
-		_:
-			_save["draws"] = int(_save["draws"]) + 1
-	_save["best_score"] = maxi(int(_save["best_score"]), you.score)
-	_save["best_length"] = maxi(int(_save["best_length"]), you.body.size())
-	var coins := you.score / 10 + (int(WIN_BONUS[difficulty]) if won else 0)
+	if not _bot:  # bot runs (screenshots, smoke tests) never touch the player's save
+		_record_stats(you)
+	var coins := 0 if _bot else you.score / 10 + (int(WIN_BONUS[difficulty]) if won else 0)
 	var stats := {
 		"game": "snake",
 		"difficulty": difficulty,
@@ -183,8 +175,9 @@ func _finish() -> void:
 		if _bot
 		else DailyChallenge.report(SaveService.data["profile"], DailyChallenge.today(), stats)
 	)
-	SaveService.save()
-	Economy.add_coins(coins + daily)
+	if not _bot:
+		SaveService.save()
+		Economy.add_coins(coins + daily)
 	info["score"] = you.score
 	info["length"] = you.body.size()
 	info["best"] = int(_save["best_score"])
@@ -194,6 +187,19 @@ func _finish() -> void:
 	tw.tween_interval(1.4)
 	tw.tween_callback(func() -> void: AudioService.play("win" if won else "lose"))
 	tw.tween_callback(_hud.show_end.bind(info))
+
+
+func _record_stats(you: SnakeLogic.Serpent) -> void:
+	_save["played"] = int(_save["played"]) + 1
+	match logic.result:
+		SnakeLogic.Result.PLAYER_WON:
+			_save["wins"] = int(_save["wins"]) + 1
+		SnakeLogic.Result.CPU_WON:
+			_save["losses"] = int(_save["losses"]) + 1
+		_:
+			_save["draws"] = int(_save["draws"]) + 1
+	_save["best_score"] = maxi(int(_save["best_score"]), you.score)
+	_save["best_length"] = maxi(int(_save["best_length"]), you.body.size())
 
 
 func _result_text() -> Dictionary:

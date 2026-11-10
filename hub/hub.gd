@@ -176,11 +176,18 @@ func _game_card(m: GameManifest) -> Control:
 	)
 	var pill_bg := UiKit.GREEN if m.enabled else Color(0, 0, 0, 0.55)
 	pill.add_theme_stylebox_override("normal", UiKit.box(pill_bg, 26, Color.TRANSPARENT, 0, 10))
-	pill.set_anchors_preset(
-		Control.PRESET_TOP_RIGHT if not m.enabled else Control.PRESET_BOTTOM_RIGHT
-	)
+	# Pin the pill's right edge 22 px inside the card; it grows leftwards to fit its text.
+	pill.anchor_left = 1.0
+	pill.anchor_right = 1.0
+	pill.offset_left = -22.0
+	pill.offset_right = -22.0
 	pill.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	pill.position = Vector2(-22, 20) if not m.enabled else Vector2(-22, -84)
+	var at_bottom := m.enabled
+	pill.anchor_top = 1.0 if at_bottom else 0.0
+	pill.anchor_bottom = pill.anchor_top
+	pill.offset_top = -30.0 if at_bottom else 20.0
+	pill.offset_bottom = pill.offset_top
+	pill.grow_vertical = Control.GROW_DIRECTION_BEGIN if at_bottom else Control.GROW_DIRECTION_END
 	card.add_child(pill)
 	card.pressed.connect(func() -> void: _open(m.id))
 	return card
