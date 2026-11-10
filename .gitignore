@@ -1,0 +1,6 @@
+.godot/
+build/
+*.keystore
+*.jks
+export_credentials.cfg
+.claude/settings.local.json
