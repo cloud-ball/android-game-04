@@ -176,3 +176,25 @@ func _turn_away_from_walls(g: SnakeLogic) -> void:
 	var rng := RandomNumberGenerator.new()
 	for i in g.snakes.size():
 		g.queue_turn(i, SnakeAI.choose(g, i, rng))
+
+
+func test_solo_mode_has_one_snake_and_ends_solo() -> void:
+	var g := SnakeLogic.new(_cfg(2), 5, false)
+	assert_int(g.snakes.size()).is_equal(1)
+	for i in 60:
+		g.step()
+	assert_int(g.result).is_equal(SnakeLogic.Result.SOLO_OVER)
+
+
+func test_save_migration_v1_to_v2_keeps_stats() -> void:
+	var game_script := load("res://games/snake/scenes/snake_game.gd")
+	var g := SaveService.prepare_namespace(
+		{"schema": 1, "played": 4, "wins": 2, "best_score": 90},
+		2,
+		game_script.SAVE_DEFAULTS,
+		game_script.migrate_save
+	)
+	assert_int(int(g["schema"])).is_equal(2)
+	assert_int(int(g["wins"])).is_equal(2)
+	assert_int(int(g["solo_best"])).is_equal(0)
+	assert_bool(g["tutorial_seen"]).is_true()

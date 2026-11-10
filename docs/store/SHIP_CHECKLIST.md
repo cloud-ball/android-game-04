@@ -5,7 +5,7 @@ New personal developer accounts must keep 12+ testers opted in for 14 continuous
 apply for production, so public release is ~2 weeks after the closed test starts. Start it as early as possible.
 
 ## Done in the repo
-- [x] Game, hub, saves, tests (30 headless tests green)
+- [x] Game, hub, saves, tests (35 headless tests green)
 - [x] Debug APK runs on a real phone (Vivo V2250, Android 15, Adreno 642L)
 - [x] Release AAB builds through Gradle: package com.cloud198.pocketarena8, minSdk 24, targetSdk 36,
       only VIBRATE permission

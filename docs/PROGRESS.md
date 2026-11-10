@@ -2,6 +2,16 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-10 · Serpent Grid polish (all 5 items)
+- Music: original synth loops (hub + game mixes) rendered on a worker thread, cached in user://; Music toggle.
+- Solo score-attack mode (vs CPU / Solo selector), solo best + NEW BEST, save schema 2 with migration.
+- Visuals: joined snake bodies, heads with eyes facing the move direction, orb sparkles.
+- First-launch HOW TO PLAY screen (drawn illustrations), reachable again from the start panel.
+- AI tuning via tools/snake_selfplay.gd: fixed head-on draw bug (93% of Easy/Medium bot matches were draws),
+  all levels avoid head-on, new hunt (cut-off) knob; Easy slower (5.5 tiles/s). CPU win vs bot: 39/41/55%.
+- 35 headless tests; verified on the Vivo (first launch, how-to, vs CPU, Solo, music cache).
+- Try it: install build/pocket-arena-8-debug.apk (already on the test phone, data cleared for a fresh first run).
+
 ## 2026-11-10 · Serpent Grid ready for closed testing (branch serpent-grid-v1)
 - Godot 4.7.2 project, core services (Rng, SaveService, Settings, Audio, Economy, GameRegistry, SceneRouter, Boot args),
   hub with 8 manifest-driven cards (only Serpent Grid enabled), daily challenge, coins.

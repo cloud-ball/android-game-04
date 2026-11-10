@@ -15,3 +15,5 @@ orb_score = 10
 crash_bonus = 100
 ai_wander = 0.03
 ai_avoid_heads = true
+ai_hunt = 1.0
+ai_squeeze = 1.0

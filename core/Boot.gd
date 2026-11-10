@@ -2,6 +2,7 @@ extends Node
 ## Command-line options for development, screenshots and smoke tests (pass them after "--"):
 ##   --game=<id>          open a game straight away
 ##   --difficulty=<d>     easy | medium | hard
+##   --mode=<m>           vs | solo
 ##   --bot                the player's side is driven by the CPU (scripted smoke runs)
 ##   --autostart          skip the game's start overlay
 ##   --seed=<n>           fix the session seed
@@ -25,8 +26,9 @@ func _ready() -> void:
 		Rng.session_seed = int(options["seed"])
 	if options.has("game"):
 		var extra := {}
-		if options.has("difficulty"):
-			extra["difficulty"] = options["difficulty"]
+		for key in ["difficulty", "mode"]:
+			if options.has(key):
+				extra[key] = options[key]
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra)
