@@ -13,5 +13,4 @@
   <circle cx="256" cy="256" r="178" fill="none" stroke="url(#ring)" stroke-width="22" opacity="0.9"/>
   <circle cx="256" cy="196" r="58" fill="none" stroke="#ffc94a" stroke-width="34"/>
   <circle cx="256" cy="318" r="70" fill="none" stroke="#ffc94a" stroke-width="34"/>
-  <circle cx="256" cy="452" r="0" fill="none"/>
 </svg>

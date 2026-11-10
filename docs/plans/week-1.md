@@ -1,5 +1,7 @@
 # Week 1 plan — project skeleton, tooling, CI
 
+> 2026-11-10: superseded by the decision to ship Serpent Grid first; see docs/store/SHIP_CHECKLIST.md. Steps 1–6 below are done except the CI run on GitHub.
+
 Roadmap week 1 (guide p. 28): Godot 4.7 project; CLAUDE.md, rules, skills, hooks, MCP; CI (headless tests +
 Android debug export). Off-repo: create the Play Console account and start recruiting 15–20 testers.
 
