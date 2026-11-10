@@ -12,7 +12,7 @@
 
 ## Commands
 - Import:      godot --headless --path . --import
-- Unit tests:  ./addons/gdUnit4/runtest.sh --godot_binary "$GODOT" -a res://tests -a res://games
+- Unit tests:  ./addons/gdUnit4/runtest.sh --godot_binary "$GODOT" --headless --ignoreHeadlessMode -a res://tests -a res://games
 - Run a game:  godot --path . -- --game=<id>
 - Screenshot:  godot --path . -- --game=<id> --shot=user://shots/<id>.png --quit-after 300   (xvfb-run on Linux CI)
 - Export:      godot --headless --export-release "Android" build/app.aab

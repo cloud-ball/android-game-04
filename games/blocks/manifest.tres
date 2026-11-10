@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="GameManifest" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/game_manifest.gd" id="1_manifest"]
+
+[resource]
+script = ExtResource("1_manifest")
+id = "blocks"
+display_name = "Stack Drop"
+subtitle = "Falling blocks"
+scene = ""
+min_save_version = 1
+enabled = false
+unlock_cost = 0
+coming_label = "SOON"
+order = 3
+accent = Color(0.62, 0.45, 1.0, 1)
+accent_dark = Color(0.13, 0.08, 0.26, 1)
+icon_kind = "blocks"
