@@ -26,25 +26,72 @@ static func evaluate(logic: SnakeLogic, who: int) -> Array[Dictionary]:
 	return out
 
 
-static func choose(logic: SnakeLogic, who: int, rng: RandomNumberGenerator) -> int:
-	var cfg := logic.cfg
+## profile overrides the match config per snake: {"wander", "avoid_heads", "hunt"}.
+## Used by self-play tuning, where the "player" side runs a fixed baseline profile.
+static func choose(
+	logic: SnakeLogic, who: int, rng: RandomNumberGenerator, profile: Dictionary = {}
+) -> int:
+	var wander: float = profile.get("wander", logic.cfg.ai_wander)
+	var avoid_heads: bool = profile.get("avoid_heads", logic.cfg.ai_avoid_heads)
+	var hunt: float = profile.get("hunt", logic.cfg.ai_hunt)
+	var squeeze: float = profile.get("squeeze", logic.cfg.ai_squeeze)
 	var options := evaluate(logic, who)
 	var safe: Array = options.filter(func(o: Dictionary) -> bool: return not o.trap)
 	if safe.is_empty():
 		return _best_area(options)
-	if cfg.ai_avoid_heads and logic.snakes.size() > 1:
+	var rival := _rival_of(logic, who)
+	if avoid_heads and rival != -1:
 		var calm: Array = safe.filter(
 			func(o: Dictionary) -> bool: return not _near_rival_head(logic, who, o.dir)
 		)
 		if not calm.is_empty():
 			safe = calm
-	if rng.randf() < cfg.ai_wander:
+	if rival != -1 and hunt > 0.0 and rng.randf() < hunt:
+		var kill := _cutoff_move(logic, who, rival, safe, squeeze)
+		if kill != -1:
+			return kill
+	if rng.randf() < wander:
 		return safe[rng.randi_range(0, safe.size() - 1)].dir
 	var toward := first_step_to_orb(logic, who)
 	for o in safe:
 		if o.dir == toward:
 			return toward
 	return _best_area(safe)
+
+
+static func _rival_of(logic: SnakeLogic, who: int) -> int:
+	for j in logic.snakes.size():
+		if j != who and logic.snakes[j].alive:
+			return j
+	return -1
+
+
+## The safe move that leaves the rival the least room, if that room is under
+## squeeze * rival length (squeeze 1.0 = only moves that trap it outright); otherwise -1.
+static func _cutoff_move(
+	logic: SnakeLogic, who: int, rival: int, safe: Array, squeeze := 1.0
+) -> int:
+	var w := logic.width
+	var r := logic.snakes[rival]
+	var best_dir := -1
+	var best_room := int(ceil(r.body.size() * squeeze))
+	for o in safe:
+		var nh: Vector2i = logic.snakes[who].head() + SnakeLogic.STEP[o.dir]
+		var grid := _grid_after_move(logic, who, logic.orbs.has(nh))
+		grid[nh.y * w + nh.x] = 1
+		var room := 0
+		for d in 4:
+			if d == SnakeLogic.opposite(r.dir):
+				continue
+			var c := r.head() + SnakeLogic.STEP[d]
+			if logic.in_bounds(c) and grid[c.y * w + c.x] == 0:
+				var g2 := grid.duplicate()
+				g2[c.y * w + c.x] = 1
+				room = maxi(room, _flood(logic, g2, c))
+		if room < best_room:
+			best_room = room
+			best_dir = o.dir
+	return best_dir
 
 
 ## First direction of a shortest path from the head to the nearest orb, or -1.

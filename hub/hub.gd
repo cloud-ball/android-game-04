@@ -10,6 +10,7 @@ var _settings: Control
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build()
+	AudioService.play_music("hub")
 	Economy.coins_changed.connect(
 		func(total: int) -> void: _coins_label.text = UiKit.format_int(total)
 	)
@@ -232,7 +233,7 @@ func _settings_panel() -> Control:
 	col.add_theme_constant_override("separation", 28)
 	panel.add_child(col)
 	col.add_child(UiKit.label("Settings", 56, Color.WHITE, 900))
-	for item in [["sound", "Sound effects"], ["haptics", "Vibration"]]:
+	for item in [["music", "Music"], ["sound", "Sound effects"], ["haptics", "Vibration"]]:
 		var t := CheckButton.new()
 		t.text = item[1]
 		t.focus_mode = Control.FOCUS_NONE

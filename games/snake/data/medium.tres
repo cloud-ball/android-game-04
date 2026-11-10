@@ -14,4 +14,6 @@ max_hz = 11.0
 orb_score = 10
 crash_bonus = 100
 ai_wander = 0.12
-ai_avoid_heads = false
+ai_avoid_heads = true
+ai_hunt = 0.3
+ai_squeeze = 1.0

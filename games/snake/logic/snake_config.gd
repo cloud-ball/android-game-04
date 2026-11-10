@@ -14,8 +14,13 @@ extends Resource
 @export var crash_bonus: int = 100
 ## CPU: chance per decision to wander (a random SAFE move) instead of chasing an orb.
 @export var ai_wander: float = 0.12
-## CPU: treat cells next to the player's head as blocked when it has another safe option.
-@export var ai_avoid_heads: bool = false
+## CPU: treat cells next to the player's head as blocked when it has another safe option
+## (avoids head-on draws).
+@export var ai_avoid_heads: bool = true
+## CPU: chance per decision to look for a move that cuts the player off (forces a crash).
+@export var ai_hunt: float = 0.0
+## CPU: when hunting, also take moves that leave the player less room than squeeze x its length.
+@export var ai_squeeze: float = 1.0
 
 
 static func for_difficulty(difficulty: String) -> SnakeConfig:

@@ -62,6 +62,10 @@ var _time := 0.0
 var _shake := 0.0
 var _cam_base := Transform3D()
 var _dead_time: Array[float] = [-1.0, -1.0]
+## Per snake: [eye_l, eye_r, pupil_l, pupil_r].
+var _eyes: Array = []
+var _sparkles: Array[CPUParticles3D] = []
+var _next_sparkle := 0
 
 
 func setup(width: int, height: int) -> void:
@@ -78,7 +82,8 @@ func setup(width: int, height: int) -> void:
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.use_colors = true
 		mm.mesh = BoxMesh.new()
-		mm.instance_count = _w * _h
+		# Instances 0..n-1 are segments; n.. are the connectors that join them into one body.
+		mm.instance_count = 2 * _w * _h
 		mm.visible_instance_count = 0
 		var node := MultiMeshInstance3D.new()
 		node.multimesh = mm
@@ -100,6 +105,9 @@ func setup(width: int, height: int) -> void:
 		_orbs.append(o)
 	for i in SNAKE_COLORS.size():
 		_bursts.append(_make_burst(SNAKE_COLORS[i]))
+		_eyes.append(_make_eyes())
+	for i in 3:
+		_sparkles.append(_make_sparkle())
 	camera = Camera3D.new()
 	camera.keep_aspect = Camera3D.KEEP_WIDTH
 	camera.fov = FOV_DEG
@@ -129,8 +137,13 @@ func cell_pos(c: Vector2i) -> Vector3:
 
 func render(logic: SnakeLogic, alpha: float, delta: float) -> void:
 	_time += delta
-	for i in logic.snakes.size():
-		_render_snake(i, logic.snakes[i], alpha)
+	for i in _snake_mm.size():
+		if i < logic.snakes.size():
+			_render_snake(i, logic.snakes[i], alpha)
+		else:
+			_snake_mm[i].visible_instance_count = 0
+			for e in _eyes[i]:
+				e.visible = false
 	for j in _orbs.size():
 		var o := _orbs[j]
 		o.visible = j < logic.orbs.size()
@@ -149,7 +162,6 @@ func render(logic: SnakeLogic, alpha: float, delta: float) -> void:
 func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 	var mm := _snake_mm[i]
 	var n := s.body.size()
-	mm.visible_instance_count = n
 	var base := SNAKE_COLORS[i]
 	var flash := 1.0
 	if not s.alive:
@@ -157,17 +169,61 @@ func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 			_dead_time[i] = _time
 		var t := _time - _dead_time[i]
 		flash = 0.35 + (0.65 * absf(cos(t * 18.0)) if t < 0.8 else 0.0)
+	var prev_p := Vector3.ZERO
+	var head_p := Vector3.ZERO
+	var neck_p := Vector3.ZERO
 	for k in n:
 		var to := s.body[k]
 		var from: Vector2i = s.prev_body[k] if k < s.prev_body.size() else s.prev_body.back()
 		var p := cell_pos(from).lerp(cell_pos(to), alpha)
-		var taper := 1.0 - 0.3 * float(k) / maxf(1.0, float(n - 1))
-		var side := (0.94 if k == 0 else 0.84) * taper
-		var tall := 0.62 if k == 0 else 0.5
+		var f := float(k) / maxf(1.0, float(n - 1))
+		var side := (0.9 if k == 0 else 0.78) * (1.0 - 0.3 * f)
+		var tall := 0.6 if k == 0 else 0.46 * (1.0 - 0.25 * f)
 		p.y = tall * 0.5
 		mm.set_instance_transform(k, Transform3D(Basis.from_scale(Vector3(side, tall, side)), p))
-		var bright := 1.45 if k == 0 else lerpf(1.1, 0.6, float(k) / maxf(1.0, float(n - 1)))
+		var bright := 1.45 if k == 0 else lerpf(1.1, 0.55, f)
 		mm.set_instance_color(k, base * bright * flash)
+		if k == 0:
+			head_p = p
+		elif k == 1:
+			neck_p = p
+		if k > 0:
+			_connect(mm, n + k - 1, prev_p, p, side * 0.8, tall * 0.85, base * bright * 0.9 * flash)
+		prev_p = p
+	mm.visible_instance_count = n * 2 - 1
+	var fwd := Vector3(SnakeLogic.STEP[s.dir].x, 0, SnakeLogic.STEP[s.dir].y)
+	if n > 1 and head_p.distance_to(neck_p) > 0.05:
+		fwd = Vector3(head_p.x - neck_p.x, 0, head_p.z - neck_p.z).normalized()
+	_place_eyes(_eyes[i], head_p, fwd, s.alive)
+
+
+## Box joining two neighbouring segments so the body reads as one solid snake.
+func _connect(
+	mm: MultiMesh, idx: int, a: Vector3, b: Vector3, width: float, tall: float, color: Color
+) -> void:
+	var d := b - a
+	var length := Vector2(d.x, d.z).length()
+	if length < 0.01 or length > 1.5:
+		mm.set_instance_transform(idx, Transform3D(Basis.from_scale(Vector3.ZERO), a))
+		return
+	var along_x := absf(d.x) > absf(d.z)
+	var size := Vector3(length, tall, width) if along_x else Vector3(width, tall, length)
+	var mid := (a + b) * 0.5
+	mid.y = tall * 0.5
+	mm.set_instance_transform(idx, Transform3D(Basis.from_scale(size), mid))
+	mm.set_instance_color(idx, color)
+
+
+func _place_eyes(eyes: Array, head: Vector3, fwd: Vector3, alive: bool) -> void:
+	var right := Vector3(-fwd.z, 0, fwd.x)
+	for side in 2:
+		var sgn := -1.0 if side == 0 else 1.0
+		var eye: MeshInstance3D = eyes[side]
+		var pupil: MeshInstance3D = eyes[side + 2]
+		eye.visible = true
+		eye.position = head + fwd * 0.18 + right * (0.2 * sgn) + Vector3(0, 0.3, 0)
+		pupil.visible = alive
+		pupil.position = eye.position + fwd * 0.07 + Vector3(0, 0.05, 0)
 
 
 func eat_fx(c: Vector2i, who: int, text: String) -> void:
@@ -187,6 +243,14 @@ func eat_fx(c: Vector2i, who: int, text: String) -> void:
 	tw.tween_property(l, "position:y", l.position.y + 1.6, 0.9).set_ease(Tween.EASE_OUT)
 	tw.tween_property(l, "modulate:a", 0.0, 0.5).set_delay(0.4)
 	tw.chain().tween_callback(l.queue_free)
+
+
+func sparkle_fx(c: Vector2i) -> void:
+	var p := _sparkles[_next_sparkle]
+	_next_sparkle = (_next_sparkle + 1) % _sparkles.size()
+	p.position = cell_pos(c) + Vector3(0, 0.4, 0)
+	p.restart()
+	p.emitting = true
 
 
 func crash_fx(c: Vector2i, who: int) -> void:
@@ -290,6 +354,45 @@ func _make_burst(color: Color) -> CPUParticles3D:
 	p.scale_amount_max = 1.3
 	p.color = color * 1.5
 	add_child(p)
+	return p
+
+
+func _make_eyes() -> Array:
+	var white := SphereMesh.new()
+	white.radius = 0.12
+	white.height = 0.24
+	white.radial_segments = 10
+	white.rings = 5
+	var dark := SphereMesh.new()
+	dark.radius = 0.065
+	dark.height = 0.13
+	dark.radial_segments = 8
+	dark.rings = 4
+	var out: Array = []
+	for k in 4:
+		var m := MeshInstance3D.new()
+		m.mesh = white if k < 2 else dark
+		m.material_override = _flat(Color.WHITE, 1.15) if k < 2 else _flat(Color(0.05, 0.05, 0.1), 1.0)
+		m.visible = false
+		add_child(m)
+		out.append(m)
+	return out
+
+
+func _make_sparkle() -> CPUParticles3D:
+	var p := _make_burst(ORB_COLOR)
+	p.amount = 18
+	p.lifetime = 0.6
+	var dot := SphereMesh.new()
+	dot.radius = 0.05
+	dot.height = 0.1
+	dot.radial_segments = 6
+	dot.rings = 3
+	p.mesh = dot
+	p.initial_velocity_min = 1.2
+	p.initial_velocity_max = 3.0
+	p.gravity = Vector3(0, -3.0, 0)
+	p.color = ORB_COLOR * 1.8
 	return p
 
 

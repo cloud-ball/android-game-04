@@ -1,12 +1,19 @@
 extends Node
-## Small synthesized sound effects (no audio files to license) + haptics. Respects settings.
+## Synthesized sound effects and music (no audio files to license) + haptics. Respects settings.
+## Music is rendered once on a worker thread (MusicSynth) and cached in user://.
 
 const MIX_RATE := 22050
+const MUSIC_RATE := 16000
+const MUSIC_DB := -13.0
 const VOICES := 6
 
 var _streams: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
+var _music: AudioStreamPlayer
+var _music_streams: Dictionary = {}
+var _music_wanted := ""
+var _render_task := -1
 
 
 func _ready() -> void:
@@ -23,6 +30,66 @@ func _ready() -> void:
 	_streams["lose"] = _tone([[440.0, 0.14], [349.0, 0.14], [262.0, 0.3]], 0.4)
 	_streams["count"] = _tone([[740.0, 0.08]], 0.35)
 	_streams["go"] = _tone([[1100.0, 0.18]], 0.4)
+	_music = AudioStreamPlayer.new()
+	_music.volume_db = MUSIC_DB
+	add_child(_music)
+	SettingsService.changed.connect(_on_setting_changed)
+	if DisplayServer.get_name() != "headless":
+		_render_task = WorkerThreadPool.add_task(_render_music)
+
+
+func _exit_tree() -> void:
+	if _render_task != -1:
+		WorkerThreadPool.wait_for_task_completion(_render_task)
+
+
+## "hub" or "game"; "" stops the music. Starts as soon as the loop has been rendered.
+func play_music(variant: String) -> void:
+	_music_wanted = variant
+	_apply_music()
+
+
+func _apply_music() -> void:
+	if _music_wanted == "" or not bool(SettingsService.get_value("music")):
+		_music.stop()
+		return
+	var s: AudioStreamWAV = _music_streams.get(_music_wanted)
+	if s == null or (_music.stream == s and _music.playing):
+		return
+	_music.stream = s
+	_music.volume_db = -40.0
+	_music.play()
+	create_tween().tween_property(_music, "volume_db", MUSIC_DB, 0.8)
+
+
+func _on_setting_changed(key: String, _value: Variant) -> void:
+	if key == "music":
+		_apply_music()
+
+
+## Worker thread: pure computation + file IO only; results go back via call_deferred.
+func _render_music() -> void:
+	for v in ["hub", "game"]:
+		var path := "user://music_v%d_%s.pcm" % [MusicSynth.VERSION, v]
+		var bytes := PackedByteArray()
+		if FileAccess.file_exists(path):
+			bytes = FileAccess.get_file_as_bytes(path)
+		if bytes.is_empty():
+			bytes = MusicSynth.to_pcm16(MusicSynth.render(v, MUSIC_RATE))
+			var f := FileAccess.open(path, FileAccess.WRITE)
+			if f != null:
+				f.store_buffer(bytes)
+				f.close()
+		_music_ready.call_deferred(v, bytes)
+
+
+func _music_ready(variant: String, bytes: PackedByteArray) -> void:
+	var w := _wav(bytes, MUSIC_RATE)
+	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	w.loop_begin = 0
+	w.loop_end = bytes.size() / 2
+	_music_streams[variant] = w
+	_apply_music()
 
 
 func play(name: String, pitch := 1.0) -> void:
@@ -75,10 +142,10 @@ static func _noise(seconds: float, gain: float) -> AudioStreamWAV:
 	return _wav(bytes)
 
 
-static func _wav(bytes: PackedByteArray) -> AudioStreamWAV:
+static func _wav(bytes: PackedByteArray, rate := MIX_RATE) -> AudioStreamWAV:
 	var w := AudioStreamWAV.new()
 	w.format = AudioStreamWAV.FORMAT_16_BITS
-	w.mix_rate = MIX_RATE
+	w.mix_rate = rate
 	w.stereo = false
 	w.data = bytes
 	return w

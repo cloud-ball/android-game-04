@@ -3,7 +3,7 @@ extends Node
 
 signal changed(key: String, value: Variant)
 
-const DEFAULTS := {"sound": true, "haptics": true}
+const DEFAULTS := {"sound": true, "music": true, "haptics": true}
 
 
 func get_value(key: String) -> Variant:
