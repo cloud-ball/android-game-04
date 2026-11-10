@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="GameManifest" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/game_manifest.gd" id="1_manifest"]
+
+[resource]
+script = ExtResource("1_manifest")
+id = "carrom"
+display_name = "Carrom Corner"
+subtitle = "Carrom"
+scene = ""
+min_save_version = 1
+enabled = false
+unlock_cost = 0
+coming_label = "SOON"
+order = 5
+accent = Color(0.95, 0.85, 0.62, 1)
+accent_dark = Color(0.24, 0.16, 0.1, 1)
+icon_kind = "carrom"

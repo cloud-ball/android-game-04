@@ -4,3 +4,10 @@ build/
 *.jks
 export_credentials.cfg
 .claude/settings.local.json
+android/
+*.apk
+*.aab
+*.idsig
+addons/gdUnit4/reports/
+reports/
+.mcp.json
