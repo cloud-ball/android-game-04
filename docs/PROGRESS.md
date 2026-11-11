@@ -2,6 +2,18 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Stack Drop step 2: playable (branch stack-drop)
+- 3D crystal tower (games/blocks/scenes/blocks_view.gd): gem shader with facet edges, outlined ghost,
+  glass back pane with grid, posts, hex base, clear flash + crystal shatter, garbage bar, slow sway.
+- Touch gestures (StackGestures, tested): tap rotate, drag move per cell, slow drag soft drop, flick hard
+  drop, two-finger tap hold; HOLD box is tappable; desktop keys with DAS/ARR.
+- shared/ui/game_shell.gd: reusable start / how-to / countdown / banner / pause+settings / results
+  overlays (Stack Drop uses it; Serpent Grid still has its own HUD - migrate later).
+- vs CPU race with garbage exchange (+ cancelling) and Solo score attack; Easy/Medium/Hard.
+- Daily challenges now rotate only over enabled games; 3 Stack Drop challenges added.
+- Dev: Boot --game opens games even while their manifest is disabled. Stack Drop enabled on this branch.
+- 81 headless tests.
+
 ## 2026-11-11 · Stack Drop step 1: rules + CPU search (branch stack-drop, not yet playable)
 - games/blocks/logic: ShardData (shards A-G, kick tables from data/kicks.json), StackState,
   StackLogic.reduce(state, action) (moves, kicks, gravity, lock delay + 15 resets, clears/scoring/levels,

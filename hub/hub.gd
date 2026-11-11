@@ -136,7 +136,7 @@ func _gear_button() -> Button:
 
 func _daily_card() -> Control:
 	var day := DailyChallenge.today()
-	var ch := DailyChallenge.for_day(day)
+	var ch := DailyChallenge.for_day(day, DailyChallenge.enabled_games())
 	var done := DailyChallenge.done_today(SaveService.data["profile"], day)
 	var card := Button.new()
 	card.focus_mode = Control.FOCUS_NONE

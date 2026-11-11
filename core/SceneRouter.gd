@@ -37,9 +37,10 @@ func _ready() -> void:
 	set_process(false)
 
 
-func open_game(id: String, extra: Dictionary = {}) -> bool:
+## force opens a game even while its manifest has enabled = false (dev launches via Boot).
+func open_game(id: String, extra: Dictionary = {}, force := false) -> bool:
 	var m := GameRegistry.get_manifest(id)
-	if m == null or not m.enabled or m.scene == "":
+	if m == null or (not m.enabled and not force) or m.scene == "":
 		push_warning("SceneRouter: game '%s' is not available" % id)
 		return false
 	current_game = id
