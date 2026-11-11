@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
-## CPU rival: chases orbs, and never picks a move flood-fill marks as a trap
-## while a safe one exists.
+## CPU rival: chases orbs, and never picks a move flood-fill marks as a trap while a safe one
+## exists, unless a difficulty's blunder roll says so (then it still never picks a blocked cell).
 
 
 func _place(logic: SnakeLogic, who: int, cells: Array, dir: int) -> void:
@@ -67,7 +67,7 @@ func _check_match(cfg: SnakeConfig, seed_value: int) -> int:
 			break
 		for who in 2:
 			var options := SnakeAI.evaluate(g, who)
-			var chosen := SnakeAI.choose(g, who, rng)
+			var chosen := SnakeAI.choose(g, who, rng, {"blunder": 0.0})
 			var any_safe := options.any(func(o: Dictionary) -> bool: return not o.trap)
 			if any_safe:
 				var pick: Array = options.filter(
@@ -114,3 +114,33 @@ func test_ai_takes_the_wrap_shortcut() -> void:
 	)
 	assert_bool(left[0].blocked).is_false()
 	assert_int(SnakeAI.choose(g, 0, RandomNumberGenerator.new())).is_equal(SnakeLogic.Dir.LEFT)
+
+
+func test_blunders_never_pick_a_blocked_cell() -> void:
+	var picked := 0
+	for seed_value in range(1, 8):
+		var g := SnakeLogic.new(SnakeConfig.for_difficulty("easy"), seed_value, true)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_value
+		for i in 300:
+			if g.is_over():
+				break
+			for who in 2:
+				var options := SnakeAI.evaluate(g, who)
+				var chosen := SnakeAI.choose(g, who, rng, {"blunder": 1.0})
+				var open := options.filter(func(o: Dictionary) -> bool: return not o.blocked)
+				if not open.is_empty():
+					var pick: Array = options.filter(func(o: Dictionary) -> bool: return o.dir == chosen)
+					assert_bool(pick[0].blocked).is_false()
+					picked += 1
+				g.queue_turn(who, chosen)
+			g.step()
+	assert_int(picked).is_greater(100)
+
+
+func test_levels_get_stronger() -> void:
+	var e := SnakeConfig.for_difficulty("easy")
+	var m := SnakeConfig.for_difficulty("medium")
+	var h := SnakeConfig.for_difficulty("hard")
+	assert_bool(e.ai_blunder > m.ai_blunder and m.ai_blunder > h.ai_blunder).is_true()
+	assert_bool(e.ai_hunt <= m.ai_hunt and m.ai_hunt < h.ai_hunt).is_true()

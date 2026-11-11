@@ -340,6 +340,17 @@ func _resume() -> void:
 		state = _paused_from
 
 
+## Points a » at the cell where the newest buffered turn will happen (after any earlier one).
+func _show_turn_hint() -> void:
+	var you := logic.snakes[SnakeLogic.PLAYER]
+	var cell := you.head()
+	var dir := you.dir
+	for d in you.queue:
+		cell = logic.step_from(cell, d)
+		dir = d
+	_view.turn_hint(cell, dir)
+
+
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
@@ -364,3 +375,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		d = int(KEY_DIRS.get(event.keycode, -1))
 	if d != -1 and logic.queue_turn(SnakeLogic.PLAYER, d):
 		AudioService.play("turn")
+		AudioService.buzz(8)
+		_show_turn_hint()
