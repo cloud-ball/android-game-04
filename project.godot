@@ -1,0 +1,57 @@
+; Engine configuration file.
+; Settings follow docs/design/PocketArena8_Build_Guide.pdf p. 6.
+
+config_version=5
+
+[application]
+
+config/name="Pocket Arena 8"
+config/description="Original 3D mini-games against the computer. Offline."
+config/version="0.1.0"
+run/main_scene="res://hub/hub.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+boot_splash/bg_color=Color(0.0627451, 0.0705882, 0.141176, 1)
+boot_splash/show_image=false
+config/icon="res://icon.svg"
+config/quit_on_go_back=false
+
+[autoload]
+
+Rng="*res://core/Rng.gd"
+SaveService="*res://core/SaveService.gd"
+SettingsService="*res://core/SettingsService.gd"
+AudioService="*res://core/AudioService.gd"
+Economy="*res://core/Economy.gd"
+GameRegistry="*res://core/GameRegistry.gd"
+SceneRouter="*res://core/SceneRouter.gd"
+Boot="*res://core/Boot.gd"
+
+[display]
+
+window/size/viewport_width=1080
+window/size/viewport_height=1920
+window/size/window_width_override=432
+window/size/window_height_override=864
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+common/physics_ticks_per_second=60
+common/physics_interpolation=true
+
+[rendering]
+
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.0627451, 0.0705882, 0.141176, 1)
