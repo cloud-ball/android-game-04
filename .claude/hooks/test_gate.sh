@@ -6,8 +6,8 @@ if printf '%s' "$input" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*tr
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 [ -f project.godot ] || exit 0
 [ -x addons/gdUnit4/runtest.sh ] || exit 0
-GODOT="${GODOT:-godot}"; log=$(mktemp)
-if ./addons/gdUnit4/runtest.sh --godot_binary "$GODOT" -a res://tests -a res://games >"$log" 2>&1; then rm -f "$log"; exit 0; fi
+GODOT="${GODOT:-$(command -v godot || echo godot)}"; log=$(mktemp)
+if ./addons/gdUnit4/runtest.sh --godot_binary "$GODOT" --headless --ignoreHeadlessMode -a res://tests -a res://games >"$log" 2>&1; then rm -f "$log"; exit 0; fi
 tail -n 60 "$log" >&2; rm -f "$log"
 echo "Headless tests failed: fix them before finishing. Do not weaken or delete tests." >&2
 exit 2

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="GameManifest" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/game_manifest.gd" id="1_manifest"]
+
+[resource]
+script = ExtResource("1_manifest")
+id = "drive"
+display_name = "Park & Pass"
+subtitle = "Driving"
+scene = ""
+min_save_version = 1
+enabled = false
+unlock_cost = 0
+coming_label = "SOON"
+order = 8
+accent = Color(1.0, 0.4, 0.35, 1)
+accent_dark = Color(0.15, 0.15, 0.2, 1)
+icon_kind = "drive"

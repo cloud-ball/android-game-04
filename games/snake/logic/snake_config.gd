@@ -1,0 +1,41 @@
+class_name SnakeConfig
+extends Resource
+## Tunable data for Serpent Grid (see games/snake/data/*.tres and .claude/rules/snake.md).
+
+@export var width: int = 12
+@export var height: int = 18
+@export var start_length: int = 3
+@export var orb_count: int = 2
+## Edges wrap around: leaving one side re-enters on the opposite side (no wall crashes).
+@export var wrap: bool = false
+## Ticks per second at the start of a match; rises with the longest snake's length.
+@export var base_hz: float = 7.0
+@export var hz_per_segment: float = 0.12
+@export var max_hz: float = 11.0
+@export var orb_score: int = 10
+@export var crash_bonus: int = 100
+## CPU: chance per decision to wander (a random SAFE move) instead of chasing an orb.
+@export var ai_wander: float = 0.12
+## CPU: treat cells next to the player's head as blocked when it has another safe option
+## (avoids head-on draws).
+@export var ai_avoid_heads: bool = true
+## CPU: chance per decision to look for a move that cuts the player off (forces a crash).
+@export var ai_hunt: float = 0.0
+## CPU: when hunting, also take moves that leave the player less room than squeeze x its length.
+@export var ai_squeeze: float = 1.0
+## CPU: chance per decision to skip the flood-fill look-ahead (it may enter a dead end).
+@export var ai_blunder: float = 0.0
+
+
+## Screens taller than 16:9 get extra rows (same 12 columns) so the board fills them.
+static func rows_for_aspect(aspect: float, base_rows := 18, max_rows := 22) -> int:
+	if aspect <= 0.0:
+		return base_rows
+	return clampi(int(floor(base_rows * (9.0 / 16.0) / aspect)), base_rows, max_rows)
+
+
+static func for_difficulty(difficulty: String) -> SnakeConfig:
+	var path := "res://games/snake/data/%s.tres" % difficulty
+	if ResourceLoader.exists(path):
+		return load(path) as SnakeConfig
+	return SnakeConfig.new()

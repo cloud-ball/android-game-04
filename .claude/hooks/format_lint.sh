@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # PostToolUse hook: format + lint the .gd file Claude just edited. Lint errors exit 2 so Claude sees them.
+# gdtoolkit installed with pip --user lands outside the default PATH on macOS.
+for d in "$HOME/.local/bin" "$HOME"/Library/Python/*/bin; do [ -d "$d" ] && PATH="$PATH:$d"; done
 f=$(jq -r '.tool_input.file_path // empty' 2>/dev/null)
 case "$f" in *.gd) ;; *) exit 0 ;; esac
 [ -f "$f" ] || exit 0
