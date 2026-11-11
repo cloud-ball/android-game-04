@@ -10,7 +10,7 @@ const SNAKE_COLORS: Array[Color] = [Color(0.35, 1.0, 0.55), Color(1.0, 0.32, 0.8
 const ORB_COLOR := Color(1.0, 0.8, 0.3)
 const ORB_POOL := 4
 ## Seconds the turn hint (›) stays on screen.
-const HINT_LIFE := 0.42
+const HINT_LIFE := 0.6
 ## Screen bands kept free for the HUD (fractions of the screen height).
 const TOP_BAND := 0.15
 const BOTTOM_BAND := 0.035
@@ -66,18 +66,20 @@ void fragment() {
 }
 """
 
-## Single thin chevron (›) drawn in a flat quad; +X of the quad is "forward".
+## Chevron (›) with a soft glow, drawn in a flat quad; +X of the quad is "forward".
 const ARROW_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled;
-uniform vec3 color : source_color = vec3(0.6, 1.0, 0.75);
+uniform vec3 color : source_color = vec3(0.85, 1.0, 0.9);
 uniform float fade = 0.0;
 void fragment() {
-	float d = (UV.x - 0.3) + abs(UV.y - 0.5) * 0.8;
-	float a = smoothstep(0.0, 0.04, d) * (1.0 - smoothstep(0.13, 0.17, d));
-	a *= step(abs(UV.y - 0.5), 0.4);
-	ALBEDO = color * 1.8;
-	ALPHA = clamp(a * fade * 0.8, 0.0, 1.0);
+	float d = (UV.x - 0.28) + abs(UV.y - 0.5) * 0.85;
+	float core = smoothstep(0.0, 0.03, d) * (1.0 - smoothstep(0.17, 0.21, d));
+	float halo = smoothstep(-0.12, 0.04, d) * (1.0 - smoothstep(0.2, 0.36, d));
+	float mask = 1.0 - smoothstep(0.38, 0.48, abs(UV.y - 0.5));
+	float a = (core + halo * 0.35) * mask;
+	ALBEDO = color * 2.4;
+	ALPHA = clamp(a * fade, 0.0, 1.0);
 }
 """
 
@@ -239,6 +241,8 @@ func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 		p.y = tall * 0.5
 		mm.set_instance_transform(k, Transform3D(Basis.from_scale(Vector3(side, tall, side)), p))
 		var bright := 1.45 if k == 0 else lerpf(1.1, 0.55, f)
+		if k == 0 and i == SnakeLogic.PLAYER and _hint_age < 0.18:
+			bright += 0.9 * (1.0 - _hint_age / 0.18)  # brief head glint on a turn
 		mm.set_instance_color(k, base * bright * flash)
 		if k == 0:
 			head_p = p
@@ -341,13 +345,14 @@ func _update_hint(delta: float) -> void:
 	var heading := atan2(fwd.z, fwd.x)
 	var lay_flat := Basis(Vector3.RIGHT, -PI / 2.0)
 	var k := _hint_age / HINT_LIFE
-	var size := 0.55 + 0.1 * minf(1.0, k * 4.0)
-	var pos := _player_head + fwd * (0.62 + 0.15 * k)
+	# Pops in slightly large, settles to ~0.9 of a cell while easing forward.
+	var size := 0.9 + 0.22 * (1.0 - minf(1.0, k * 5.0))
+	var pos := _player_head + fwd * (0.72 + 0.18 * k)
 	pos.y = 0.04
 	_hint.transform = Transform3D(
 		Basis(Vector3.UP, -heading) * lay_flat * Basis.from_scale(Vector3(size, size, 1)), pos
 	)
-	var fade := minf(1.0, k * 8.0) * (1.0 - smoothstep(0.55, 1.0, k))
+	var fade := minf(1.0, k * 10.0) * (1.0 - smoothstep(0.6, 1.0, k))
 	(_hint.material_override as ShaderMaterial).set_shader_parameter("fade", fade)
 
 

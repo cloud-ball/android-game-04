@@ -6,7 +6,7 @@ Newest first. Claude appends: date · what changed · how to try it on a phone �
 - New ai_blunder knob (CPU sometimes skips the flood-fill look-ahead; never picks a blocked cell): Easy 15%,
   Medium 8%, Hard 2%. Hunt 0 / 0.05 / 0.3, wander 0.5 / 0.3 / 0.1. CPU win vs steady bot: 20% / 30% / 41%
   (was 40 / 49 / 52). Rule file .claude/rules/snake.md updated to allow blunders.
-- Turn hint: a small › rides just in front of the head pointing at the newest buffered turn (0.42 s);
+- Turn hint: a glowing white › (0.9 cell, pops in) rides in front of the head + brief head glint (0.6 s);
   tiny haptic tick on each accepted swipe. 48 headless tests.
 
 ## 2026-11-11 · Polished settings UI (user feedback: too small)
