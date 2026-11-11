@@ -2,6 +2,7 @@ class_name SnakeLogic
 extends RefCounted
 ## Pure grid logic for Serpent Grid. No nodes; same seed + same inputs -> same game.
 ## Coordinates: x 0..width-1 left->right, y 0..height-1 far->near (UP = toward y 0).
+## With cfg.wrap the board is a torus: stepping off an edge re-enters on the opposite edge.
 ## Both snakes move at the same time each tick. A snake may move into a tail cell that is
 ## vacated on that same tick. Head-on (same cell or swapped cells) crashes both.
 
@@ -80,6 +81,14 @@ func queue_turn(who: int, d: int) -> bool:
 	return true
 
 
+## The cell one step from c in direction d (wrapped onto the board when cfg.wrap is on).
+func step_from(c: Vector2i, d: int) -> Vector2i:
+	var n := c + STEP[d]
+	if cfg.wrap:
+		n = Vector2i(posmod(n.x, width), posmod(n.y, height))
+	return n
+
+
 func in_bounds(c: Vector2i) -> bool:
 	return c.x >= 0 and c.y >= 0 and c.x < width and c.y < height
 
@@ -111,7 +120,7 @@ func step() -> void:
 		s.prev_body = s.body.duplicate()
 		if s.alive and not s.queue.is_empty():
 			s.dir = s.queue.pop_front()
-		var nh := s.head() + STEP[s.dir]
+		var nh := step_from(s.head(), s.dir)
 		new_heads.append(nh)
 		grows.append(s.alive and orbs.has(nh))
 	var new_bodies: Array = []

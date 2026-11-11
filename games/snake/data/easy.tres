@@ -8,6 +8,7 @@ width = 12
 height = 18
 start_length = 3
 orb_count = 2
+wrap = true
 base_hz = 4.5
 hz_per_segment = 0.08
 max_hz = 7.0

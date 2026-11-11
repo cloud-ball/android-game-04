@@ -228,8 +228,12 @@ func _build_howto() -> Control:
 	var steps := [
 		["swipe", "Swipe anywhere to turn.", "Two quick swipes make a tight U-turn."],
 		["orb", "Eat glowing orbs to grow.", "Each orb is +10. Longer snakes move faster."],
-		["crash", "Make the CPU crash first.", "Cut it off so it hits you, a wall or itself."],
-		["wall", "Don't crash yourself.", "Walls, your own tail and the rival all end the run."],
+		["crash", "Make the CPU crash first.", "Cut it off so it runs into you or itself."],
+		[
+			"wall",
+			"Edges wrap around.",
+			"Go out one side, come back on the other. Only tails crash."
+		],
 	]
 	for step in steps:
 		var row := HBoxContainer.new()
@@ -289,11 +293,17 @@ static func _draw_howto(c: Control, kind: String) -> void:
 				c.draw_rect(Rect2(Vector2(10 + i * 26, 78), Vector2(24, 24)), UiKit.MAGENTA)
 			c.draw_circle(Vector2(56, 90), 12, Color(1, 0.9, 0.4))
 		"wall":
-			c.draw_rect(Rect2(Vector2(124, 10), Vector2(10, 130)), Color(0.55, 0.7, 1.0))
-			for i in 3:
-				c.draw_rect(Rect2(Vector2(36 + i * 28, 62), Vector2(26, 26)), g * (0.6 + 0.2 * i))
-			c.draw_line(Vector2(20, 20), Vector2(50, 50), Color(1, 0.4, 0.4), 6.0)
-			c.draw_line(Vector2(50, 20), Vector2(20, 50), Color(1, 0.4, 0.4), 6.0)
+			# Snake leaving the right edge and coming back in on the left.
+			var edge := Color(0.55, 0.7, 1.0, 0.6)
+			c.draw_rect(Rect2(Vector2(6, 10), Vector2(6, 130)), edge)
+			c.draw_rect(Rect2(Vector2(138, 10), Vector2(6, 130)), edge)
+			for i in 2:
+				c.draw_rect(Rect2(Vector2(84 + i * 28, 90), Vector2(26, 26)), g * (0.6 + 0.2 * i))
+			c.draw_rect(Rect2(Vector2(16, 90), Vector2(26, 26)), g * 1.1)
+			c.draw_arc(Vector2(75, 90), 62, PI * 1.05, PI * 1.95, 24, Color.WHITE, 5.0)
+			c.draw_colored_polygon(
+				PackedVector2Array([Vector2(14, 78), Vector2(10, 98), Vector2(30, 88)]), Color.WHITE
+			)
 
 
 func _center(l: Label) -> Label:
