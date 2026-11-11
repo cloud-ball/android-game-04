@@ -4,14 +4,14 @@ extends Node3D
 ## frame and interpolates segment positions between ticks (alpha 0..1). Everything is unshaded
 ## + glow, so there are no lights or shadows to pay for on low-end phones.
 
-const PITCH_DEG := 64.0
-const FOV_DEG := 40.0
+const PITCH_DEG := 78.0
+const FOV_DEG := 26.0
 const SNAKE_COLORS: Array[Color] = [Color(0.35, 1.0, 0.55), Color(1.0, 0.32, 0.86)]
 const ORB_COLOR := Color(1.0, 0.8, 0.3)
 const ORB_POOL := 4
 ## Screen bands kept free for the HUD (fractions of the screen height).
-const TOP_BAND := 0.16
-const BOTTOM_BAND := 0.07
+const TOP_BAND := 0.15
+const BOTTOM_BAND := 0.035
 
 const SEGMENT_SHADER := """
 shader_type spatial;
@@ -435,7 +435,7 @@ static func fit_camera(w: float, h: float, aspect: float, top: float, bottom: fl
 			var r := _ndc_bounds(t, corners, tan_h, tan_v)
 			tz += (want - (r.z + r.w) * 0.5) * d * 0.25
 		var b := _ndc_bounds(t, corners, tan_h, tan_v)
-		if b.x >= -0.96 and b.y <= 0.96 and b.z >= y_bot and b.w <= y_top:
+		if b.x >= -0.985 and b.y <= 0.985 and b.z >= y_bot and b.w <= y_top:
 			return t
 		d += 0.25
 	return t
