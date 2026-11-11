@@ -82,6 +82,18 @@ static func coin(size := 36.0) -> Control:
 	return c
 
 
+## Centres a fixed-size control (e.g. an icon) inside its parent, whatever the parent's size.
+static func center(ctrl: Control, side: float) -> void:
+	ctrl.anchor_left = 0.5
+	ctrl.anchor_top = 0.5
+	ctrl.anchor_right = 0.5
+	ctrl.anchor_bottom = 0.5
+	ctrl.offset_left = -side * 0.5
+	ctrl.offset_top = -side * 0.5
+	ctrl.offset_right = side * 0.5
+	ctrl.offset_bottom = side * 0.5
+
+
 ## Height of the notch/status bar in canvas units (0 on desktop).
 static func safe_top(node: Node) -> float:
 	if not OS.has_feature("mobile"):
