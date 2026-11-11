@@ -4,7 +4,7 @@ extends Control
 
 var _coins_label: Label
 var _toast: Label
-var _settings: Control
+var _settings: SettingsSheet
 
 
 func _ready() -> void:
@@ -18,8 +18,8 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if _settings != null and _settings.visible:
-			_settings.visible = false
+		if _settings != null and _settings.is_open():
+			_settings.close()
 		else:
 			get_tree().quit()
 
@@ -73,7 +73,7 @@ func _build() -> void:
 	_toast.position.y -= 220
 	_toast.modulate.a = 0.0
 	add_child(_toast)
-	_settings = _settings_panel()
+	_settings = SettingsSheet.new()
 	add_child(_settings)
 
 
@@ -91,25 +91,47 @@ func _header() -> Control:
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.add_theme_font_override("bold_font", UiKit.font(900))
-	title.add_theme_font_size_override("bold_font_size", 62)
+	title.add_theme_font_size_override("bold_font_size", 58)
 	title.text = "[b]POCKET ARENA [color=#ffc94a]8[/color][/b]"
 	left.add_child(title)
 	left.add_child(UiKit.label("Play the CPU · offline", 30, UiKit.MUTED, 500))
 	row.add_child(left)
-	var right := VBoxContainer.new()
-	right.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 20)
+	var pill := PanelContainer.new()
+	pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pill.add_theme_stylebox_override(
+		"panel", UiKit.box(Color(1.0, 0.79, 0.29, 0.13), 44, Color(1.0, 0.79, 0.29, 0.35), 2, 18)
+	)
 	var coins := HBoxContainer.new()
-	coins.alignment = BoxContainer.ALIGNMENT_END
 	coins.add_theme_constant_override("separation", 12)
-	coins.add_child(UiKit.coin(40))
+	coins.add_child(UiKit.coin(48))
 	_coins_label = UiKit.label(UiKit.format_int(Economy.coins()), 44, UiKit.GOLD, 800)
 	coins.add_child(_coins_label)
-	right.add_child(coins)
-	var gear := UiKit.button("Settings", Color(1, 1, 1, 0.1), UiKit.MUTED, 28, 64)
-	gear.pressed.connect(func() -> void: _settings.visible = true)
-	right.add_child(gear)
-	row.add_child(right)
+	pill.add_child(coins)
+	row.add_child(pill)
+	row.add_child(_gear_button())
 	return panel
+
+
+func _gear_button() -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(116, 116)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.add_theme_stylebox_override("normal", UiKit.box(Color(1, 1, 1, 0.1), 58))
+	b.add_theme_stylebox_override("hover", UiKit.box(Color(1, 1, 1, 0.14), 58))
+	b.add_theme_stylebox_override("pressed", UiKit.box(Color(1, 1, 1, 0.2), 58))
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var icon := IconGlyph.new("gear", Color(0.85, 0.88, 1.0), 70)
+	icon.hole = Color(0.14, 0.15, 0.21)
+	UiKit.center(icon, 70)
+	b.add_child(icon)
+	b.pressed.connect(
+		func() -> void:
+			AudioService.play("tap")
+			_settings.open()
+	)
+	return b
 
 
 func _daily_card() -> Control:
@@ -213,43 +235,3 @@ func _show_toast(text: String) -> void:
 	tw.tween_property(_toast, "modulate:a", 1.0, 0.15)
 	tw.tween_interval(1.6)
 	tw.tween_property(_toast, "modulate:a", 0.0, 0.3)
-
-
-func _settings_panel() -> Control:
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0, 0.6)
-	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shade.visible = false
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(820, 0)
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	panel.add_theme_stylebox_override(
-		"panel", UiKit.box(Color(0.1, 0.11, 0.22), 36, Color.TRANSPARENT, 0, 48)
-	)
-	shade.add_child(panel)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 28)
-	panel.add_child(col)
-	col.add_child(UiKit.label("Settings", 56, Color.WHITE, 900))
-	for item in [["music", "Music"], ["sound", "Sound effects"], ["haptics", "Vibration"]]:
-		var t := CheckButton.new()
-		t.text = item[1]
-		t.focus_mode = Control.FOCUS_NONE
-		t.button_pressed = bool(SettingsService.get_value(item[0]))
-		t.add_theme_font_override("font", UiKit.font(700))
-		t.add_theme_font_size_override("font_size", 42)
-		var key: String = item[0]
-		t.toggled.connect(func(on: bool) -> void: SettingsService.set_value(key, on))
-		col.add_child(t)
-	var version := str(ProjectSettings.get_setting("application/config/version", ""))
-	col.add_child(
-		UiKit.label(
-			"Pocket Arena 8 · v%s · no account, no tracking" % version, 26, UiKit.MUTED, 500
-		)
-	)
-	var close := UiKit.button("Close", UiKit.GREEN)
-	close.pressed.connect(func() -> void: shade.visible = false)
-	col.add_child(close)
-	return shade

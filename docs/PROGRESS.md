@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Polished settings UI (user feedback: too small)
+- shared/ui: IconGlyph (drawn icons), ToggleSwitch (large animated switch), SettingsSheet (bottom sheet:
+  Music / Sound effects / Vibration rows with icons + hints, About card, Done). Whole rows are tap targets.
+- Hub header: coin pill + round gear button. Pause menu gains Settings (same sheet). Android back closes it.
+- Bug found while testing: controls given "full rect" after entering the tree keep a 0x0 size -> use
+  set_anchors_and_offsets_preset / UiKit.center(). 46 headless tests; verified on the Vivo.
+
 ## 2026-11-11 · Wrap-around edges (user request)
 - SnakeConfig.wrap (on for all levels): leaving an edge re-enters on the opposite side; only tails crash.
 - AI pathing/flood/cut-off/head-avoid are wrap-aware; view slides wrapped segments in from outside the edge.

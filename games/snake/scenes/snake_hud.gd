@@ -44,6 +44,7 @@ var _end_stats: Label
 var _end_coins: Label
 var _end_daily: Label
 var _pause_btn: Button
+var _settings: SettingsSheet
 
 
 func _ready() -> void:
@@ -58,6 +59,8 @@ func _ready() -> void:
 	_pause = _build_pause()
 	_end = _build_end()
 	_howto = _build_howto()
+	_settings = SettingsSheet.new()
+	add_child(_settings)
 
 
 func _build_bar(top: float) -> void:
@@ -188,6 +191,9 @@ func _build_pause() -> Control:
 	var restart := UiKit.button("Restart", Color(1, 1, 1, 0.12), Color.WHITE, 40, 110)
 	restart.pressed.connect(func() -> void: rematch_requested.emit())
 	col.add_child(restart)
+	var settings := UiKit.button("Settings", Color(1, 1, 1, 0.12), Color.WHITE, 40, 110)
+	settings.pressed.connect(func() -> void: _settings.open())
+	col.add_child(settings)
 	var quit := UiKit.button("Back to hub", Color(1, 1, 1, 0.08), UiKit.MUTED, 34, 90)
 	quit.pressed.connect(func() -> void: exit_requested.emit())
 	col.add_child(quit)
@@ -361,6 +367,14 @@ func hide_panels() -> void:
 	_end.visible = false
 	_howto.visible = false
 	_pause_btn.visible = true
+
+
+func settings_open() -> bool:
+	return _settings.is_open()
+
+
+func close_settings() -> void:
+	_settings.close()
 
 
 func show_pause(on: bool) -> void:
