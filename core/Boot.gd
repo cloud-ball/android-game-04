@@ -32,7 +32,7 @@ func _ready() -> void:
 				extra[key] = options[key]
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
-		SceneRouter.open_game.call_deferred(options["game"], extra)
+		SceneRouter.open_game.call_deferred(options["game"], extra, true)
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
 
 
