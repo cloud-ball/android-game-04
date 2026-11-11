@@ -2,6 +2,11 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Bigger board, slower snakes, easier Medium (user feedback)
+- Camera 78° / 26° lens; tall screens get extra rows (12x22 on 20:9, 12x18 on 16:9): board ~46% -> ~70% of screen.
+- Speeds lowered: Easy 4.5->7, Medium 5.5->8.5, Hard 6.5->10 tiles/s. Medium hunts 15% (was 30%), wanders more.
+- 37 headless tests.
+
 ## 2026-11-10 · Serpent Grid polish (all 5 items)
 - Music: original synth loops (hub + game mixes) rendered on a worker thread, cached in user://; Music toggle.
 - Solo score-attack mode (vs CPU / Solo selector), solo best + NEW BEST, save schema 2 with migration.
