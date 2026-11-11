@@ -10,6 +10,7 @@ extends Node
 ##   --shot-at=<frames>   first screenshot frame (default 120); --shot-every=<frames> (default 90)
 ##   --shot-count=<n>     number of screenshots (default 1)
 ##   --quit-after=<n>     quit after n frames
+##   --fps                print frames per second to the log once a second
 
 var options: Dictionary = {}
 var bot := false
@@ -32,11 +33,26 @@ func _ready() -> void:
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra)
-	set_process(options.has("shot") or options.has("quit-after"))
+	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
 
 
 func _process(_delta: float) -> void:
 	_frame += 1
+	if options.has("fps") and _frame % 60 == 0:
+		var rid := get_viewport().get_viewport_rid()
+		RenderingServer.viewport_set_measure_render_time(rid, true)
+		print(
+			(
+				"[fps] %d  process %.1f ms  render cpu %.1f ms  gpu %.1f ms  draws %d"
+				% [
+					Engine.get_frames_per_second(),
+					Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+					RenderingServer.viewport_get_measured_render_time_cpu(rid),
+					RenderingServer.viewport_get_measured_render_time_gpu(rid),
+					Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+				]
+			)
+		)
 	if options.has("shot"):
 		var at := int(options.get("shot-at", 120))
 		var every := maxi(1, int(options.get("shot-every", 90)))

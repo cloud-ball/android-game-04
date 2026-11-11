@@ -26,18 +26,41 @@ void fragment() {
 
 const BOARD_SHADER := """
 shader_type spatial;
-render_mode unshaded, cull_disabled;
+render_mode unshaded, cull_disabled, depth_draw_always;
 uniform vec2 cells = vec2(12.0, 18.0);
 uniform vec3 base_color : source_color = vec3(0.02, 0.03, 0.09);
 uniform vec3 line_color : source_color = vec3(0.22, 0.38, 1.0);
+uniform float base_alpha = 0.72;
+uniform float now = 0.0;
+// Up to 4 ripples: (x, z, start_time, strength) and their tint.
+uniform vec4 ripples[4];
+uniform vec4 ripple_tint[4];
+varying vec2 local_xz;
+void vertex() {
+	local_xz = VERTEX.xz;
+}
 void fragment() {
-	vec2 g = UV * cells;
+	vec2 g = local_xz + cells * 0.5;
 	vec2 dist = abs(fract(g + 0.5) - 0.5);
 	vec2 fw = fwidth(g);
 	vec2 a = 1.0 - smoothstep(fw * 0.6, fw * 1.8, dist);
 	float line = max(a.x, a.y);
-	float vignette = 1.0 - 0.35 * length(UV - 0.5);
-	ALBEDO = mix(base_color * vignette, line_color * 1.25, line);
+	float vignette = 1.0 - 0.7 * length(local_xz / cells);
+	vec3 col = mix(base_color * vignette, line_color * 1.25, line);
+	float glow = 0.0;
+	for (int i = 0; i < 4; i++) {
+		vec4 r = ripples[i];
+		float age = now - r.z;
+		if (age < 0.0 || age > 1.6 || r.w <= 0.0) {
+			continue;
+		}
+		float d = length(local_xz - r.xy);
+		float ring = exp(-pow((d - age * 9.0) / 0.45, 2.0)) * (1.0 - age / 1.6) * r.w;
+		col += ripple_tint[i].rgb * ring * (0.1 + 2.2 * line);
+		glow += ring;
+	}
+	ALBEDO = col;
+	ALPHA = clamp(mix(base_alpha, 1.0, line) + glow * 0.15, 0.0, 1.0);
 }
 """
 
@@ -66,6 +89,12 @@ var _dead_time: Array[float] = [-1.0, -1.0]
 var _eyes: Array = []
 var _sparkles: Array[CPUParticles3D] = []
 var _next_sparkle := 0
+var _backdrop: SnakeBackdrop
+var _board_mat: ShaderMaterial
+var _frame_mat: ShaderMaterial
+var _ripples := PackedVector4Array([Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO])
+var _ripple_tint := PackedVector4Array([Vector4.ONE, Vector4.ONE, Vector4.ONE, Vector4.ONE])
+var _next_ripple := 0
 
 
 func setup(width: int, height: int) -> void:
@@ -73,7 +102,9 @@ func setup(width: int, height: int) -> void:
 	_h = height
 	_add_environment()
 	_add_board()
-	_add_stars()
+	_backdrop = SnakeBackdrop.new()
+	add_child(_backdrop)
+	_backdrop.setup(float(_w), float(_h), 8)
 	var seg_mat := ShaderMaterial.new()
 	seg_mat.shader = _shader(SEGMENT_SHADER)
 	seg_mat.set_shader_parameter("energy", 1.0)
@@ -137,6 +168,9 @@ func cell_pos(c: Vector2i) -> Vector3:
 
 func render(logic: SnakeLogic, alpha: float, delta: float) -> void:
 	_time += delta
+	_backdrop.update(delta)
+	_board_mat.set_shader_parameter("now", _time)
+	_frame_mat.set_shader_parameter("energy", 1.45 + 0.3 * sin(_time * 1.9))
 	for i in _snake_mm.size():
 		if i < logic.snakes.size():
 			_render_snake(i, logic.snakes[i], alpha)
@@ -226,7 +260,18 @@ func _place_eyes(eyes: Array, head: Vector3, fwd: Vector3, alive: bool) -> void:
 		pupil.position = eye.position + fwd * 0.07 + Vector3(0, 0.05, 0)
 
 
+## Ring of light spreading across the grid from cell c.
+func ripple(c: Vector2i, color: Color, strength: float) -> void:
+	var p := cell_pos(c)
+	_ripples[_next_ripple] = Vector4(p.x, p.z, _time, strength)
+	_ripple_tint[_next_ripple] = Vector4(color.r, color.g, color.b, 1.0)
+	_next_ripple = (_next_ripple + 1) % _ripples.size()
+	_board_mat.set_shader_parameter("ripples", _ripples)
+	_board_mat.set_shader_parameter("ripple_tint", _ripple_tint)
+
+
 func eat_fx(c: Vector2i, who: int, text: String) -> void:
+	ripple(c, SNAKE_COLORS[who].lerp(ORB_COLOR, 0.5), 0.9)
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -260,6 +305,7 @@ func crash_fx(c: Vector2i, who: int) -> void:
 	b.restart()
 	b.emitting = true
 	_shake = 1.0
+	ripple(clamped, SNAKE_COLORS[who], 1.8)
 
 
 func _add_environment() -> void:
@@ -283,12 +329,16 @@ func _add_board() -> void:
 	plane.size = Vector2(_w, _h)
 	var mat := ShaderMaterial.new()
 	mat.shader = _shader(BOARD_SHADER)
+	mat.set_shader_parameter("ripples", _ripples)
+	mat.set_shader_parameter("ripple_tint", _ripple_tint)
+	_board_mat = mat
 	mat.set_shader_parameter("cells", Vector2(_w, _h))
 	var board := MeshInstance3D.new()
 	board.mesh = plane
 	board.material_override = mat
 	add_child(board)
 	var frame_mat := _flat(Color(0.5, 0.65, 1.0), 1.6)
+	_frame_mat = frame_mat
 	var hw := _w * 0.5
 	var hh := _h * 0.5
 	var bars := [
@@ -305,30 +355,6 @@ func _add_board() -> void:
 		m.material_override = frame_mat
 		m.position = bar[0]
 		add_child(m)
-
-
-func _add_stars() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 8
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = BoxMesh.new()
-	mm.instance_count = 260
-	for i in mm.instance_count:
-		var p := Vector3(
-			rng.randf_range(-28, 28), rng.randf_range(-22, -3), rng.randf_range(-40, 14)
-		)
-		var s := rng.randf_range(0.05, 0.13)
-		mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * s), p))
-		var b := rng.randf_range(0.4, 1.3)
-		mm.set_instance_color(i, Color(0.75, 0.82, 1.0) * b)
-	var node := MultiMeshInstance3D.new()
-	node.multimesh = mm
-	var mat := ShaderMaterial.new()
-	mat.shader = _shader(SEGMENT_SHADER)
-	node.material_override = mat
-	add_child(node)
 
 
 func _make_burst(color: Color) -> CPUParticles3D:
@@ -372,7 +398,9 @@ func _make_eyes() -> Array:
 	for k in 4:
 		var m := MeshInstance3D.new()
 		m.mesh = white if k < 2 else dark
-		m.material_override = _flat(Color.WHITE, 1.15) if k < 2 else _flat(Color(0.05, 0.05, 0.1), 1.0)
+		m.material_override = (
+			_flat(Color.WHITE, 1.15) if k < 2 else _flat(Color(0.05, 0.05, 0.1), 1.0)
+		)
 		m.visible = false
 		add_child(m)
 		out.append(m)
