@@ -4,24 +4,34 @@ extends RefCounted
 ## handles several goals at once), rejected when a flood fill shows the move would trap it.
 ## A move is a trap when the region reachable after it is smaller than the snake's length.
 ## The AI never picks a trap while a non-trap move exists (tested).
+## Performance: flood fills stop as soon as the answer is known (cap), and work on flat cell
+## indices in packed arrays; a full-board count in GDScript cost up to ~190 ms per tick on a
+## mid-range phone.
+
+## Regions larger than this (or than 2x the snake) all count as "plenty of room".
+const ROOM_CAP := 48
 
 
 ## Per-direction evaluation for snake `who`: {dir, blocked, area, trap}.
+## area is capped (see ROOM_CAP), which is enough to rank moves and to detect traps.
 static func evaluate(logic: SnakeLogic, who: int) -> Array[Dictionary]:
 	var s := logic.snakes[who]
+	var w := logic.width
+	var occ := logic.occupancy()
 	var out: Array[Dictionary] = []
 	for d in 4:
 		if d == SnakeLogic.opposite(s.dir):
 			continue
 		var nh := s.head() + SnakeLogic.STEP[d]
 		var eats := logic.orbs.has(nh)
-		var grid := _grid_after_move(logic, who, eats)
-		var blocked := not logic.in_bounds(nh) or grid[nh.y * logic.width + nh.x] != 0
+		var need := s.body.size() + (1 if eats else 0)
+		var blocked := not logic.in_bounds(nh)
 		var area := 0
 		if not blocked:
-			grid[nh.y * logic.width + nh.x] = 1
-			area = _flood(logic, grid, nh)
-		var need := s.body.size() + (1 if eats else 0)
+			var grid := _without_own_tail(logic, who, occ, eats)
+			blocked = grid[nh.y * w + nh.x] != 0
+			if not blocked:
+				area = _flood(logic, grid, nh.y * w + nh.x, maxi(need * 2, ROOM_CAP))
 		out.append({"dir": d, "blocked": blocked, "area": area, "trap": blocked or area < need})
 	return out
 
@@ -75,19 +85,19 @@ static func _cutoff_move(
 	var r := logic.snakes[rival]
 	var best_dir := -1
 	var best_room := int(ceil(r.body.size() * squeeze))
+	var occ := logic.occupancy()
 	for o in safe:
 		var nh: Vector2i = logic.snakes[who].head() + SnakeLogic.STEP[o.dir]
-		var grid := _grid_after_move(logic, who, logic.orbs.has(nh))
+		var grid := _without_own_tail(logic, who, occ, logic.orbs.has(nh))
 		grid[nh.y * w + nh.x] = 1
 		var room := 0
 		for d in 4:
-			if d == SnakeLogic.opposite(r.dir):
+			if d == SnakeLogic.opposite(r.dir) or room >= best_room:
 				continue
 			var c := r.head() + SnakeLogic.STEP[d]
 			if logic.in_bounds(c) and grid[c.y * w + c.x] == 0:
-				var g2 := grid.duplicate()
-				g2[c.y * w + c.x] = 1
-				room = maxi(room, _flood(logic, g2, c))
+				# Only "is it smaller than best_room" matters, so stop counting there.
+				room = maxi(room, _flood(logic, grid, c.y * w + c.x, best_room))
 		if room < best_room:
 			best_room = room
 			best_dir = o.dir
@@ -99,34 +109,42 @@ static func first_step_to_orb(logic: SnakeLogic, who: int) -> int:
 	if logic.orbs.is_empty():
 		return -1
 	var w := logic.width
+	var n := w * logic.height
 	var grid := logic.occupancy()
-	var start := logic.snakes[who].head()
+	var is_orb := PackedByteArray()
+	is_orb.resize(n)
+	for o in logic.orbs:
+		is_orb[o.y * w + o.x] = 1
 	var first := PackedInt32Array()
-	first.resize(w * logic.height)
+	first.resize(n)
 	first.fill(-1)
-	var frontier: Array[Vector2i] = []
+	var queue := PackedInt32Array()
+	var start := logic.snakes[who].head()
 	for d in 4:
 		var c := start + SnakeLogic.STEP[d]
-		if logic.in_bounds(c) and grid[c.y * w + c.x] == 0 and first[c.y * w + c.x] == -1:
+		if logic.in_bounds(c) and grid[c.y * w + c.x] == 0:
 			first[c.y * w + c.x] = d
-			frontier.append(c)
-	var i := 0
-	while i < frontier.size():
-		var c := frontier[i]
-		i += 1
-		if logic.orbs.has(c):
-			return first[c.y * w + c.x]
-		for d in 4:
-			var n := c + SnakeLogic.STEP[d]
-			if logic.in_bounds(n) and grid[n.y * w + n.x] == 0 and first[n.y * w + n.x] == -1:
-				first[n.y * w + n.x] = first[c.y * w + c.x]
-				frontier.append(n)
+			queue.append(c.y * w + c.x)
+	var head := 0
+	while head < queue.size():
+		var i := queue[head]
+		head += 1
+		if is_orb[i] == 1:
+			return first[i]
+		var x := i % w
+		var nbrs := [i - 1 if x > 0 else -1, i + 1 if x < w - 1 else -1, i - w, i + w]
+		for j in nbrs:
+			if j >= 0 and j < n and grid[j] == 0 and first[j] == -1:
+				first[j] = first[i]
+				queue.append(j)
 	return -1
 
 
-static func _grid_after_move(logic: SnakeLogic, who: int, eats: bool) -> PackedByteArray:
-	var grid := logic.occupancy()
-	# Our own tail moves away this tick unless we grow.
+## Occupancy copy with our own tail freed (it moves away this tick unless we grow).
+static func _without_own_tail(
+	logic: SnakeLogic, who: int, occ: PackedByteArray, eats: bool
+) -> PackedByteArray:
+	var grid := occ.duplicate()
 	var body := logic.snakes[who].body
 	if not eats and body.size() > 1:
 		var t: Vector2i = body.back()
@@ -134,19 +152,31 @@ static func _grid_after_move(logic: SnakeLogic, who: int, eats: bool) -> PackedB
 	return grid
 
 
-static func _flood(logic: SnakeLogic, grid: PackedByteArray, from: Vector2i) -> int:
+## Number of free cells reachable from cell index `from` (counting it), stopping at `cap`.
+static func _flood(logic: SnakeLogic, grid: PackedByteArray, from: int, cap: int) -> int:
 	var w := logic.width
+	var n := w * logic.height
 	var seen := grid.duplicate()
-	var stack: Array[Vector2i] = [from]
+	seen[from] = 9
+	var stack := PackedInt32Array([from])
 	var count := 0
-	while not stack.is_empty():
-		var c: Vector2i = stack.pop_back()
+	while not stack.is_empty() and count < cap:
+		var i := stack[stack.size() - 1]
+		stack.resize(stack.size() - 1)
 		count += 1
-		for d in 4:
-			var n := c + SnakeLogic.STEP[d]
-			if logic.in_bounds(n) and seen[n.y * w + n.x] == 0:
-				seen[n.y * w + n.x] = 9
-				stack.append(n)
+		var x := i % w
+		if x > 0 and seen[i - 1] == 0:
+			seen[i - 1] = 9
+			stack.append(i - 1)
+		if x < w - 1 and seen[i + 1] == 0:
+			seen[i + 1] = 9
+			stack.append(i + 1)
+		if i >= w and seen[i - w] == 0:
+			seen[i - w] = 9
+			stack.append(i - w)
+		if i + w < n and seen[i + w] == 0:
+			seen[i + w] = 9
+			stack.append(i + w)
 	return count
 
 

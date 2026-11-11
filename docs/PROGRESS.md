@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Space backdrop + AI speed-up
+- New games/snake/scenes/snake_backdrop.gd: twinkling drifting stars, noise nebula clouds, shooting stars,
+  rising sparks; see-through board; grid ripples on eat/crash; pulsing board edge.
+- Found with `--fps` on the phone: AI ticks took 70-195 ms (stutter). Flood fills now stop once the answer is
+  known and use packed arrays -> solid 59-61 fps on the Vivo (Hard, bot vs CPU), GPU ~9 ms, ~33 draw calls.
+- Boot `--fps` prints fps, process time, GPU time and draw calls to the log.
+
 ## 2026-11-11 · Bigger board, slower snakes, easier Medium (user feedback)
 - Camera 78° / 26° lens; tall screens get extra rows (12x22 on 20:9, 12x18 on 16:9): board ~46% -> ~70% of screen.
 - Speeds lowered: Easy 4.5->7, Medium 5.5->8.5, Hard 6.5->10 tiles/s. Medium hunts 15% (was 30%), wanders more.
