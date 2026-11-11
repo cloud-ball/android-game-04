@@ -54,6 +54,9 @@ var _hud: BlocksHud
 var _gestures := StackGestures.new()
 var _save: Dictionary
 var _ai_rng: RandomNumberGenerator
+var _cpu_rng: RandomNumberGenerator
+var _cpu_task := -1
+var _cpu_plan: Dictionary = {}
 var _acc := 0.0
 var _cpu_timer := 0.0
 var _countdown := 0.0
@@ -108,11 +111,13 @@ func _ready() -> void:
 
 
 func _new_match() -> void:
+	_finish_cpu_task()
 	var seed_value := Rng.next_seed()
 	var lv: Dictionary = LEVELS[difficulty]
 	player = StackLogic.new_game(seed_value, lv.start)
 	cpu = StackLogic.new_game(seed_value ^ 0x5bd1e995, lv.start)
 	_ai_rng = Rng.make(seed_value ^ 0x2545f491)
+	_cpu_rng = Rng.make(seed_value ^ 0x68e31da4)
 	_acc = 0.0
 	_cpu_timer = 0.0
 
@@ -182,22 +187,52 @@ func _player_action(type: String) -> void:
 	_check_end()
 
 
+## The CPU plans its next placement on a worker thread while it "thinks" (the search costs
+## 40-80 ms in GDScript on a mid-range phone), then applies it when its think time is up.
 func _cpu_step() -> void:
+	if cpu.over:
+		return
+	if _cpu_task == -1:
+		_start_cpu_plan()
 	_cpu_timer += STEP
 	var lv: Dictionary = LEVELS[difficulty]
 	var think: float = lv.think / (1.0 + 0.07 * (cpu.level - 1))
-	if _cpu_timer < think or cpu.over:
+	if _cpu_timer < think or not WorkerThreadPool.is_task_completed(_cpu_task):
 		return
+	_finish_cpu_task()
 	_cpu_timer = 0.0
-	var plan := StackAI.choose(cpu, _ai_rng, lv.hold, lv.top_k, lv.noise)
-	if plan.is_empty():
+	if _cpu_plan.is_empty():
 		cpu = StackLogic.reduce(cpu, {"type": "hard"})
 	else:
-		for a in StackAI.actions_for(cpu, plan):
+		for a in StackAI.actions_for(cpu, _cpu_plan):
 			cpu = StackLogic.reduce(cpu, a)
 	if cpu.outgoing > 0:
 		player = StackLogic.reduce(player, {"type": "garbage", "rows": cpu.outgoing})
 		AudioService.play("count", 0.6)
+	if not cpu.over:
+		_start_cpu_plan()
+
+
+## Only the CPU's own board decides its plan; incoming garbage changes the board only when
+## the CPU locks, so a plan made from this snapshot stays valid until it is applied.
+func _start_cpu_plan() -> void:
+	var snapshot := cpu.copy()
+	var lv: Dictionary = LEVELS[difficulty]
+	var rng := _cpu_rng
+	_cpu_plan = {}
+	_cpu_task = WorkerThreadPool.add_task(
+		func() -> void: _cpu_plan = StackAI.choose(snapshot, rng, lv.hold, lv.top_k, lv.noise)
+	)
+
+
+func _finish_cpu_task() -> void:
+	if _cpu_task != -1:
+		WorkerThreadPool.wait_for_task_completion(_cpu_task)
+		_cpu_task = -1
+
+
+func _exit_tree() -> void:
+	_finish_cpu_task()
 
 
 func _bot_turn() -> void:
