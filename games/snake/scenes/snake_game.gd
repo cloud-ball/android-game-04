@@ -340,15 +340,10 @@ func _resume() -> void:
 		state = _paused_from
 
 
-## Points a » at the cell where the newest buffered turn will happen (after any earlier one).
+## Re-aims the small › in front of the head at the newest buffered turn.
 func _show_turn_hint() -> void:
 	var you := logic.snakes[SnakeLogic.PLAYER]
-	var cell := you.head()
-	var dir := you.dir
-	for d in you.queue:
-		cell = logic.step_from(cell, d)
-		dir = d
-	_view.turn_hint(cell, dir)
+	_view.turn_hint(you.queue.back() if not you.queue.is_empty() else you.dir)
 
 
 func _notification(what: int) -> void:
