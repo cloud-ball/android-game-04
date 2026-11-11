@@ -9,6 +9,8 @@ const FOV_DEG := 26.0
 const SNAKE_COLORS: Array[Color] = [Color(0.35, 1.0, 0.55), Color(1.0, 0.32, 0.86)]
 const ORB_COLOR := Color(1.0, 0.8, 0.3)
 const ORB_POOL := 4
+## Seconds the turn hint (›) stays on screen.
+const HINT_LIFE := 0.42
 ## Screen bands kept free for the HUD (fractions of the screen height).
 const TOP_BAND := 0.15
 const BOTTOM_BAND := 0.035
@@ -64,20 +66,18 @@ void fragment() {
 }
 """
 
-## Double chevron (») drawn in a flat quad; +X of the quad is "forward".
+## Single thin chevron (›) drawn in a flat quad; +X of the quad is "forward".
 const ARROW_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled;
-uniform vec3 color : source_color = vec3(0.4, 1.0, 0.6);
+uniform vec3 color : source_color = vec3(0.6, 1.0, 0.75);
 uniform float fade = 0.0;
-float chevron(vec2 uv, float x0) {
-	float d = (uv.x - x0) + abs(uv.y - 0.5) * 0.9;
-	return smoothstep(0.0, 0.03, d) * (1.0 - smoothstep(0.2, 0.24, d)) * step(abs(uv.y - 0.5), 0.44);
-}
 void fragment() {
-	float a = chevron(UV, 0.08) * 0.55 + chevron(UV, 0.42);
-	ALBEDO = color * 3.2;
-	ALPHA = clamp(a * fade, 0.0, 1.0);
+	float d = (UV.x - 0.3) + abs(UV.y - 0.5) * 0.8;
+	float a = smoothstep(0.0, 0.04, d) * (1.0 - smoothstep(0.13, 0.17, d));
+	a *= step(abs(UV.y - 0.5), 0.4);
+	ALBEDO = color * 1.8;
+	ALPHA = clamp(a * fade * 0.8, 0.0, 1.0);
 }
 """
 
@@ -112,8 +112,10 @@ var _frame_mat: ShaderMaterial
 var _ripples := PackedVector4Array([Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO])
 var _ripple_tint := PackedVector4Array([Vector4.ONE, Vector4.ONE, Vector4.ONE, Vector4.ONE])
 var _next_ripple := 0
-var _arrows: Array[MeshInstance3D] = []
-var _next_arrow := 0
+var _hint: MeshInstance3D
+var _hint_dir := -1
+var _hint_age := 99.0
+var _player_head := Vector3.ZERO
 
 
 func setup(width: int, height: int) -> void:
@@ -197,6 +199,7 @@ func render(logic: SnakeLogic, alpha: float, delta: float) -> void:
 			_snake_mm[i].visible_instance_count = 0
 			for e in _eyes[i]:
 				e.visible = false
+	_update_hint(delta)
 	for j in _orbs.size():
 		var o := _orbs[j]
 		o.visible = j < logic.orbs.size()
@@ -250,6 +253,8 @@ func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 	if n > 1 and neck_gap > 0.05 and neck_gap < 1.5:
 		fwd = Vector3(head_p.x - neck_p.x, 0, head_p.z - neck_p.z).normalized()
 	_place_eyes(_eyes[i], head_p, fwd, s.alive)
+	if i == SnakeLogic.PLAYER:
+		_player_head = head_p
 
 
 ## A move that crossed an edge (wrap mode) is drawn sliding in from just outside the
@@ -307,39 +312,43 @@ func ripple(c: Vector2i, color: Color, strength: float) -> void:
 	_board_mat.set_shader_parameter("ripple_tint", _ripple_tint)
 
 
-## Shows a glowing » on cell c pointing in direction d: where the player's snake is about to
-## turn. It pops in, slides half a cell forward and fades (about 0.45 s).
-func turn_hint(c: Vector2i, d: int) -> void:
-	if _arrows.is_empty():
+## Small › that rides just in front of the player's head, pointing in direction d (the newest
+## buffered turn). Fades in fast, holds briefly, fades out; a new swipe just re-aims it.
+func turn_hint(d: int) -> void:
+	if _hint == null:
 		var quad := QuadMesh.new()
 		quad.size = Vector2.ONE
-		for i in 3:
-			var m := MeshInstance3D.new()
-			m.mesh = quad
-			var mat := ShaderMaterial.new()
-			mat.shader = _shader(ARROW_SHADER)
-			mat.set_shader_parameter("color", SNAKE_COLORS[0].lightened(0.55))
-			m.material_override = mat
-			m.visible = false
-			add_child(m)
-			_arrows.append(m)
-	var m := _arrows[_next_arrow]
-	_next_arrow = (_next_arrow + 1) % _arrows.size()
-	var step := SnakeLogic.STEP[d]
+		_hint = MeshInstance3D.new()
+		_hint.mesh = quad
+		var mat := ShaderMaterial.new()
+		mat.shader = _shader(ARROW_SHADER)
+		_hint.material_override = mat
+		add_child(_hint)
+	_hint_dir = d
+	_hint_age = 0.0
+	_update_hint(0.0)
+
+
+func _update_hint(delta: float) -> void:
+	if _hint == null:
+		return
+	_hint_age += delta
+	_hint.visible = _hint_age < HINT_LIFE
+	if not _hint.visible:
+		return
+	var step := SnakeLogic.STEP[_hint_dir]
 	var fwd := Vector3(step.x, 0, step.y)
 	var heading := atan2(fwd.z, fwd.x)
 	var lay_flat := Basis(Vector3.RIGHT, -PI / 2.0)
-	var start := cell_pos(c) + Vector3(0, 0.06, 0) - fwd * 0.15
-	m.transform = Transform3D(
-		Basis(Vector3.UP, -heading) * lay_flat * Basis.from_scale(Vector3(1.3, 1.3, 1)), start
+	var k := _hint_age / HINT_LIFE
+	var size := 0.55 + 0.1 * minf(1.0, k * 4.0)
+	var pos := _player_head + fwd * (0.62 + 0.15 * k)
+	pos.y = 0.04
+	_hint.transform = Transform3D(
+		Basis(Vector3.UP, -heading) * lay_flat * Basis.from_scale(Vector3(size, size, 1)), pos
 	)
-	m.visible = true
-	var mat := m.material_override as ShaderMaterial
-	var tw := m.create_tween()
-	tw.tween_method(func(f: float) -> void: mat.set_shader_parameter("fade", f), 0.0, 1.0, 0.07)
-	tw.parallel().tween_property(m, "position", start + fwd * 0.5, 0.45).set_ease(Tween.EASE_OUT)
-	tw.tween_method(func(f: float) -> void: mat.set_shader_parameter("fade", f), 1.0, 0.0, 0.3)
-	tw.tween_callback(func() -> void: m.visible = false)
+	var fade := minf(1.0, k * 8.0) * (1.0 - smoothstep(0.55, 1.0, k))
+	(_hint.material_override as ShaderMaterial).set_shader_parameter("fade", fade)
 
 
 func eat_fx(c: Vector2i, who: int, text: String) -> void:
