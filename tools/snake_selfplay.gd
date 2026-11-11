@@ -2,10 +2,10 @@ extends SceneTree
 ## Headless self-play for Serpent Grid difficulty tuning.
 ## The CPU (each difficulty's data file) plays a fixed baseline "player" profile.
 ## Run: godot --headless --path . -s res://tools/snake_selfplay.gd -- [matches]
-##      [wander,avoid,hunt,squeeze ...]
+##      [wander,avoid,hunt,squeeze,blunder ...]
 ## Targets (CPU win rate vs baseline): easy ~25%, medium ~50%, hard ~70%.
 
-const BASELINE := {"wander": 0.12, "avoid_heads": true, "hunt": 0.0, "squeeze": 1.0}
+const BASELINE := {"wander": 0.12, "avoid_heads": true, "hunt": 0.0, "squeeze": 1.0, "blunder": 0.0}
 const MAX_TICKS := 1500
 
 
@@ -20,6 +20,7 @@ func _init() -> void:
 			cfg.ai_avoid_heads = parts.size() <= 1 or parts[1] == "1"
 			cfg.ai_hunt = float(parts[2]) if parts.size() > 2 else 0.0
 			cfg.ai_squeeze = float(parts[3]) if parts.size() > 3 else 1.0
+			cfg.ai_blunder = float(parts[4]) if parts.size() > 4 else 0.0
 			_report(spec, cfg, matches)
 	else:
 		for d in ["easy", "medium", "hard"]:

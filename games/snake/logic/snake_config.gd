@@ -23,6 +23,8 @@ extends Resource
 @export var ai_hunt: float = 0.0
 ## CPU: when hunting, also take moves that leave the player less room than squeeze x its length.
 @export var ai_squeeze: float = 1.0
+## CPU: chance per decision to skip the flood-fill look-ahead (it may enter a dead end).
+@export var ai_blunder: float = 0.0
 
 
 ## Screens taller than 16:9 get extra rows (same 12 columns) so the board fills them.

@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Weaker CPU + turn hints (user feedback)
+- New ai_blunder knob (CPU sometimes skips the flood-fill look-ahead; never picks a blocked cell): Easy 15%,
+  Medium 8%, Hard 2%. Hunt 0 / 0.05 / 0.3, wander 0.5 / 0.3 / 0.1. CPU win vs steady bot: 20% / 30% / 41%
+  (was 40 / 49 / 52). Rule file .claude/rules/snake.md updated to allow blunders.
+- Turn hint: a glowing » appears on the cell where your buffered turn will happen, slides forward and fades;
+  tiny haptic tick on each accepted swipe. 48 headless tests.
+
 ## 2026-11-11 · Polished settings UI (user feedback: too small)
 - shared/ui: IconGlyph (drawn icons), ToggleSwitch (large animated switch), SettingsSheet (bottom sheet:
   Music / Sound effects / Vibration rows with icons + hints, About card, Done). Whole rows are tap targets.

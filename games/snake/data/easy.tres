@@ -18,3 +18,4 @@ ai_wander = 0.5
 ai_avoid_heads = true
 ai_hunt = 0.0
 ai_squeeze = 1.0
+ai_blunder = 0.15

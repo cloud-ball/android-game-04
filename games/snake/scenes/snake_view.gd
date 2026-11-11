@@ -64,6 +64,23 @@ void fragment() {
 }
 """
 
+## Double chevron (») drawn in a flat quad; +X of the quad is "forward".
+const ARROW_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled;
+uniform vec3 color : source_color = vec3(0.4, 1.0, 0.6);
+uniform float fade = 0.0;
+float chevron(vec2 uv, float x0) {
+	float d = (uv.x - x0) + abs(uv.y - 0.5) * 0.9;
+	return smoothstep(0.0, 0.03, d) * (1.0 - smoothstep(0.2, 0.24, d)) * step(abs(uv.y - 0.5), 0.44);
+}
+void fragment() {
+	float a = chevron(UV, 0.08) * 0.55 + chevron(UV, 0.42);
+	ALBEDO = color * 3.2;
+	ALPHA = clamp(a * fade, 0.0, 1.0);
+}
+"""
+
 const FLAT_SHADER := """
 shader_type spatial;
 render_mode unshaded;
@@ -95,6 +112,8 @@ var _frame_mat: ShaderMaterial
 var _ripples := PackedVector4Array([Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO])
 var _ripple_tint := PackedVector4Array([Vector4.ONE, Vector4.ONE, Vector4.ONE, Vector4.ONE])
 var _next_ripple := 0
+var _arrows: Array[MeshInstance3D] = []
+var _next_arrow := 0
 
 
 func setup(width: int, height: int) -> void:
@@ -286,6 +305,41 @@ func ripple(c: Vector2i, color: Color, strength: float) -> void:
 	_next_ripple = (_next_ripple + 1) % _ripples.size()
 	_board_mat.set_shader_parameter("ripples", _ripples)
 	_board_mat.set_shader_parameter("ripple_tint", _ripple_tint)
+
+
+## Shows a glowing » on cell c pointing in direction d: where the player's snake is about to
+## turn. It pops in, slides half a cell forward and fades (about 0.45 s).
+func turn_hint(c: Vector2i, d: int) -> void:
+	if _arrows.is_empty():
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE
+		for i in 3:
+			var m := MeshInstance3D.new()
+			m.mesh = quad
+			var mat := ShaderMaterial.new()
+			mat.shader = _shader(ARROW_SHADER)
+			mat.set_shader_parameter("color", SNAKE_COLORS[0].lightened(0.55))
+			m.material_override = mat
+			m.visible = false
+			add_child(m)
+			_arrows.append(m)
+	var m := _arrows[_next_arrow]
+	_next_arrow = (_next_arrow + 1) % _arrows.size()
+	var step := SnakeLogic.STEP[d]
+	var fwd := Vector3(step.x, 0, step.y)
+	var heading := atan2(fwd.z, fwd.x)
+	var lay_flat := Basis(Vector3.RIGHT, -PI / 2.0)
+	var start := cell_pos(c) + Vector3(0, 0.06, 0) - fwd * 0.15
+	m.transform = Transform3D(
+		Basis(Vector3.UP, -heading) * lay_flat * Basis.from_scale(Vector3(1.3, 1.3, 1)), start
+	)
+	m.visible = true
+	var mat := m.material_override as ShaderMaterial
+	var tw := m.create_tween()
+	tw.tween_method(func(f: float) -> void: mat.set_shader_parameter("fade", f), 0.0, 1.0, 0.07)
+	tw.parallel().tween_property(m, "position", start + fwd * 0.5, 0.45).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(f: float) -> void: mat.set_shader_parameter("fade", f), 1.0, 0.0, 0.3)
+	tw.tween_callback(func() -> void: m.visible = false)
 
 
 func eat_fx(c: Vector2i, who: int, text: String) -> void:

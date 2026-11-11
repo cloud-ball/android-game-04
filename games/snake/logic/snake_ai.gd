@@ -3,7 +3,9 @@ extends RefCounted
 ## CPU rival: shortest path to the nearest orb (BFS, i.e. A* with a zero heuristic, which also
 ## handles several goals at once), rejected when a flood fill shows the move would trap it.
 ## A move is a trap when the region reachable after it is smaller than the snake's length.
-## The AI never picks a trap while a non-trap move exists (tested).
+## The AI never picks a trap while a non-trap move exists (tested), except on a deliberate
+## "blunder" roll (cfg.ai_blunder, mostly on Easy): then it skips the look-ahead and only
+## avoids cells that are blocked right now, so it can wander into a dead end.
 ## Performance: flood fills stop as soon as the answer is known (cap), and work on flat cell
 ## indices in packed arrays; a full-board count in GDScript cost up to ~190 ms per tick on a
 ## mid-range phone.
@@ -36,7 +38,7 @@ static func evaluate(logic: SnakeLogic, who: int) -> Array[Dictionary]:
 	return out
 
 
-## profile overrides the match config per snake: {"wander", "avoid_heads", "hunt"}.
+## profile overrides the match config per snake: {wander, avoid_heads, hunt, squeeze, blunder}.
 ## Used by self-play tuning, where the "player" side runs a fixed baseline profile.
 static func choose(
 	logic: SnakeLogic, who: int, rng: RandomNumberGenerator, profile: Dictionary = {}
@@ -45,7 +47,16 @@ static func choose(
 	var avoid_heads: bool = profile.get("avoid_heads", logic.cfg.ai_avoid_heads)
 	var hunt: float = profile.get("hunt", logic.cfg.ai_hunt)
 	var squeeze: float = profile.get("squeeze", logic.cfg.ai_squeeze)
+	var blunder: float = profile.get("blunder", logic.cfg.ai_blunder)
 	var options := evaluate(logic, who)
+	if blunder > 0.0 and rng.randf() < blunder:
+		var open: Array = options.filter(func(o: Dictionary) -> bool: return not o.blocked)
+		if not open.is_empty():
+			var greedy := first_step_to_orb(logic, who)
+			for o in open:
+				if o.dir == greedy:
+					return greedy
+			return open[rng.randi_range(0, open.size() - 1)].dir
 	var safe: Array = options.filter(func(o: Dictionary) -> bool: return not o.trap)
 	if safe.is_empty():
 		return _best_area(options)
