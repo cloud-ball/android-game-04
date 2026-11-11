@@ -9,7 +9,7 @@ apply for production, so public release is ~2 weeks after the closed test starts
 - [x] Debug APK runs on a real phone (Vivo V2250, Android 15, Adreno 642L)
 - [x] Release AAB builds through Gradle: package com.cloud198.pocketarena8, minSdk 24, targetSdk 36,
       only VIBRATE permission
-- [x] Store icon, feature graphic, 4 phone screenshots, listing text, privacy policy text, app-content answers
+- [x] Store icon, feature graphic, 5 phone screenshots (re-taken 2026-11-11), listing text, privacy policy text, app-content answers
 
 ## You (one time)
 1. **Upload key**: `scripts/make_upload_key.sh` → pick a strong password → back up the .jks + password.
