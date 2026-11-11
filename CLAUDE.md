@@ -7,6 +7,9 @@
 - Game logic lives in pure GDScript classes (no Node dependencies) under games/<id>/logic/ and is unit tested.
 - Simulation uses fixed timesteps and seeded Rng (core/Rng.gd). Never call randf() directly.
   Never scale physics by render delta.
+- Physics interpolation is ON project-wide (for Jolt games). A game that moves nodes itself in
+  _process (snake, blocks, chess, cue_sim renderers) must set physics_interpolation_mode = OFF on its
+  root, or the first frames and any teleports render smeared (seen on device, 2026-11-11).
 - One game loaded at a time via SceneRouter. Games talk to the hub only through core/ autoloads.
 - Save data: only write to SaveService.games[<id>]; bump that game's schema + add migrate() for any change.
 

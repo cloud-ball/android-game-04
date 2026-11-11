@@ -2,6 +2,12 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Wrap-around edges (user request)
+- SnakeConfig.wrap (on for all levels): leaving an edge re-enters on the opposite side; only tails crash.
+- AI pathing/flood/cut-off/head-avoid are wrap-aware; view slides wrapped segments in from outside the edge.
+- How-to step 4 is now "Edges wrap around". 43 headless tests. Matches ~50% longer; 59-61 fps on the Vivo.
+- Fixed: physics interpolation smeared the snake scene's first frames (giant boxes) -> OFF for this game.
+
 ## 2026-11-11 · Space backdrop + AI speed-up
 - New games/snake/scenes/snake_backdrop.gd: twinkling drifting stars, noise nebula clouds, shooting stars,
   rising sparks; see-through board; grid ripples on eat/crash; pulsing board edge.

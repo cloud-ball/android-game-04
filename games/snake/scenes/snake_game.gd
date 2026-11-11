@@ -58,6 +58,10 @@ static func migrate_save(old: Dictionary, _from: int, _to: int) -> Dictionary:
 
 
 func _ready() -> void:
+	# Serpent Grid has no physics: the view moves everything itself every frame. Physics
+	# interpolation (on project-wide for the physics games) would blend those transforms with
+	# stale ones and smear the board on the first frames and on wrap-around moves.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_save = SaveService.game("snake", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
 	difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))
 	if not SnakeHud.DIFFICULTIES.has(difficulty):

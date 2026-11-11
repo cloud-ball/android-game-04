@@ -38,3 +38,11 @@ func test_tall_board_fits_tall_phone() -> void:
 	# The board should use most of the free band height.
 	var band := (1.0 - 2.0 * SnakeView.TOP_BAND) - (-1.0 + 2.0 * SnakeView.BOTTOM_BAND)
 	assert_float((b.w - b.z) / band).is_greater(0.8)
+
+
+func test_wrapped_moves_slide_in_from_outside_the_edge() -> void:
+	var v: SnakeView = auto_free(SnakeView.new())
+	assert_that(v._unwrap(Vector2i(11, 5), Vector2i(0, 5))).is_equal(Vector2i(-1, 5))
+	assert_that(v._unwrap(Vector2i(0, 5), Vector2i(11, 5))).is_equal(Vector2i(12, 5))
+	assert_that(v._unwrap(Vector2i(3, 0), Vector2i(3, 17))).is_equal(Vector2i(3, 18))
+	assert_that(v._unwrap(Vector2i(3, 4), Vector2i(3, 5))).is_equal(Vector2i(3, 4))

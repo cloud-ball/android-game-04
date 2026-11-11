@@ -209,6 +209,7 @@ func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 	for k in n:
 		var to := s.body[k]
 		var from: Vector2i = s.prev_body[k] if k < s.prev_body.size() else s.prev_body.back()
+		from = _unwrap(from, to)
 		var p := cell_pos(from).lerp(cell_pos(to), alpha)
 		var f := float(k) / maxf(1.0, float(n - 1))
 		var side := (0.9 if k == 0 else 0.78) * (1.0 - 0.3 * f)
@@ -226,9 +227,26 @@ func _render_snake(i: int, s: SnakeLogic.Serpent, alpha: float) -> void:
 		prev_p = p
 	mm.visible_instance_count = n * 2 - 1
 	var fwd := Vector3(SnakeLogic.STEP[s.dir].x, 0, SnakeLogic.STEP[s.dir].y)
-	if n > 1 and head_p.distance_to(neck_p) > 0.05:
+	var neck_gap := head_p.distance_to(neck_p)
+	if n > 1 and neck_gap > 0.05 and neck_gap < 1.5:
 		fwd = Vector3(head_p.x - neck_p.x, 0, head_p.z - neck_p.z).normalized()
 	_place_eyes(_eyes[i], head_p, fwd, s.alive)
+
+
+## A move that crossed an edge (wrap mode) is drawn sliding in from just outside the
+## opposite edge, instead of streaking across the whole board.
+func _unwrap(from: Vector2i, to: Vector2i) -> Vector2i:
+	var dx := to.x - from.x
+	var dy := to.y - from.y
+	if dx > 1:
+		dx -= _w
+	elif dx < -1:
+		dx += _w
+	if dy > 1:
+		dy -= _h
+	elif dy < -1:
+		dy += _h
+	return to - Vector2i(dx, dy)
 
 
 ## Box joining two neighbouring segments so the body reads as one solid snake.

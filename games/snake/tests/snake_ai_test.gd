@@ -98,3 +98,19 @@ func test_difficulty_configs_load() -> void:
 	assert_float(SnakeConfig.for_difficulty("easy").base_hz).is_less(
 		SnakeConfig.for_difficulty("medium").base_hz
 	)
+
+
+func test_ai_takes_the_wrap_shortcut() -> void:
+	var c := SnakeConfig.new()
+	c.orb_count = 0
+	c.ai_wander = 0.0
+	c.wrap = true
+	var g := SnakeLogic.new(c, 1, false)
+	_place(g, 0, [Vector2i(0, 5), Vector2i(0, 6), Vector2i(0, 7)], SnakeLogic.Dir.UP)
+	g.orbs.append(Vector2i(g.width - 1, 5))
+	assert_int(SnakeAI.first_step_to_orb(g, 0)).is_equal(SnakeLogic.Dir.LEFT)
+	var left: Array = SnakeAI.evaluate(g, 0).filter(
+		func(o: Dictionary) -> bool: return o.dir == SnakeLogic.Dir.LEFT
+	)
+	assert_bool(left[0].blocked).is_false()
+	assert_int(SnakeAI.choose(g, 0, RandomNumberGenerator.new())).is_equal(SnakeLogic.Dir.LEFT)

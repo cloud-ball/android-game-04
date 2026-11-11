@@ -6,6 +6,8 @@ extends Resource
 @export var height: int = 18
 @export var start_length: int = 3
 @export var orb_count: int = 2
+## Edges wrap around: leaving one side re-enters on the opposite side (no wall crashes).
+@export var wrap: bool = false
 ## Ticks per second at the start of a match; rises with the longest snake's length.
 @export var base_hz: float = 7.0
 @export var hz_per_segment: float = 0.12

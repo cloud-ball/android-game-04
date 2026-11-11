@@ -22,7 +22,7 @@ static func evaluate(logic: SnakeLogic, who: int) -> Array[Dictionary]:
 	for d in 4:
 		if d == SnakeLogic.opposite(s.dir):
 			continue
-		var nh := s.head() + SnakeLogic.STEP[d]
+		var nh := logic.step_from(s.head(), d)
 		var eats := logic.orbs.has(nh)
 		var need := s.body.size() + (1 if eats else 0)
 		var blocked := not logic.in_bounds(nh)
@@ -87,14 +87,14 @@ static func _cutoff_move(
 	var best_room := int(ceil(r.body.size() * squeeze))
 	var occ := logic.occupancy()
 	for o in safe:
-		var nh: Vector2i = logic.snakes[who].head() + SnakeLogic.STEP[o.dir]
+		var nh: Vector2i = logic.step_from(logic.snakes[who].head(), o.dir)
 		var grid := _without_own_tail(logic, who, occ, logic.orbs.has(nh))
 		grid[nh.y * w + nh.x] = 1
 		var room := 0
 		for d in 4:
 			if d == SnakeLogic.opposite(r.dir) or room >= best_room:
 				continue
-			var c := r.head() + SnakeLogic.STEP[d]
+			var c := logic.step_from(r.head(), d)
 			if logic.in_bounds(c) and grid[c.y * w + c.x] == 0:
 				# Only "is it smaller than best_room" matters, so stop counting there.
 				room = maxi(room, _flood(logic, grid, c.y * w + c.x, best_room))
@@ -115,13 +115,14 @@ static func first_step_to_orb(logic: SnakeLogic, who: int) -> int:
 	is_orb.resize(n)
 	for o in logic.orbs:
 		is_orb[o.y * w + o.x] = 1
+	var wrap := logic.cfg.wrap
 	var first := PackedInt32Array()
 	first.resize(n)
 	first.fill(-1)
 	var queue := PackedInt32Array()
 	var start := logic.snakes[who].head()
 	for d in 4:
-		var c := start + SnakeLogic.STEP[d]
+		var c := logic.step_from(start, d)
 		if logic.in_bounds(c) and grid[c.y * w + c.x] == 0:
 			first[c.y * w + c.x] = d
 			queue.append(c.y * w + c.x)
@@ -132,9 +133,12 @@ static func first_step_to_orb(logic: SnakeLogic, who: int) -> int:
 		if is_orb[i] == 1:
 			return first[i]
 		var x := i % w
-		var nbrs := [i - 1 if x > 0 else -1, i + 1 if x < w - 1 else -1, i - w, i + w]
-		for j in nbrs:
-			if j >= 0 and j < n and grid[j] == 0 and first[j] == -1:
+		var left := i - 1 if x > 0 else (i + w - 1 if wrap else -1)
+		var right := i + 1 if x < w - 1 else (i - w + 1 if wrap else -1)
+		var up := i - w if i >= w else (i + n - w if wrap else -1)
+		var down := i + w if i + w < n else (i + w - n if wrap else -1)
+		for j in [left, right, up, down]:
+			if j >= 0 and grid[j] == 0 and first[j] == -1:
 				first[j] = first[i]
 				queue.append(j)
 	return -1
@@ -156,6 +160,7 @@ static func _without_own_tail(
 static func _flood(logic: SnakeLogic, grid: PackedByteArray, from: int, cap: int) -> int:
 	var w := logic.width
 	var n := w * logic.height
+	var wrap := logic.cfg.wrap
 	var seen := grid.duplicate()
 	seen[from] = 9
 	var stack := PackedInt32Array([from])
@@ -165,27 +170,36 @@ static func _flood(logic: SnakeLogic, grid: PackedByteArray, from: int, cap: int
 		stack.resize(stack.size() - 1)
 		count += 1
 		var x := i % w
-		if x > 0 and seen[i - 1] == 0:
-			seen[i - 1] = 9
-			stack.append(i - 1)
-		if x < w - 1 and seen[i + 1] == 0:
-			seen[i + 1] = 9
-			stack.append(i + 1)
-		if i >= w and seen[i - w] == 0:
-			seen[i - w] = 9
-			stack.append(i - w)
-		if i + w < n and seen[i + w] == 0:
-			seen[i + w] = 9
-			stack.append(i + w)
+		var left := i - 1 if x > 0 else (i + w - 1 if wrap else -1)
+		var right := i + 1 if x < w - 1 else (i - w + 1 if wrap else -1)
+		var up := i - w if i >= w else (i + n - w if wrap else -1)
+		var down := i + w if i + w < n else (i + w - n if wrap else -1)
+		if left >= 0 and seen[left] == 0:
+			seen[left] = 9
+			stack.append(left)
+		if right >= 0 and seen[right] == 0:
+			seen[right] = 9
+			stack.append(right)
+		if up >= 0 and seen[up] == 0:
+			seen[up] = 9
+			stack.append(up)
+		if down >= 0 and seen[down] == 0:
+			seen[down] = 9
+			stack.append(down)
 	return count
 
 
 static func _near_rival_head(logic: SnakeLogic, who: int, d: int) -> bool:
-	var nh := logic.snakes[who].head() + SnakeLogic.STEP[d]
+	var nh := logic.step_from(logic.snakes[who].head(), d)
 	for j in logic.snakes.size():
 		var r := logic.snakes[j]
 		if j != who and r.alive:
-			var dist := absi(r.head().x - nh.x) + absi(r.head().y - nh.y)
+			var dx := absi(r.head().x - nh.x)
+			var dy := absi(r.head().y - nh.y)
+			if logic.cfg.wrap:
+				dx = mini(dx, logic.width - dx)
+				dy = mini(dy, logic.height - dy)
+			var dist := dx + dy
 			if dist <= 1:
 				return true
 	return false

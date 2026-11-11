@@ -198,3 +198,38 @@ func test_save_migration_v1_to_v2_keeps_stats() -> void:
 	assert_int(int(g["wins"])).is_equal(2)
 	assert_int(int(g["solo_best"])).is_equal(0)
 	assert_bool(g["tutorial_seen"]).is_true()
+
+
+func _wrap_cfg() -> SnakeConfig:
+	var c := _cfg()
+	c.wrap = true
+	return c
+
+
+func test_wrap_left_edge_reenters_on_right() -> void:
+	var g := SnakeLogic.new(_wrap_cfg(), 1, false)
+	_place(g, 0, [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5)], L)
+	g.step()
+	assert_bool(g.snakes[0].alive).is_true()
+	assert_that(g.snakes[0].head()).is_equal(Vector2i(g.width - 1, 5))
+
+
+func test_wrap_top_edge_reenters_at_bottom() -> void:
+	var g := SnakeLogic.new(_wrap_cfg(), 1, false)
+	_place(g, 0, [Vector2i(4, 0), Vector2i(4, 1), Vector2i(4, 2)], U)
+	g.step()
+	assert_that(g.snakes[0].head()).is_equal(Vector2i(4, g.height - 1))
+
+
+func test_wrap_still_crashes_into_tails() -> void:
+	var g := SnakeLogic.new(_wrap_cfg(), 1, true)
+	_place(g, 0, [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5)], L)
+	_place(g, 1, [Vector2i(11, 4), Vector2i(11, 5), Vector2i(11, 6), Vector2i(10, 6)], U)
+	g.step()
+	assert_int(g.result).is_equal(SnakeLogic.Result.CPU_WON)
+	assert_str(g.snakes[0].crash_cause).is_equal("rival")
+
+
+func test_gameplay_difficulties_use_wrap() -> void:
+	for d in ["easy", "medium", "hard"]:
+		assert_bool(SnakeConfig.for_difficulty(d).wrap).override_failure_message(d).is_true()
