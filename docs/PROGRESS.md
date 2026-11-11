@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-11 · Stack Drop step 1: rules + CPU search (branch stack-drop, not yet playable)
+- games/blocks/logic: ShardData (shards A-G, kick tables from data/kicks.json), StackState,
+  StackLogic.reduce(state, action) (moves, kicks, gravity, lock delay + 15 resets, clears/scoring/levels,
+  hold, 3-preview, ghost, garbage with cancel, top-out), StackAI (rotation x column search + heuristic).
+- 25 new tests (73 total). Export presets now include games/*/data/*.json (kick table ships in the APK).
+- Plan: docs/plans/2026-11-11-stack-drop.md. Next: 3D crystal tower + touch controls + HUD.
+
 ## 2026-11-11 · Weaker CPU + turn hints (user feedback)
 - New ai_blunder knob (CPU sometimes skips the flood-fill look-ahead; never picks a blocked cell): Easy 15%,
   Medium 8%, Hard 2%. Hunt 0 / 0.05 / 0.3, wander 0.5 / 0.3 / 0.1. CPU win vs steady bot: 20% / 30% / 41%
