@@ -23,6 +23,13 @@ extends Resource
 @export var ai_squeeze: float = 1.0
 
 
+## Screens taller than 16:9 get extra rows (same 12 columns) so the board fills them.
+static func rows_for_aspect(aspect: float, base_rows := 18, max_rows := 22) -> int:
+	if aspect <= 0.0:
+		return base_rows
+	return clampi(int(floor(base_rows * (9.0 / 16.0) / aspect)), base_rows, max_rows)
+
+
 static func for_difficulty(difficulty: String) -> SnakeConfig:
 	var path := "res://games/snake/data/%s.tres" % difficulty
 	if ResourceLoader.exists(path):

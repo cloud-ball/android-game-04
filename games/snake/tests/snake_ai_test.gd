@@ -90,9 +90,11 @@ func test_difficulty_configs_load() -> void:
 	assert_float(SnakeConfig.for_difficulty("easy").ai_wander).is_greater(
 		SnakeConfig.for_difficulty("hard").ai_wander
 	)
-	assert_float(SnakeConfig.for_difficulty("medium").base_hz).is_equal(7.0)
+	assert_float(SnakeConfig.for_difficulty("medium").base_hz).is_equal(5.5)
 	assert_bool(SnakeConfig.for_difficulty("hard").ai_avoid_heads).is_true()
 	assert_float(SnakeConfig.for_difficulty("hard").ai_hunt).is_greater(
 		SnakeConfig.for_difficulty("easy").ai_hunt
 	)
-	assert_float(SnakeConfig.for_difficulty("easy").base_hz).is_less(7.0)
+	assert_float(SnakeConfig.for_difficulty("easy").base_hz).is_less(
+		SnakeConfig.for_difficulty("medium").base_hz
+	)

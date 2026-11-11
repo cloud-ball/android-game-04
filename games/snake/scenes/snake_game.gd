@@ -47,6 +47,7 @@ var _acc := 0.0
 var _countdown := 0.0
 var _paused_from: int = State.PLAYING
 var _bot := false
+var _rows := 18
 
 
 ## Schema 1 -> 2 added solo mode and the tutorial flag; defaults fill the new keys.
@@ -67,6 +68,7 @@ func _ready() -> void:
 	_bot = Boot.bot
 	var vis := get_viewport().get_visible_rect().size
 	_swipe.threshold = 0.04 * minf(vis.x, vis.y)
+	_rows = SnakeConfig.rows_for_aspect(vis.x / maxf(1.0, vis.y))
 	_new_match()
 	_view = SnakeView.new()
 	add_child(_view)
@@ -99,7 +101,9 @@ func _ready() -> void:
 
 func _new_match() -> void:
 	var seed_value := Rng.next_seed()
-	logic = SnakeLogic.new(SnakeConfig.for_difficulty(difficulty), seed_value, mode == "vs")
+	var cfg := SnakeConfig.for_difficulty(difficulty).duplicate() as SnakeConfig
+	cfg.height = maxi(cfg.height, _rows)
+	logic = SnakeLogic.new(cfg, seed_value, mode == "vs")
 	_ai_rng = Rng.make(seed_value ^ 0x2545F491)
 	_acc = 0.0
 	if _view != null:
