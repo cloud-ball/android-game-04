@@ -18,9 +18,9 @@ func _layout(spec: Array) -> BoardLayout:
 
 func test_vivo_gets_the_researched_cell_size() -> void:
 	var l := _layout(PHONES["20:9 Vivo (420 dp)"])
-	assert_float(l.cell).is_between(96.0, 104.0)
+	assert_float(l.cell).is_between(86.0, 96.0)
 	var dp := l.cell / (1080.0 / 420.0)
-	assert_float(dp).is_between(37.0, 41.0)
+	assert_float(dp).is_between(33.0, 37.0)
 	# Well about 84% of the width and about three quarters of the height.
 	assert_float(l.well.size.x / 1080.0).is_between(0.8, 0.88)
 	assert_float(l.well.size.y / 2400.0).is_between(0.7, 0.8)

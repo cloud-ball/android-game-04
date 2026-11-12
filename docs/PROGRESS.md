@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop: 10 x 20 tower (smaller blocks, more of them)
+- User: keep the big tower but make the blocks smaller with more of them. Board 9 x 18 -> 10 x 20 visible
+  (StackState.W 10, H 22 incl. 2 hidden rows). BoardLayout takes COLS/ROWS from StackState, so the
+  well, posts and pedestal follow automatically.
+- Vivo: cell 100 -> 91 canvas units (39 -> 35 dp); tower still ~84% of the width and ~75% of the height.
+- 93 tests green, fuzz 0 violations over 30 seeds. CPU speeds unchanged (it may clear a little slower on
+  the wider board - check on the phone).
+- Try it: open Stack Drop -> 10 columns, 20 rows.
+
 ## 2026-11-12 · Stack Drop: much bigger tower (HOLD moved up beside NEXT)
 - User: tower still too small. Plan: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
 - HOLD left the bottom band and sits in the top band beside NEXT (row 2: CPU | HOLD | NEXT); the bottom
