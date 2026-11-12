@@ -11,6 +11,7 @@ extends Node
 ##   --shot-count=<n>     number of screenshots (default 1)
 ##   --quit-after=<n>     quit after n frames
 ##   --fps                print frames per second to the log once a second
+##   --time-scale=<x>     run game time x times faster (QA soak runs)
 
 var options: Dictionary = {}
 var bot := false
@@ -23,6 +24,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	options = parse_args(OS.get_cmdline_user_args())
 	bot = options.has("bot")
+	if options.has("time-scale"):
+		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
 	if options.has("seed"):
 		Rng.session_seed = int(options["seed"])
 	if options.has("game"):
