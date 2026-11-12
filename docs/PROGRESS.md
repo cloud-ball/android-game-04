@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Bigger Stack Drop tower, bigger "Back to hub"
+- Tower cells 88 -> 92 canvas units on the Vivo (34 -> 36 dp); tower 73% -> 77% of the width. Space came
+  from tighter HUD bands (side gutter 130 -> 92, pedestal band 140 -> 108, HOLD 168 -> 150, NEXT 130 -> 120).
+  Cell size is also capped so the pedestal always fits inside the side margins (21:9 phones).
+- Pause hit area trimmed to stop at the NEXT strip (still >= 48 dp on a 360 dp phone).
+- Shared menus (both games): "Back to hub" and "How to play" are full-size white buttons (38-40 px text,
+  ~110 px tall) instead of small grey ones.
+- Try it: open Stack Drop -> the tower is wider; pause -> "Back to hub" matches the other buttons.
+
 ## 2026-11-12 · QA pass fixes (Stack Drop + hub + Serpent Grid)
 - QA: tools/qa_fuzz.gd (rules invariant fuzzer) + Boot --time-scale soak runs found the bugs below.
 - Stack Drop rules: shards can no longer rotate/kick into the hidden rows above the tower; a lock that

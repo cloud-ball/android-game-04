@@ -160,11 +160,11 @@ func _build_start() -> Control:
 	col.add_child(play)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
-	var help := UiKit.button("How to play", Color(1, 1, 1, 0.08), UiKit.MUTED, 34, 90)
+	var help := UiKit.button("How to play", Color(1, 1, 1, 0.12), Color.WHITE, 38, 112)
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help.pressed.connect(show_howto)
 	row.add_child(help)
-	var back := UiKit.button("Back to hub", Color(1, 1, 1, 0.08), UiKit.MUTED, 34, 90)
+	var back := UiKit.button("Back to hub", Color(1, 1, 1, 0.12), Color.WHITE, 38, 112)
 	back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	back.pressed.connect(func() -> void: exit_requested.emit())
 	row.add_child(back)
@@ -180,11 +180,10 @@ func _build_pause() -> Control:
 		["Resume", UiKit.GREEN, 48, 130, func() -> void: resume_requested.emit()],
 		["Restart", Color(1, 1, 1, 0.12), 40, 110, func() -> void: rematch_requested.emit()],
 		["Settings", Color(1, 1, 1, 0.12), 40, 110, func() -> void: _settings.open()],
-		["Back to hub", Color(1, 1, 1, 0.08), 34, 90, func() -> void: exit_requested.emit()],
+		["Back to hub", Color(1, 1, 1, 0.12), 40, 110, func() -> void: exit_requested.emit()],
 	]
 	for b in buttons:
-		var fg := UiKit.MUTED if b[0] == "Back to hub" else Color.WHITE
-		var btn := UiKit.button(b[0], b[1], fg, b[2], b[3])
+		var btn := UiKit.button(b[0], b[1], Color.WHITE, b[2], b[3])
 		btn.pressed.connect(b[4])
 		col.add_child(btn)
 	return parts[0]
@@ -212,7 +211,7 @@ func _build_end() -> Control:
 	var again := UiKit.button("PLAY AGAIN", UiKit.GREEN, Color.WHITE, 54, 136)
 	again.pressed.connect(func() -> void: rematch_requested.emit())
 	col.add_child(again)
-	var hub := UiKit.button("Back to hub", Color(1, 1, 1, 0.08), UiKit.MUTED, 34, 90)
+	var hub := UiKit.button("Back to hub", Color(1, 1, 1, 0.12), Color.WHITE, 40, 112)
 	hub.pressed.connect(func() -> void: exit_requested.emit())
 	col.add_child(hub)
 	return parts[0]
