@@ -12,16 +12,18 @@ const ROWS := 18
 ## Outer margin; nothing tappable and no gesture starts inside it (back-gesture zones).
 const SIDE := 42.0
 ## Horizontal space per side reserved beside the well (meter + posts + breathing room).
-const GUTTER := 130.0
+const GUTTER := 92.0
 ## Width of the well in cells including its corner posts.
 const WELL_SPAN := 9.32
-const STATUS_H := 120.0
-const NEXT_GAP := 12.0
-const NEXT_H := 130.0
-const TOP_TO_WELL := 278.0  # status + gap + NEXT strip + gap
-const PEDESTAL_H := 140.0
+## Width of the pedestal in cells (BlocksView builds a hex of radius PEDESTAL_SPAN / 2).
+const PEDESTAL_SPAN := 10.4
+const STATUS_H := 116.0
+const NEXT_GAP := 16.0
+const NEXT_H := 120.0
+const TOP_TO_WELL := 268.0  # status + gap + NEXT strip + gap
+const PEDESTAL_H := 108.0
 const HOLD_W := 216.0
-const HOLD_H := 168.0
+const HOLD_H := 150.0
 const BAND_GAP := 16.0
 const MIN_BOTTOM_INSET := 84.0  # 32 dp gesture area on a 420 dp phone
 const PAUSE_HIT := 144.0
@@ -53,13 +55,15 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 	l.canvas = canvas_size
 	var side := maxf(SIDE, maxf(float(insets.get("left", 0.0)), float(insets.get("right", 0.0))))
 	l.top = maxf(float(insets.get("top", 0.0)), 0.0) + BAND_GAP
-	l.bottom = canvas_size.y - maxf(float(insets.get("bottom", 0.0)), MIN_BOTTOM_INSET) - BAND_GAP
+	l.bottom = canvas_size.y - maxf(float(insets.get("bottom", 0.0)), MIN_BOTTOM_INSET)
 	var well_top_min := l.top + TOP_TO_WELL
 	var well_bottom_max := l.bottom - HOLD_H - BAND_GAP - PEDESTAL_H
 	var avail_h := well_bottom_max - well_top_min
 	var by_width := (canvas_size.x - 2.0 * GUTTER) / WELL_SPAN
 	var by_height := avail_h / ROWS
-	l.cell = clampf(minf(by_width, by_height), MIN_CELL, MAX_CELL_DP * units_per_dp)
+	var by_pedestal := (canvas_size.x - 2.0 * side) / PEDESTAL_SPAN
+	var fit := minf(minf(by_width, by_height), by_pedestal)
+	l.cell = clampf(fit, MIN_CELL, MAX_CELL_DP * units_per_dp)
 	var w := l.cell * COLS
 	var h := l.cell * ROWS
 	var extra := maxf(0.0, avail_h - h)
@@ -70,7 +74,9 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 		canvas_size.x - 2.0 * side - CPU_W - 20.0 - PAUSE_HIT - 14.0,
 		STATUS_H
 	)
-	l.pause = Rect2(canvas_size.x - side - PAUSE_HIT, l.top - 12.0, PAUSE_HIT, PAUSE_HIT)
+	# Hit area: PAUSE_HIT wide, as tall as fits above the NEXT strip (>= 48 dp on every phone).
+	var pause_h := minf(PAUSE_HIT, STATUS_H + NEXT_GAP + 12.0)
+	l.pause = Rect2(canvas_size.x - side - PAUSE_HIT, l.top - 12.0, PAUSE_HIT, pause_h)
 	l.cpu = Rect2(side, l.top, CPU_W, STATUS_H + NEXT_GAP + NEXT_H)
 	l.next = Rect2(
 		l.status.position.x,
@@ -79,7 +85,7 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 		NEXT_H
 	)
 	l.garbage = Rect2(l.well.position.x - 50.0, l.well.position.y, 30.0, h)
-	var ped_w := 10.4 * l.cell
+	var ped_w := PEDESTAL_SPAN * l.cell
 	l.pedestal = Rect2((canvas_size.x - ped_w) * 0.5, l.well.end.y, ped_w, PEDESTAL_H)
 	l.hold = Rect2(side, l.bottom - HOLD_H, HOLD_W, HOLD_H)
 	l.keepout_bottom = Rect2(0.0, l.bottom, canvas_size.x, canvas_size.y - l.bottom)
