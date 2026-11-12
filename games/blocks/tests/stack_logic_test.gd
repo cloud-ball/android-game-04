@@ -169,6 +169,16 @@ func test_gravity_moves_one_row_per_second_at_level_one() -> void:
 	assert_int(s.py).is_equal(3)
 
 
+func test_gravity_ramps_gently_until_level_25_then_faster() -> void:
+	assert_float(StackLogic.gravity(1)).is_equal_approx(1.0, 0.001)
+	assert_float(StackLogic.gravity(10)).is_equal_approx(2.8, 0.001)
+	assert_float(StackLogic.gravity(25)).is_equal_approx(5.8, 0.001)
+	assert_float(StackLogic.gravity(26)).is_equal_approx(6.5, 0.001)
+	assert_float(StackLogic.gravity(99)).is_equal_approx(20.0, 0.001)
+	for lv in range(1, 60):
+		assert_float(StackLogic.gravity(lv + 1)).is_greater_equal(StackLogic.gravity(lv))
+
+
 func test_hard_drop_lands_on_ghost_scores_and_locks() -> void:
 	var s := _with_shard(2, 0, 3, 2)
 	var ghost := StackLogic.ghost_y(s)

@@ -2,6 +2,11 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop: slower falling speed until level 25
+- User: blocks come too fast. Gravity was 1 + 0.55/level (L10 5.95 rows/s, L25 14.2). Now 1 + 0.2/level up
+  to level 25 (L2 1.2, L10 2.8, L25 5.8 rows/s), then +0.7/level after 25, capped at 20. Test added.
+- Try it: play Stack Drop past a few levels; it should stay calm for much longer.
+
 ## 2026-11-12 · Stack Drop: 12 x 24 tower (blocks smaller again)
 - User asked for still smaller blocks. Board 10 x 20 -> 12 x 24 visible (W 12, H 26 incl. 2 hidden rows);
   spawn column now derived from the width so shards still start mid-board.
