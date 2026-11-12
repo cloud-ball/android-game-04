@@ -13,6 +13,8 @@ const PREVIEW := 3
 const LINE_SCORES := [0, 100, 300, 500, 800]
 ## Garbage rows sent for clearing 0..4 lines at once.
 const GARBAGE_SENT := [0, 0, 1, 2, 4]
+## Levels with the gentle speed-up (user request 2026-11-12: slower blocks until level 25).
+const GENTLE_LEVELS := 25
 const SPAWN_X := (StackState.W - 4) >> 1  # shard boxes (3-4 wide) start mid-board
 ## Shards appear in the top visible rows (row HIDDEN); the 2 hidden rows above are headroom
 ## for rotations. Top-out = a new shard cannot fit there.
@@ -68,9 +70,13 @@ static func reduce(state: StackState, action: Dictionary) -> StackState:
 	return s
 
 
-## Rows per second of gravity at a level.
+## Rows per second of gravity at a level: 1 at level 1, +0.2 per level up to 5.8 at level 25,
+## then +0.7 per level, capped at 20.
 static func gravity(level: int) -> float:
-	return minf(20.0, 1.0 + 0.55 * (level - 1))
+	var l := maxi(1, level)
+	if l <= GENTLE_LEVELS:
+		return 1.0 + 0.2 * (l - 1)
+	return minf(20.0, gravity(GENTLE_LEVELS) + 0.7 * (l - GENTLE_LEVELS))
 
 
 ## Where the active shard would land (row of its box).
