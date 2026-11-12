@@ -95,3 +95,14 @@ func test_second_finger_holds_and_cancels_the_tap() -> void:
 		]
 	)
 	assert_array(Array(out)).is_equal(["hold"])
+
+
+func test_touches_starting_in_rejected_areas_are_ignored() -> void:
+	var g := StackGestures.new()
+	g.reject = func(p: Vector2) -> bool: return p.y > 2000.0
+	var out := _run(
+		g, [[_touch(Vector2(300, 2100), true), 0], [_touch(Vector2(302, 2101), false), 100]]
+	)
+	assert_bool(out.is_empty()).is_true()
+	out = _run(g, [[_touch(Vector2(300, 900), true), 0], [_touch(Vector2(302, 901), false), 100]])
+	assert_array(Array(out)).is_equal(["cw"])
