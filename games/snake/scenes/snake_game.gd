@@ -155,7 +155,7 @@ func _step_countdown(delta: float) -> void:
 		state = State.PLAYING
 		_acc = 0.0
 		if not _bot:
-			_hud.show_hint()
+			_hud.show_hint("Swipe anywhere to turn")
 
 
 func _tick() -> void:
@@ -216,9 +216,8 @@ func _finish() -> void:
 		daily = DailyChallenge.report(profile, DailyChallenge.today(), stats)
 		SaveService.save()
 		Economy.add_coins(coins + daily)
-	info["score"] = you.score
-	info["length"] = you.body.size()
-	info["best"] = int(_save["solo_best" if mode == "solo" else "best_score"])
+	var best := int(_save["solo_best" if mode == "solo" else "best_score"])
+	info["stats"] = "Score %d  ·  Length %d  ·  Best %d" % [you.score, you.body.size(), best]
 	info["coins"] = coins + daily
 	info["daily"] = "Daily challenge complete! +%d" % daily if daily > 0 else ""
 	var happy := won or new_best

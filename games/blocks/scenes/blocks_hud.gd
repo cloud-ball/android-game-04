@@ -189,6 +189,10 @@ func apply_layout(l: BoardLayout) -> void:
 	_place(_cpu_panel, l.cpu)
 	_place(_pause_btn, l.pause)
 	set_focus(l.well)
+	var hint_x := l.hold.end.x + 24.0
+	set_hint_area(
+		Rect2(hint_x, l.hold.position.y, l.canvas.x - BoardLayout.SIDE - hint_x, l.hold.size.y)
+	)
 	_next_draw.queue_redraw()
 	_hold_draw.queue_redraw()
 
@@ -231,7 +235,6 @@ func update_states(player: StackState, cpu: StackState) -> void:
 	_cpu = cpu
 	_score.text = UiKit.format_int(player.score)
 	_sub.text = "Lines %d  ·  Lv %d" % [player.lines, player.level]
-	_hold_btn.modulate.a = 1.0 if player.can_hold else 0.6
 	_next_draw.queue_redraw()
 	_hold_draw.queue_redraw()
 	_cpu_draw.queue_redraw()
@@ -256,7 +259,7 @@ func _draw_next(c: Control) -> void:
 func _draw_hold(c: Control) -> void:
 	if _player == null or _player.hold < 0 or layout == null:
 		return
-	var alpha := 1.0 if _player.can_hold else 0.4
+	var alpha := 1.0 if _player.can_hold else 0.62  # locked until the next shard
 	var centre := Vector2(c.size.x * 0.5, 54 + (c.size.y - 54) * 0.5)
 	draw_shard_at(c, _player.hold, centre, layout.cell * 0.45, alpha)
 

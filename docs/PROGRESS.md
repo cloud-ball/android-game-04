@@ -2,6 +2,25 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · QA pass fixes (Stack Drop + hub + Serpent Grid)
+- QA: tools/qa_fuzz.gd (rules invariant fuzzer) + Boot --time-scale soak runs found the bugs below.
+- Stack Drop rules: shards can no longer rotate/kick into the hidden rows above the tower; a lock that
+  leaves any cell above the top, or garbage that lifts blocks above the top, now ends the game instead of
+  leaving invisible blocks. 3 new tests; fuzz: 0 violations over 40 seeds.
+- Stack Drop HUD: held shard stays bright after using HOLD (was too dim); the start hint sits beside HOLD
+  instead of over the bottom rows.
+- Loading screen: game title, spinner and "Loading..." stay up until the new scene has drawn 3 frames
+  (first-use shader compile happens behind it). Vivo: ~180 ms load + ~450-560 ms warm-up.
+- Hub: Android back no longer quits at once - first press shows a centred "Press back again to exit"
+  toast, a second press within 2 s exits (back closes Settings first if it is open).
+- Serpent Grid now uses the shared GameShell overlays (same start / how-to / pause / results as Stack Drop);
+  its HUD lost ~250 duplicated lines. Larger HUD text (36-38 px labels, 36 px start stats on both games).
+- Not fixable: "Vulkan surface lost" in logcat when the app goes to the background is Android/driver noise.
+- 93 headless tests, lint clean. Verified on the Vivo: hub back/toast, loading screen, Serpent Grid
+  start / how-to / play / pause, Stack Drop start / play / HOLD / hint.
+- Try it: open the app, press back once (toast) then twice (exit); open Stack Drop, press HOLD and
+  check the held shard is easy to see; open Serpent Grid -> How to play.
+
 ## 2026-11-12 · Stack Drop board redesign (researched)
 - Research: docs/research/Stack Drop board redesign.md (+ notes). Cell 88 canvas units (~34 dp, 5.6 mm),
   well ~73% of width; orthographic camera pitched 9 deg; 0.55-deep gem slabs; pedestal sized to the margins;

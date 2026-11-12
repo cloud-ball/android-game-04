@@ -83,6 +83,15 @@ func set_focus(area: Rect2) -> void:
 	_hint.position.y = area.end.y - 150.0
 
 
+## Puts the start-of-match hint in a free screen area instead of over the play field.
+func set_hint_area(area: Rect2) -> void:
+	_hint.position = area.position
+	_hint.size = area.size
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hint.add_theme_font_size_override("font_size", 36)
+
+
 func _centered_label(text: String, size: int, color: Color, y: float) -> Label:
 	var l := UiKit.label(text, size, color, 900)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -143,7 +152,7 @@ func _build_start() -> Control:
 	if modes.size() > 1:
 		col.add_child(_segmented(modes.keys(), modes, set_mode, _mode_buttons))
 	col.add_child(_segmented(DIFFICULTIES, {}, set_difficulty, _diff_buttons))
-	_start_stats = UiKit.label("", 32, UiKit.MUTED, 600)
+	_start_stats = UiKit.label("", 36, UiKit.MUTED, 600)
 	_start_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_start_stats)
 	var play := UiKit.button("PLAY", UiKit.GREEN, Color.WHITE, 60, 140)
@@ -198,7 +207,7 @@ func _build_end() -> Control:
 	_end_coins = UiKit.label("", 52, UiKit.GOLD, 900)
 	coins.add_child(_end_coins)
 	col.add_child(coins)
-	_end_daily = _center(UiKit.label("", 32, Color(1.0, 0.7, 0.45), 800))
+	_end_daily = _center(UiKit.label("", 36, Color(1.0, 0.7, 0.45), 800))
 	col.add_child(_end_daily)
 	var again := UiKit.button("PLAY AGAIN", UiKit.GREEN, Color.WHITE, 54, 136)
 	again.pressed.connect(func() -> void: rematch_requested.emit())
@@ -226,7 +235,7 @@ func _build_howto() -> Control:
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.alignment = BoxContainer.ALIGNMENT_CENTER
 		text.add_child(UiKit.label(step[1], 40, Color.WHITE, 800))
-		var sub := UiKit.label(step[2], 30, UiKit.MUTED, 500)
+		var sub := UiKit.label(step[2], 32, UiKit.MUTED, 500)
 		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.add_child(sub)
 		row.add_child(text)

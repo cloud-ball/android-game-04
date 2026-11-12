@@ -187,7 +187,7 @@ func _step_countdown(delta: float) -> void:
 		AudioService.play("go")
 		state = State.PLAYING
 		if not _bot:
-			_hud.show_hint("Tap rotate · drag move · swipe down drop")
+			_hud.show_hint("Tap to rotate · drag to move · flick down to drop")
 
 
 func _fixed_step() -> void:

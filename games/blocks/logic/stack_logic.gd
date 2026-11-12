@@ -99,7 +99,9 @@ static func _fits(s: StackState, kind: int, rot: int, x: int, y: int) -> bool:
 	for c in ShardData.cells(kind, rot):
 		var cx: int = x + c.x
 		var cy: int = y + c.y
-		if cx < 0 or cx >= StackState.W or cy < 0 or cy >= StackState.H:
+		# The rows above the visible tower (y < HIDDEN) are solid: shards never move, rotate
+		# or kick into space the player cannot see.
+		if cx < 0 or cx >= StackState.W or cy < StackState.HIDDEN or cy >= StackState.H:
 			return false
 		if s.board[cy * StackState.W + cx] != 0:
 			return false
@@ -178,15 +180,15 @@ static func _hold(s: StackState) -> void:
 
 static func _lock(s: StackState) -> void:
 	var cells := shard_cells(s.kind, s.rot, s.px, s.py)
-	var all_hidden := true
+	var above_top := false
 	for c in cells:
 		s.board[c.y * StackState.W + c.x] = s.kind + 1
-		if c.y >= StackState.HIDDEN:
-			all_hidden = false
+		if c.y < StackState.HIDDEN:
+			above_top = true
 	s.pieces += 1
 	s.events.append({"type": "lock", "cells": cells, "kind": s.kind})
-	if all_hidden:
-		_top_out(s, "lock_out")
+	if above_top:
+		_top_out(s, "lock_out")  # any block above the visible tower = tower full
 		return
 	var cleared := _clear_rows(s)
 	var sent: int = GARBAGE_SENT[cleared.size()]
@@ -235,9 +237,11 @@ static func _clear_rows(s: StackState) -> PackedInt32Array:
 static func _add_garbage(s: StackState, rows: int) -> void:
 	var w := StackState.W
 	var gap := _next_rand(s) % w
-	for i in rows * w:
+	# Anything that the new rows push above the visible tower (or off the board) tops out.
+	for i in mini((StackState.HIDDEN + rows) * w, s.board.size()):
 		if s.board[i] != 0:
 			_top_out(s, "garbage")
+			break
 	var shifted := s.board.slice(rows * w)
 	for r in rows:
 		for x in w:

@@ -130,7 +130,9 @@ func test_blunders_never_pick_a_blocked_cell() -> void:
 				var chosen := SnakeAI.choose(g, who, rng, {"blunder": 1.0})
 				var open := options.filter(func(o: Dictionary) -> bool: return not o.blocked)
 				if not open.is_empty():
-					var pick: Array = options.filter(func(o: Dictionary) -> bool: return o.dir == chosen)
+					var pick: Array = options.filter(
+						func(o: Dictionary) -> bool: return o.dir == chosen
+					)
 					assert_bool(pick[0].blocked).is_false()
 					picked += 1
 				g.queue_turn(who, chosen)
