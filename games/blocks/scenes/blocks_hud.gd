@@ -1,20 +1,31 @@
 class_name BlocksHud
 extends GameShell
-## Stack Drop HUD on top of the shared GameShell overlays: score bar, NEXT (3 shards),
-## HOLD (tappable), and the CPU's tower as a live mini view. Holds no game state.
+## Stack Drop HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout
+## (docs/research/Stack Drop board redesign.md): a read-only top band (CPU mini-board, status
+## plate, pause, NEXT strip above the spawn columns) and a tappable HOLD in the bottom band.
+## Nothing covers the well. Holds no game state.
 
 signal hold_requested
 
 const ACCENT := Color(0.86, 0.72, 1.0)
+const PLATE := Color(0.03, 0.035, 0.08, 0.82)  # >= 79% dark plate keeps text at 4.5:1
+const CAPTION := 36
+const VALUE := 52
+const SCORE := 72
 
+## Set by the game before the HUD enters the tree (and again on resize via apply_layout()).
+var layout: BoardLayout
+
+var _status: Panel
 var _score: Label
 var _sub: Label
 var _mode_label: Label
+var _next_panel: Panel
 var _next_draw: Control
+var _hold_btn: Button
 var _hold_draw: Control
-var _cpu_panel: Control
+var _cpu_panel: Panel
 var _cpu_draw: Control
-var _cpu_info: Label
 var _pause_btn: Button
 var _player: StackState
 var _cpu: StackState
@@ -37,106 +48,154 @@ func _ready() -> void:
 				[
 					_icon_drag,
 					"Drag to move.",
-					"Slide your finger left or right, one column per step."
+					"Slide your finger left or right; each short step moves one column."
 				],
-				[_icon_drop, "Swipe down to drop.", "A quick flick drops the shard straight down."],
+				[_icon_drop, "Flick down to drop.", "A quick flick drops the shard straight down."],
 				[
 					_icon_hold,
-					"Two-finger tap to hold.",
-					"Or tap the HOLD box. Swap once per shard."
+					"Tap HOLD to keep a shard.",
+					"Or tap with two fingers. Once per shard."
 				],
 			],
 		}
 	)
-	var top := UiKit.safe_top(self)
-	_build_bar(top)
-	_build_side_panels(top)
+	_build_status()
+	_build_next()
+	_build_hold()
+	_build_cpu()
+	_build_pause_button()
 	build_shell()
+	apply_layout(layout)
 
 
-func _build_bar(top: float) -> void:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiKit.box(UiKit.PANEL, 28, Color.TRANSPARENT, 0, 24))
-	panel.position = Vector2(16, 20 + top)
-	panel.size = Vector2(924, 0)
-	add_child(panel)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	panel.add_child(grid)
-	var t := UiKit.label("STACK DROP", 38, ACCENT, 900)
-	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.add_child(t)
-	_mode_label = UiKit.label("", 30, UiKit.MUTED, 600)
+func _plate(radius := 26) -> StyleBoxFlat:
+	return UiKit.box(PLATE, radius, Color(1, 1, 1, 0.1), 2, 0)
+
+
+func _build_status() -> void:
+	_status = Panel.new()
+	_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_status.add_theme_stylebox_override("panel", _plate())
+	add_child(_status)
+	var caption := UiKit.label("SCORE", 34, UiKit.MUTED, 700)
+	caption.position = Vector2(24, 2)
+	_status.add_child(caption)
+	_score = UiKit.label("0", SCORE, UiKit.GOLD, 900)
+	_score.position = Vector2(22, 30)
+	_score.add_theme_constant_override("outline_size", 6)
+	_score.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	_status.add_child(_score)
+	_mode_label = UiKit.label("", CAPTION, UiKit.MUTED, 600)
 	_mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	grid.add_child(_mode_label)
-	_score = UiKit.label("0", 46, UiKit.GOLD, 900)
-	grid.add_child(_score)
-	_sub = UiKit.label("", 32, Color(0.9, 0.9, 1.0), 700)
+	_status.add_child(_mode_label)
+	_sub = UiKit.label("", VALUE, Color(0.94, 0.94, 1.0), 800)
 	_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	grid.add_child(_sub)
-	_pause_btn = UiKit.button("II", Color(1, 1, 1, 0.12), Color.WHITE, 36, 96)
-	_pause_btn.custom_minimum_size = Vector2(96, 96)
-	_pause_btn.custom_minimum_size = Vector2(112, 112)
-	_pause_btn.position = Vector2(952, 34 + top)
-	_pause_btn.pressed.connect(func() -> void: pause_requested.emit())
-	add_child(_pause_btn)
+	_status.add_child(_sub)
 
 
-func _build_side_panels(top: float) -> void:
-	# Slim, see-through panels float over the tower's outer columns near the top.
-	var y0 := 196.0 + top
-	var next := _panel(Vector2(14, y0), Vector2(132, 320), "NEXT")
-	_next_draw = _drawer(next, _draw_next)
-	var hold := Button.new()
-	hold.focus_mode = Control.FOCUS_NONE
-	hold.position = Vector2(14, y0 + 334)
-	hold.size = Vector2(132, 140)
-	for st in ["normal", "hover", "pressed"]:
-		var bg := Color(UiKit.PANEL, 0.62).lightened(0.08 if st == "pressed" else 0.0)
-		hold.add_theme_stylebox_override(st, UiKit.box(bg, 24, Color(1, 1, 1, 0.12), 2, 0))
-	hold.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	hold.pressed.connect(func() -> void: hold_requested.emit())
-	add_child(hold)
-	_title(hold, "HOLD")
-	_hold_draw = _drawer(hold, _draw_hold)
-	_cpu_panel = _panel(Vector2(934, y0), Vector2(132, 360), "CPU")
-	_cpu_draw = _drawer(_cpu_panel, _draw_cpu)
-	_cpu_info = UiKit.label("", 26, UiKit.MUTED, 700)
-	_cpu_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_cpu_info.position = Vector2(0, 318)
-	_cpu_info.size = Vector2(132, 36)
-	_cpu_panel.add_child(_cpu_info)
+func _build_next() -> void:
+	_next_panel = Panel.new()
+	_next_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_next_panel.add_theme_stylebox_override("panel", _plate())
+	add_child(_next_panel)
+	var caption := UiKit.label("NEXT", CAPTION, ACCENT, 900)
+	caption.position = Vector2(22, 0)
+	caption.size = Vector2(120, 130)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_next_panel.add_child(caption)
+	_next_draw = _drawer(_next_panel, _draw_next)
 
 
-func _panel(pos: Vector2, size: Vector2, caption: String) -> Control:
-	var p := Panel.new()
-	p.position = pos
-	p.size = size
-	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_theme_stylebox_override(
-		"panel", UiKit.box(Color(UiKit.PANEL, 0.62), 22, Color(1, 1, 1, 0.12), 2, 0)
+func _build_hold() -> void:
+	_hold_btn = Button.new()
+	_hold_btn.focus_mode = Control.FOCUS_NONE
+	_hold_btn.add_theme_stylebox_override("normal", _plate(30))
+	_hold_btn.add_theme_stylebox_override("hover", _plate(30))
+	_hold_btn.add_theme_stylebox_override(
+		"pressed", UiKit.box(Color(0.2, 0.18, 0.35, 0.95), 30, ACCENT, 4, 0)
 	)
-	add_child(p)
-	_title(p, caption)
-	return p
+	_hold_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_hold_btn.pressed.connect(func() -> void: hold_requested.emit())
+	add_child(_hold_btn)
+	var caption := UiKit.label("HOLD", CAPTION, ACCENT, 900)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption.position = Vector2(0, 10)
+	caption.size = Vector2(BoardLayout.HOLD_W, 44)
+	_hold_btn.add_child(caption)
+	_hold_draw = _drawer(_hold_btn, _draw_hold)
 
 
-func _title(parent: Control, caption: String) -> void:
-	var l := UiKit.label(caption, 24, ACCENT, 900)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.position = Vector2(0, 8)
-	l.size = Vector2(parent.size.x, 32)
-	parent.add_child(l)
+func _build_cpu() -> void:
+	_cpu_panel = Panel.new()
+	_cpu_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cpu_panel.add_theme_stylebox_override("panel", _plate(20))
+	add_child(_cpu_panel)
+	var caption := UiKit.label("CPU", 30, ACCENT, 900)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption.position = Vector2(0, 4)
+	caption.size = Vector2(BoardLayout.CPU_W, 38)
+	_cpu_panel.add_child(caption)
+	_cpu_draw = _drawer(_cpu_panel, _draw_cpu)
+
+
+func _build_pause_button() -> void:
+	_pause_btn = Button.new()
+	_pause_btn.focus_mode = Control.FOCUS_NONE
+	for st in ["normal", "hover", "pressed", "focus"]:
+		_pause_btn.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+	_pause_btn.pressed.connect(
+		func() -> void:
+			AudioService.play("tap")
+			pause_requested.emit()
+	)
+	add_child(_pause_btn)
+	var disc := Panel.new()
+	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	disc.add_theme_stylebox_override("panel", UiKit.box(PLATE, 48, Color(1, 1, 1, 0.14), 2, 0))
+	_pause_btn.add_child(disc)
+	UiKit.center(disc, 96)
+	var bars := Control.new()
+	bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bars.draw.connect(
+		func() -> void:
+			bars.draw_rect(Rect2(Vector2(32, 28), Vector2(10, 40)), Color.WHITE)
+			bars.draw_rect(Rect2(Vector2(54, 28), Vector2(10, 40)), Color.WHITE)
+	)
+	disc.add_child(bars)
+	bars.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 func _drawer(parent: Control, fn: Callable) -> Control:
 	var c := Control.new()
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.position = Vector2(0, 40)
-	c.size = parent.size - Vector2(0, 40)
 	c.draw.connect(func() -> void: fn.call(c))
 	parent.add_child(c)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return c
+
+
+## Places every HUD element from the layout (called on start and on every resize).
+func apply_layout(l: BoardLayout) -> void:
+	layout = l
+	if _status == null or l == null:
+		return
+	_place(_status, l.status)
+	_mode_label.position = Vector2(l.status.size.x - 424, 8)
+	_mode_label.size = Vector2(400, 44)
+	_sub.position = Vector2(l.status.size.x - 424, 50)
+	_sub.size = Vector2(400, 64)
+	_place(_next_panel, l.next)
+	_place(_hold_btn, l.hold)
+	_place(_cpu_panel, l.cpu)
+	_place(_pause_btn, l.pause)
+	set_focus(l.well)
+	_next_draw.queue_redraw()
+	_hold_draw.queue_redraw()
+
+
+static func _place(c: Control, r: Rect2) -> void:
+	c.position = r.position
+	c.size = r.size
 
 
 func _on_labels_changed() -> void:
@@ -172,36 +231,43 @@ func update_states(player: StackState, cpu: StackState) -> void:
 	_cpu = cpu
 	_score.text = UiKit.format_int(player.score)
 	_sub.text = "Lines %d  ·  Lv %d" % [player.lines, player.level]
-	if cpu != null:
-		_cpu_info.text = "%d lines" % cpu.lines
+	_hold_btn.modulate.a = 1.0 if player.can_hold else 0.6
 	_next_draw.queue_redraw()
 	_hold_draw.queue_redraw()
 	_cpu_draw.queue_redraw()
 
 
 func _draw_next(c: Control) -> void:
-	if _player == null:
+	if _player == null or layout == null:
 		return
-	for i in mini(3, _player.queue.size()):
-		var slot := (c.size.y - 12) / 3.0
-		var box := Rect2(Vector2(12, 4 + i * slot), Vector2(c.size.x - 24, slot - 10))
-		draw_shard(c, int(_player.queue[i]), box, 1.0 if i == 0 else 0.8)
+	# First preview at 60% scale, centred over the spawn columns; the rest at 45% to its right.
+	var centre_x := layout.canvas.x * 0.5 - layout.next.position.x
+	var big := layout.cell * 0.6
+	var small := layout.cell * 0.45
+	var mid_y := c.size.y * 0.5
+	if _player.queue.size() > 0:
+		draw_shard_at(c, int(_player.queue[0]), Vector2(centre_x, mid_y), big, 1.0)
+	var x := centre_x + 2.6 * big + 2.0 * small
+	for i in range(1, mini(3, _player.queue.size())):
+		draw_shard_at(c, int(_player.queue[i]), Vector2(x, mid_y), small, 0.85)
+		x += 4.6 * small
 
 
 func _draw_hold(c: Control) -> void:
-	if _player == null or _player.hold < 0:
+	if _player == null or _player.hold < 0 or layout == null:
 		return
-	var alpha := 1.0 if _player.can_hold else 0.35
-	draw_shard(c, _player.hold, Rect2(Vector2(14, 6), Vector2(c.size.x - 28, c.size.y - 20)), alpha)
+	var alpha := 1.0 if _player.can_hold else 0.4
+	var centre := Vector2(c.size.x * 0.5, 54 + (c.size.y - 54) * 0.5)
+	draw_shard_at(c, _player.hold, centre, layout.cell * 0.45, alpha)
 
 
 func _draw_cpu(c: Control) -> void:
 	if _cpu == null:
 		return
 	var rows := StackState.H - StackState.HIDDEN
-	var cell := minf((c.size.x - 24) / StackState.W, (c.size.y - 64) / rows)
-	var origin := Vector2((c.size.x - cell * StackState.W) * 0.5, 6)
-	c.draw_rect(Rect2(origin, Vector2(cell * StackState.W, cell * rows)), Color(1, 1, 1, 0.06))
+	var cell := minf((c.size.x - 12.0) / StackState.W, (c.size.y - 50.0) / rows)
+	var origin := Vector2((c.size.x - cell * StackState.W) * 0.5, 42)
+	c.draw_rect(Rect2(origin, Vector2(cell * StackState.W, cell * rows)), Color(1, 1, 1, 0.07))
 	for y in range(StackState.HIDDEN, StackState.H):
 		for x in StackState.W:
 			var v := _cpu.board[y * StackState.W + x]
@@ -212,19 +278,20 @@ func _draw_cpu(c: Control) -> void:
 				if v == StackState.GARBAGE
 				else BlocksView.GEM_COLORS[v - 1]
 			)
-			var r := Rect2(
-				origin + Vector2(x, y - StackState.HIDDEN) * cell, Vector2(cell - 1, cell - 1)
-			)
-			c.draw_rect(r, col)
+			var pos := origin + Vector2(x, y - StackState.HIDDEN) * cell
+			c.draw_rect(Rect2(pos, Vector2(cell - 1, cell - 1)), col)
 	if _cpu.pending_garbage > 0:
 		var h := minf(rows, _cpu.pending_garbage) * cell
 		c.draw_rect(
-			Rect2(origin + Vector2(-8, rows * cell - h), Vector2(5, h)), Color(1, 0.3, 0.35)
+			Rect2(origin + Vector2(-5, rows * cell - h), Vector2(3, h)), Color(1, 0.3, 0.35)
 		)
 
 
-## Draws one shard (spawn orientation) centred in `box`.
-static func draw_shard(c: Control, kind: int, box: Rect2, alpha: float) -> void:
+## Draws one shard (spawn orientation) centred on `centre` with square cells of `cell` units:
+## gem face, a lighter top band, and a dark gap that doubles as an outline.
+static func draw_shard_at(
+	c: Control, kind: int, centre: Vector2, cell: float, alpha: float
+) -> void:
 	var cells := ShardData.cells(kind, 0)
 	var min_c := Vector2i(9, 9)
 	var max_c := Vector2i(-9, -9)
@@ -232,16 +299,26 @@ static func draw_shard(c: Control, kind: int, box: Rect2, alpha: float) -> void:
 		min_c = Vector2i(mini(min_c.x, p.x), mini(min_c.y, p.y))
 		max_c = Vector2i(maxi(max_c.x, p.x), maxi(max_c.y, p.y))
 	var span := Vector2(max_c - min_c + Vector2i.ONE)
-	var cell := minf(box.size.x / 4.2, box.size.y / 2.6)
-	var origin := box.position + (box.size - span * cell) * 0.5
+	var origin := centre - span * cell * 0.5
 	var col: Color = BlocksView.GEM_COLORS[kind]
 	col.a = alpha
+	var gap := maxf(2.0, cell * 0.07)
 	for p in cells:
-		var r := Rect2(origin + Vector2(p - min_c) * cell, Vector2(cell - 3, cell - 3))
+		var r := Rect2(origin + Vector2(p - min_c) * cell, Vector2(cell - gap, cell - gap))
 		c.draw_rect(r, col)
 		c.draw_rect(
-			Rect2(r.position, Vector2(r.size.x, r.size.y * 0.3)), Color(1, 1, 1, 0.22 * alpha)
+			Rect2(r.position, Vector2(r.size.x, r.size.y * 0.18)), Color(1, 1, 1, 0.3 * alpha)
 		)
+		c.draw_rect(
+			Rect2(r.position + Vector2(0, r.size.y * 0.82), Vector2(r.size.x, r.size.y * 0.18)),
+			Color(0, 0, 0, 0.22 * alpha)
+		)
+
+
+## Draws a shard fitted into `box` (used by the how-to illustrations).
+static func draw_shard(c: Control, kind: int, box: Rect2, alpha: float) -> void:
+	var cell := minf(box.size.x / 4.2, box.size.y / 2.6)
+	draw_shard_at(c, kind, box.get_center(), cell, alpha)
 
 
 # --- how-to illustrations ------------------------------------------------------------------
@@ -278,6 +355,6 @@ func _icon_drop(c: Control) -> void:
 
 func _icon_hold(c: Control) -> void:
 	c.draw_rect(Rect2(Vector2.ZERO, c.size), Color(0.4, 0.3, 0.8, 0.25))
-	c.draw_circle(Vector2(50, 92), 16, Color(1, 1, 1, 0.85))
-	c.draw_circle(Vector2(100, 92), 16, Color(1, 1, 1, 0.85))
-	draw_shard(c, 1, Rect2(Vector2(45, 18), Vector2(60, 46)), 1.0)
+	c.draw_rect(Rect2(Vector2(28, 70), Vector2(94, 64)), Color(1, 1, 1, 0.2))
+	draw_shard(c, 1, Rect2(Vector2(45, 14), Vector2(60, 46)), 1.0)
+	c.draw_circle(Vector2(75, 104), 14, Color(1, 1, 1, 0.85))

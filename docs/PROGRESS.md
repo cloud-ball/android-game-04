@@ -2,6 +2,17 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop board redesign (researched)
+- Research: docs/research/Stack Drop board redesign.md (+ notes). Cell 88 canvas units (~34 dp, 5.6 mm),
+  well ~73% of width; orthographic camera pitched 9 deg; 0.55-deep gem slabs; pedestal sized to the margins;
+  HUD moved off the well (top band read-only, HOLD bottom-left); lightness-ladder palette + glyph per shard.
+- games/blocks/logic/board_layout.gd: pure layout (cell size + every HUD rect from canvas size, safe area,
+  density); 8 tests over 20:9, 19.5:9, 21:9 and 16:9 (no overlaps, nothing in the gesture keep-out,
+  48 dp tap targets on a 360 dp phone).
+- Shards now spawn in the top visible rows (hidden rows are rotation headroom only).
+- Drag step is physical (36 dp per column), gestures ignored on HOLD/pause, screen edges and the
+  gesture area. Vivo: phone density 480 -> 420 dp wide. Verified on the phone; 60 fps (bot vs Hard).
+
 ## 2026-11-12 · Stack Drop tested on the Vivo
 - Full pass on the phone: hub card -> how-to -> start -> tap rotate, drag move, flick drop, HOLD box,
   garbage rows from the CPU, top-out -> TOWER FULL results. No errors in logcat; 60 fps.

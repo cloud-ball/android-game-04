@@ -74,6 +74,15 @@ func build_shell() -> void:
 	add_child(_settings)
 
 
+## Centres banners and the countdown on a play area (e.g. the board) instead of fixed heights.
+func set_focus(area: Rect2) -> void:
+	var cy := area.get_center().y
+	_banner.position.y = cy - 190.0
+	_banner_sub.position.y = cy - 60.0
+	_count.position.y = cy - 160.0
+	_hint.position.y = area.end.y - 150.0
+
+
 func _centered_label(text: String, size: int, color: Color, y: float) -> Label:
 	var l := UiKit.label(text, size, color, 900)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

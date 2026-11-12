@@ -15,6 +15,9 @@ var tap_px := 26.0
 ## A flick down: at least this far and this fast (px per ms) at release.
 var flick_px := 110.0
 var flick_speed := 0.9
+## Optional: func(position) -> bool; touches that start where it returns true are ignored
+## (HUD buttons, screen-edge back-gesture zones, the bottom gesture area).
+var reject := Callable()
 
 var _down := false
 var _start := Vector2.ZERO
@@ -37,6 +40,8 @@ func feed(event: InputEvent, now_ms: int) -> PackedStringArray:
 				_moved = true  # the first finger's lift is not a tap any more
 				return out
 			if _fingers == 1:
+				if reject.is_valid() and reject.call(t.position):
+					return out
 				_down = true
 				_start = t.position
 				_anchor = t.position

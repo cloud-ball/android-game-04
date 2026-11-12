@@ -65,6 +65,7 @@ var _bot := false
 var _held_key := ""
 var _held_time := 0.0
 var _bot_timer := 0.0
+var _layout: BoardLayout
 
 
 func _ready() -> void:
@@ -77,14 +78,17 @@ func _ready() -> void:
 	if mode != "vs" and mode != "solo":
 		mode = "vs"
 	_bot = Boot.bot
-	var vis := get_viewport().get_visible_rect().size
-	_gestures.cell_px = 0.065 * minf(vis.x, vis.y)
+	_layout = compute_layout()
+	_gestures.cell_px = _layout.drag_step
+	_gestures.reject = func(p: Vector2) -> bool: return _layout.rejects_gesture_at(p)
 	_new_match()
 	_view = BlocksView.new()
 	add_child(_view)
-	_view.setup()
+	_view.setup(_layout)
 	_hud = BlocksHud.new()
+	_hud.layout = _layout
 	add_child(_hud)
+	get_viewport().size_changed.connect(_on_resize)
 	_hud.play_requested.connect(_on_play)
 	_hud.rematch_requested.connect(_on_rematch)
 	_hud.exit_requested.connect(func() -> void: SceneRouter.back_to_hub())
@@ -108,6 +112,32 @@ func _ready() -> void:
 		_hud.show_howto()
 	else:
 		_hud.show_start(_stats_text())
+
+
+## Layout from the canvas size, the safe area (notch, gesture bar) and the screen density.
+func compute_layout() -> BoardLayout:
+	var canvas := get_viewport().get_visible_rect().size
+	var win := Vector2(DisplayServer.window_get_size())
+	var k := canvas.x / maxf(1.0, win.x)  # canvas units per screen pixel
+	var insets := {}
+	var dp_width := 411.0
+	if OS.has_feature("mobile"):
+		var safe := DisplayServer.get_display_safe_area()
+		insets = {
+			"top": safe.position.y * k,
+			"bottom": (win.y - safe.end.y) * k,
+			"left": safe.position.x * k,
+			"right": (win.x - safe.end.x) * k,
+		}
+		dp_width = win.x / maxf(1.0, DisplayServer.screen_get_dpi() / 160.0)
+	return BoardLayout.compute(canvas, insets, canvas.x / dp_width)
+
+
+func _on_resize() -> void:
+	_layout = compute_layout()
+	_gestures.cell_px = _layout.drag_step
+	_view.apply_layout(_layout)
+	_hud.apply_layout(_layout)
 
 
 func _new_match() -> void:
