@@ -15,11 +15,11 @@ const GEM_COLORS: Array[Color] = [
 const GARBAGE_COLOR := Color(0.46, 0.43, 0.57)
 const CUBE := 0.94
 const PITCH_DEG := 7.0
-const FOV_DEG := 36.0
+const FOV_DEG := 30.0
 ## Screen bands left for the HUD (fractions of height) and the side panels (fraction of width).
-const TOP_BAND := 0.14
-const BOTTOM_BAND := 0.035
-const SIDE_BAND := 0.19
+const TOP_BAND := 0.085
+const BOTTOM_BAND := 0.012
+const SIDE_BAND := 0.012
 
 const GEM_SHADER := """
 shader_type spatial;
@@ -157,7 +157,7 @@ func render(s: StackState, delta: float) -> void:
 		var h := float(mini(pending, StackState.H - StackState.HIDDEN))
 		_garbage_bar.scale = Vector3(1, h, 1)
 		_garbage_bar.position = Vector3(-StackState.W * 0.5 - 0.45, h * 0.5, 0.3)
-	var sway := sin(_time * 0.3) * deg_to_rad(4.0)
+	var sway := sin(_time * 0.3) * deg_to_rad(2.0)
 	var t := Transform3D(Basis(Vector3.UP, sway), Vector3.ZERO) * _cam_base
 	if _shake > 0.0:
 		_shake = maxf(0.0, _shake - delta * 3.0)
@@ -401,7 +401,7 @@ static func fit_camera(aspect: float) -> Transform3D:
 	var h := float(StackState.H - StackState.HIDDEN) + 0.6
 	var pts: Array[Vector3] = []
 	for x in [-w, w]:
-		for y in [-0.7, h]:
+		for y in [-0.15, h]:  # the hex base may run off the bottom edge
 			for z in [-0.6, 0.6]:
 				pts.append(Vector3(x, y, z))
 	var pitch := deg_to_rad(PITCH_DEG)
