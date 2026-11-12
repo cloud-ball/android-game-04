@@ -4,8 +4,8 @@ extends RefCounted
 ## so any game can be replayed bit-exactly from (seed, actions).
 ## Board: W x H cells, row 0 at the top; the top HIDDEN rows are the spawn area (not drawn).
 
-const W := 9
-const H := 20
+const W := 10
+const H := 22
 const HIDDEN := 2
 const GARBAGE := 8  # board value for garbage cells (shards are 1..7)
 

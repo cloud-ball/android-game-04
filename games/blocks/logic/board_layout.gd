@@ -6,19 +6,19 @@ extends RefCounted
 ## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
 ##   top band : CPU mini-board | status (score, lines, level) | pause
 ##              CPU mini-board | HOLD | NEXT strip
-##   middle   : the 9 x 18 well (garbage meter beside its left edge), pedestal below
+##   middle   : the 10 x 20 well (garbage meter beside its left edge), pedestal below
 ##   bottom   : keep-out above the system gesture area
 
-const COLS := 9
-const ROWS := 18
+const COLS := StackState.W
+const ROWS := StackState.H - StackState.HIDDEN
 ## Outer margin; nothing tappable and no gesture starts inside it (back-gesture zones).
 const SIDE := 42.0
 ## Horizontal space per side reserved beside the well (meter + posts).
 const GUTTER := 72.0
 ## Width of the well in cells including its corner posts.
-const WELL_SPAN := 9.32
+const WELL_SPAN := COLS + 0.32
 ## Width of the pedestal in cells (BlocksView builds a hex of radius PEDESTAL_SPAN / 2).
-const PEDESTAL_SPAN := 9.8
+const PEDESTAL_SPAN := COLS + 0.8
 const STATUS_H := 116.0
 const ROW_GAP := 16.0
 ## Second top row (HOLD + NEXT): at least this tall, and at least 48 dp.
