@@ -20,9 +20,9 @@ const SAVE_DEFAULTS := {
 }
 ## Per difficulty: player's start level, CPU seconds per shard, CPU top_k, noise, hold.
 const LEVELS := {
-	"easy": {"start": 1, "think": 1.7, "top_k": 4, "noise": 1.2, "hold": false},
-	"medium": {"start": 2, "think": 1.1, "top_k": 2, "noise": 0.45, "hold": true},
-	"hard": {"start": 4, "think": 0.7, "top_k": 1, "noise": 0.1, "hold": true},
+	"easy": {"start": 1, "think": 2.4, "top_k": 5, "noise": 1.6, "hold": false},
+	"medium": {"start": 2, "think": 1.7, "top_k": 3, "noise": 0.8, "hold": true},
+	"hard": {"start": 4, "think": 1.15, "top_k": 1, "noise": 0.2, "hold": true},
 }
 const WIN_BONUS := {"easy": 15, "medium": 30, "hard": 60}
 const CLEAR_NAMES := ["", "SINGLE", "DOUBLE!", "TRIPLE!", "QUAD CLEAR!"]
