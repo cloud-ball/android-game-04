@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop tested on the Vivo
+- Full pass on the phone: hub card -> how-to -> start -> tap rotate, drag move, flick drop, HOLD box,
+  garbage rows from the CPU, top-out -> TOWER FULL results. No errors in logcat; 60 fps.
+- CPU was too strong (Medium cleared 27 lines in 50 s). Now: Easy 2.4 s/shard (top 5, noisy),
+  Medium 1.7 s (top 3), Hard 1.15 s (best) -> Medium ~11 lines in 50 s.
+- First open of Stack Drop takes ~5 s (one-time shader compile); later opens are fast.
+
 ## 2026-11-11 · Stack Drop step 2: playable (branch stack-drop)
 - 3D crystal tower (games/blocks/scenes/blocks_view.gd): gem shader with facet edges, outlined ghost,
   glass back pane with grid, posts, hex base, clear flash + crystal shatter, garbage bar, slow sway.
