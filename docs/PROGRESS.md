@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop: much bigger tower (HOLD moved up beside NEXT)
+- User: tower still too small. Plan: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
+- HOLD left the bottom band and sits in the top band beside NEXT (row 2: CPU | HOLD | NEXT); the bottom
+  band is now just the pedestal. Side gutter 92 -> 72, pedestal 10.4 -> 9.8 cells, max cell 38 -> 42 dp.
+- Vivo: cell 92 -> 100 canvas units (36 -> 39 dp), tower 77% -> 84% of the width, ~75% of the height.
+- NEXT previews are sized to fit the strip; start hint shows in the upper-middle of the empty well.
+- Two-finger tap still holds. Layout tests updated (4 phone shapes, 48 dp targets, no overlaps).
+- Try it: open Stack Drop -> tower fills most of the screen; tap HOLD (top left, under CPU's right).
+
 ## 2026-11-12 · Bigger Stack Drop tower, bigger "Back to hub"
 - Tower cells 88 -> 92 canvas units on the Vivo (34 -> 36 dp); tower 73% -> 77% of the width. Space came
   from tighter HUD bands (side gutter 130 -> 92, pedestal band 140 -> 108, HOLD 168 -> 150, NEXT 130 -> 120).

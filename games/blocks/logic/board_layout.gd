@@ -2,34 +2,36 @@ class_name BoardLayout
 extends RefCounted
 ## Screen layout for Stack Drop, as pure arithmetic (no nodes): from the canvas size (1080 wide,
 ## height follows the phone's aspect) and the safe-area insets it derives the cell size and every
-## HUD rectangle, in canvas units. Design: docs/research/Stack Drop board redesign.md.
-##   top band    : CPU mini-board | status (score, lines, level) | pause, then the NEXT strip
-##   middle      : the 9 x 18 well (garbage meter flush against its left edge), pedestal below
-##   bottom band : HOLD (thumb reach), then a keep-out above the system gesture area
+## HUD rectangle, in canvas units. Research: docs/research/Stack Drop board redesign.md;
+## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
+##   top band : CPU mini-board | status (score, lines, level) | pause
+##              CPU mini-board | HOLD | NEXT strip
+##   middle   : the 9 x 18 well (garbage meter beside its left edge), pedestal below
+##   bottom   : keep-out above the system gesture area
 
 const COLS := 9
 const ROWS := 18
 ## Outer margin; nothing tappable and no gesture starts inside it (back-gesture zones).
 const SIDE := 42.0
-## Horizontal space per side reserved beside the well (meter + posts + breathing room).
-const GUTTER := 92.0
+## Horizontal space per side reserved beside the well (meter + posts).
+const GUTTER := 72.0
 ## Width of the well in cells including its corner posts.
 const WELL_SPAN := 9.32
 ## Width of the pedestal in cells (BlocksView builds a hex of radius PEDESTAL_SPAN / 2).
-const PEDESTAL_SPAN := 10.4
+const PEDESTAL_SPAN := 9.8
 const STATUS_H := 116.0
-const NEXT_GAP := 16.0
-const NEXT_H := 120.0
-const TOP_TO_WELL := 268.0  # status + gap + NEXT strip + gap
+const ROW_GAP := 16.0
+## Second top row (HOLD + NEXT): at least this tall, and at least 48 dp.
+const ROW2_MIN_H := 120.0
 const PEDESTAL_H := 108.0
-const HOLD_W := 216.0
-const HOLD_H := 150.0
+const HOLD_W := 150.0
 const BAND_GAP := 16.0
 const MIN_BOTTOM_INSET := 84.0  # 32 dp gesture area on a 420 dp phone
 const PAUSE_HIT := 144.0
 const CPU_W := 108.0
 const MIN_CELL := 56.0
-const MAX_CELL_DP := 38.0
+const MAX_CELL_DP := 42.0
+const MIN_TAP_DP := 48.0
 ## Finger travel per column when dragging, independent of the cell size.
 const DRAG_STEP_DP := 36.0
 
@@ -56,8 +58,10 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 	var side := maxf(SIDE, maxf(float(insets.get("left", 0.0)), float(insets.get("right", 0.0))))
 	l.top = maxf(float(insets.get("top", 0.0)), 0.0) + BAND_GAP
 	l.bottom = canvas_size.y - maxf(float(insets.get("bottom", 0.0)), MIN_BOTTOM_INSET)
-	var well_top_min := l.top + TOP_TO_WELL
-	var well_bottom_max := l.bottom - HOLD_H - BAND_GAP - PEDESTAL_H
+	var row2_h := maxf(ROW2_MIN_H, MIN_TAP_DP * units_per_dp)
+	var row2_y := l.top + STATUS_H + ROW_GAP
+	var well_top_min := row2_y + row2_h + BAND_GAP
+	var well_bottom_max := l.bottom - PEDESTAL_H
 	var avail_h := well_bottom_max - well_top_min
 	var by_width := (canvas_size.x - 2.0 * GUTTER) / WELL_SPAN
 	var by_height := avail_h / ROWS
@@ -68,26 +72,18 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 	var h := l.cell * ROWS
 	var extra := maxf(0.0, avail_h - h)
 	l.well = Rect2((canvas_size.x - w) * 0.5, well_top_min + extra * 0.5, w, h)
-	l.status = Rect2(
-		side + CPU_W + 20.0,
-		l.top,
-		canvas_size.x - 2.0 * side - CPU_W - 20.0 - PAUSE_HIT - 14.0,
-		STATUS_H
-	)
-	# Hit area: PAUSE_HIT wide, as tall as fits above the NEXT strip (>= 48 dp on every phone).
-	var pause_h := minf(PAUSE_HIT, STATUS_H + NEXT_GAP + 12.0)
+	var inner_x := side + CPU_W + 16.0
+	l.status = Rect2(inner_x, l.top, canvas_size.x - side - PAUSE_HIT - 14.0 - inner_x, STATUS_H)
+	# Pause hit area: PAUSE_HIT wide, as tall as fits above row 2 (>= 48 dp on every phone).
+	var pause_h := minf(PAUSE_HIT, STATUS_H + ROW_GAP + 12.0)
 	l.pause = Rect2(canvas_size.x - side - PAUSE_HIT, l.top - 12.0, PAUSE_HIT, pause_h)
-	l.cpu = Rect2(side, l.top, CPU_W, STATUS_H + NEXT_GAP + NEXT_H)
-	l.next = Rect2(
-		l.status.position.x,
-		l.top + STATUS_H + NEXT_GAP,
-		canvas_size.x - side - l.status.position.x,
-		NEXT_H
-	)
-	l.garbage = Rect2(l.well.position.x - 50.0, l.well.position.y, 30.0, h)
+	l.cpu = Rect2(side, l.top, CPU_W, row2_y + row2_h - l.top)
+	l.hold = Rect2(inner_x, row2_y, HOLD_W, row2_h)
+	var next_x := l.hold.end.x + 14.0
+	l.next = Rect2(next_x, row2_y, canvas_size.x - side - next_x, row2_h)
+	l.garbage = Rect2(l.well.position.x - 40.0, l.well.position.y, 22.0, h)
 	var ped_w := PEDESTAL_SPAN * l.cell
 	l.pedestal = Rect2((canvas_size.x - ped_w) * 0.5, l.well.end.y, ped_w, PEDESTAL_H)
-	l.hold = Rect2(side, l.bottom - HOLD_H, HOLD_W, HOLD_H)
 	l.keepout_bottom = Rect2(0.0, l.bottom, canvas_size.x, canvas_size.y - l.bottom)
 	l.drag_step = DRAG_STEP_DP * units_per_dp
 	return l

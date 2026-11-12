@@ -1,8 +1,7 @@
 class_name BlocksHud
 extends GameShell
-## Stack Drop HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout
-## (docs/research/Stack Drop board redesign.md): a read-only top band (CPU mini-board, status
-## plate, pause, NEXT strip above the spawn columns) and a tappable HOLD in the bottom band.
+## Stack Drop HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout:
+## a top band (CPU mini-board, status plate, pause; then a tappable HOLD box beside the NEXT strip).
 ## Nothing covers the well. Holds no game state.
 
 signal hold_requested
@@ -22,6 +21,7 @@ var _sub: Label
 var _mode_label: Label
 var _next_panel: Panel
 var _next_draw: Control
+var _next_caption: Label
 var _hold_btn: Button
 var _hold_draw: Control
 var _cpu_panel: Panel
@@ -100,9 +100,10 @@ func _build_next() -> void:
 	add_child(_next_panel)
 	var caption := UiKit.label("NEXT", CAPTION, ACCENT, 900)
 	caption.position = Vector2(22, 0)
-	caption.size = Vector2(120, 130)
+	caption.size = Vector2(110, 120)
 	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_next_panel.add_child(caption)
+	_next_caption = caption
 	_next_draw = _drawer(_next_panel, _draw_next)
 
 
@@ -117,10 +118,10 @@ func _build_hold() -> void:
 	_hold_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_hold_btn.pressed.connect(func() -> void: hold_requested.emit())
 	add_child(_hold_btn)
-	var caption := UiKit.label("HOLD", CAPTION, ACCENT, 900)
+	var caption := UiKit.label("HOLD", 30, ACCENT, 900)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption.position = Vector2(0, 10)
-	caption.size = Vector2(BoardLayout.HOLD_W, 44)
+	caption.position = Vector2(0, 4)
+	caption.size = Vector2(BoardLayout.HOLD_W, 36)
 	_hold_btn.add_child(caption)
 	_hold_draw = _drawer(_hold_btn, _draw_hold)
 
@@ -188,10 +189,16 @@ func apply_layout(l: BoardLayout) -> void:
 	_place(_hold_btn, l.hold)
 	_place(_cpu_panel, l.cpu)
 	_place(_pause_btn, l.pause)
+	_next_caption.size.y = l.next.size.y
 	set_focus(l.well)
-	var hint_x := l.hold.end.x + 24.0
+	# The start hint sits in the upper-middle of the (still empty) well for its ~3 s.
 	set_hint_area(
-		Rect2(hint_x, l.hold.position.y, l.canvas.x - BoardLayout.SIDE - hint_x, l.hold.size.y)
+		Rect2(
+			l.well.position.x + 40.0,
+			l.well.position.y + l.well.size.y * 0.3,
+			l.well.size.x - 80.0,
+			120
+		)
 	)
 	_next_draw.queue_redraw()
 	_hold_draw.queue_redraw()
@@ -243,14 +250,16 @@ func update_states(player: StackState, cpu: StackState) -> void:
 func _draw_next(c: Control) -> void:
 	if _player == null or layout == null:
 		return
-	# First preview at 60% scale, centred over the spawn columns; the rest at 45% to its right.
-	var centre_x := layout.canvas.x * 0.5 - layout.next.position.x
-	var big := layout.cell * 0.6
-	var small := layout.cell * 0.45
+	# Left to right after the caption: the next shard larger, then two smaller ones. Cell sizes are
+	# fitted to the strip so 4-wide shards never spill (2 rows tall at most).
+	var avail := c.size.x - 130.0
+	var big := minf(c.size.y * 0.4, avail / 12.0)
+	var small := big * 0.78
 	var mid_y := c.size.y * 0.5
+	var x := 130.0 + 2.0 * big
 	if _player.queue.size() > 0:
-		draw_shard_at(c, int(_player.queue[0]), Vector2(centre_x, mid_y), big, 1.0)
-	var x := centre_x + 2.6 * big + 2.0 * small
+		draw_shard_at(c, int(_player.queue[0]), Vector2(x, mid_y), big, 1.0)
+	x += 2.0 * big + 0.6 * big + 2.0 * small
 	for i in range(1, mini(3, _player.queue.size())):
 		draw_shard_at(c, int(_player.queue[i]), Vector2(x, mid_y), small, 0.85)
 		x += 4.6 * small
@@ -260,8 +269,10 @@ func _draw_hold(c: Control) -> void:
 	if _player == null or _player.hold < 0 or layout == null:
 		return
 	var alpha := 1.0 if _player.can_hold else 0.62  # locked until the next shard
-	var centre := Vector2(c.size.x * 0.5, 54 + (c.size.y - 54) * 0.5)
-	draw_shard_at(c, _player.hold, centre, layout.cell * 0.45, alpha)
+	var top := 40.0
+	var cell := minf((c.size.y - top - 8.0) / 2.0, (c.size.x - 20.0) / 4.0)
+	var centre := Vector2(c.size.x * 0.5, top + (c.size.y - top) * 0.5)
+	draw_shard_at(c, _player.hold, centre, cell, alpha)
 
 
 func _draw_cpu(c: Control) -> void:

@@ -419,7 +419,7 @@ func _add_tower() -> void:
 	add_child(holder)
 	var hex := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
-	cyl.top_radius = 4.95
+	cyl.top_radius = BoardLayout.PEDESTAL_SPAN * 0.5 - 0.25
 	cyl.bottom_radius = BoardLayout.PEDESTAL_SPAN * 0.5
 	cyl.height = 0.5
 	cyl.radial_segments = 6
