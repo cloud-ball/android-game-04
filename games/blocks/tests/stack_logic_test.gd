@@ -330,3 +330,40 @@ func _replay(seed_value: int) -> Array:
 		s = StackLogic.reduce(s, a)
 		prints.append(s.fingerprint())
 	return prints
+
+
+# --- the rows above the visible tower --------------------------------------------------------
+
+
+func test_shards_never_rotate_into_the_hidden_rows() -> void:
+	# A tall stack right under the top: rotations that would need an upward kick fail instead.
+	for kind in ShardData.COUNT:
+		var s := _with_shard(kind, 0, 3, StackState.HIDDEN)
+		for y in range(StackState.HIDDEN + 2, H):
+			_fill_row(s, y, -1)
+		for turn in 4:
+			s = _act(s, "cw")
+			for c in StackLogic.shard_cells(s.kind, s.rot, s.px, s.py):
+				(
+					assert_bool(c.y >= StackState.HIDDEN)
+					. override_failure_message("shard %d rotated into hidden row %d" % [kind, c.y])
+					. is_true()
+				)
+
+
+func test_garbage_lifting_blocks_above_the_top_ends_the_game() -> void:
+	var s := StackLogic.new_game(8)
+	s.board[StackState.HIDDEN * W + 4] = 1  # one block in the top visible row
+	s = _act(s, "garbage", {"rows": 1})
+	s = _act(s, "hard")
+	assert_bool(s.over).is_true()
+	var why: Array = s.events.filter(func(e: Dictionary) -> bool: return e.type == "top_out")
+	assert_str(str(why[0].why)).is_equal("garbage")
+
+
+func test_garbage_below_the_top_does_not_end_the_game() -> void:
+	var s := StackLogic.new_game(8)
+	s.board[(StackState.HIDDEN + 3) * W + 0] = 1  # edge column, clear of the dropped shard
+	s = _act(s, "garbage", {"rows": 2})
+	s = _act(s, "hard")
+	assert_bool(s.over).is_false()
