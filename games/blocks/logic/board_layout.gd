@@ -6,7 +6,7 @@ extends RefCounted
 ## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
 ##   top band : CPU mini-board | status (score, lines, level) | pause
 ##              CPU mini-board | HOLD | NEXT strip
-##   middle   : the 10 x 20 well (garbage meter beside its left edge), pedestal below
+##   middle   : the 12 x 24 well (garbage meter beside its left edge), pedestal below
 ##   bottom   : keep-out above the system gesture area
 
 const COLS := StackState.W

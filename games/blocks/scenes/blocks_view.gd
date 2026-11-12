@@ -96,7 +96,7 @@ void fragment() {
 const PANE_SHADER := """
 shader_type spatial;
 render_mode unshaded, cull_disabled;
-uniform vec2 cells = vec2(10.0, 20.0);
+uniform vec2 cells = vec2(12.0, 24.0);
 uniform vec3 pane : source_color = vec3(0.075, 0.098, 0.172);
 uniform vec3 line : source_color = vec3(0.2, 0.24, 0.38);
 void fragment() {
