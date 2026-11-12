@@ -8,6 +8,8 @@ Newest first. Claude appends: date · what changed · how to try it on a phone �
 - CPU was too strong (Medium cleared 27 lines in 50 s). Now: Easy 2.4 s/shard (top 5, noisy),
   Medium 1.7 s (top 3), Hard 1.15 s (best) -> Medium ~11 lines in 50 s.
 - First open of Stack Drop takes ~5 s (one-time shader compile); later opens are fast.
+- Bigger tower (user request): near full width/height; NEXT, HOLD and CPU are slim see-through panels over
+  the outer top columns; pause moved into the score bar; 30° lens, gentler sway.
 
 ## 2026-11-11 · Stack Drop step 2: playable (branch stack-drop)
 - 3D crystal tower (games/blocks/scenes/blocks_view.gd): gem shader with facet edges, outlined ghost,

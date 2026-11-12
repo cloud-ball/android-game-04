@@ -57,8 +57,8 @@ func _ready() -> void:
 func _build_bar(top: float) -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UiKit.box(UiKit.PANEL, 28, Color.TRANSPARENT, 0, 24))
-	panel.position = Vector2(32, 24 + top)
-	panel.size = Vector2(1016, 0)
+	panel.position = Vector2(16, 20 + top)
+	panel.size = Vector2(924, 0)
 	add_child(panel)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -76,33 +76,35 @@ func _build_bar(top: float) -> void:
 	grid.add_child(_sub)
 	_pause_btn = UiKit.button("II", Color(1, 1, 1, 0.12), Color.WHITE, 36, 96)
 	_pause_btn.custom_minimum_size = Vector2(96, 96)
-	_pause_btn.position = Vector2(952, 214 + top)
+	_pause_btn.custom_minimum_size = Vector2(112, 112)
+	_pause_btn.position = Vector2(952, 34 + top)
 	_pause_btn.pressed.connect(func() -> void: pause_requested.emit())
 	add_child(_pause_btn)
 
 
 func _build_side_panels(top: float) -> void:
-	var y0 := 214.0 + top
-	var next := _panel(Vector2(24, y0), Vector2(176, 380), "NEXT")
+	# Slim, see-through panels float over the tower's outer columns near the top.
+	var y0 := 196.0 + top
+	var next := _panel(Vector2(14, y0), Vector2(132, 320), "NEXT")
 	_next_draw = _drawer(next, _draw_next)
 	var hold := Button.new()
 	hold.focus_mode = Control.FOCUS_NONE
-	hold.position = Vector2(24, y0 + 400)
-	hold.size = Vector2(176, 176)
+	hold.position = Vector2(14, y0 + 334)
+	hold.size = Vector2(132, 140)
 	for st in ["normal", "hover", "pressed"]:
-		var bg := UiKit.PANEL.lightened(0.08 if st == "pressed" else 0.0)
+		var bg := Color(UiKit.PANEL, 0.62).lightened(0.08 if st == "pressed" else 0.0)
 		hold.add_theme_stylebox_override(st, UiKit.box(bg, 24, Color(1, 1, 1, 0.12), 2, 0))
 	hold.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	hold.pressed.connect(func() -> void: hold_requested.emit())
 	add_child(hold)
 	_title(hold, "HOLD")
 	_hold_draw = _drawer(hold, _draw_hold)
-	_cpu_panel = _panel(Vector2(856, y0 + 112), Vector2(200, 470), "CPU")
+	_cpu_panel = _panel(Vector2(934, y0), Vector2(132, 360), "CPU")
 	_cpu_draw = _drawer(_cpu_panel, _draw_cpu)
 	_cpu_info = UiKit.label("", 26, UiKit.MUTED, 700)
 	_cpu_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_cpu_info.position = Vector2(0, 420)
-	_cpu_info.size = Vector2(200, 40)
+	_cpu_info.position = Vector2(0, 318)
+	_cpu_info.size = Vector2(132, 36)
 	_cpu_panel.add_child(_cpu_info)
 
 
@@ -111,25 +113,27 @@ func _panel(pos: Vector2, size: Vector2, caption: String) -> Control:
 	p.position = pos
 	p.size = size
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_theme_stylebox_override("panel", UiKit.box(UiKit.PANEL, 24, Color(1, 1, 1, 0.12), 2, 0))
+	p.add_theme_stylebox_override(
+		"panel", UiKit.box(Color(UiKit.PANEL, 0.62), 22, Color(1, 1, 1, 0.12), 2, 0)
+	)
 	add_child(p)
 	_title(p, caption)
 	return p
 
 
 func _title(parent: Control, caption: String) -> void:
-	var l := UiKit.label(caption, 26, ACCENT, 900)
+	var l := UiKit.label(caption, 24, ACCENT, 900)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.position = Vector2(0, 10)
-	l.size = Vector2(parent.size.x, 36)
+	l.position = Vector2(0, 8)
+	l.size = Vector2(parent.size.x, 32)
 	parent.add_child(l)
 
 
 func _drawer(parent: Control, fn: Callable) -> Control:
 	var c := Control.new()
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.position = Vector2(0, 46)
-	c.size = parent.size - Vector2(0, 46)
+	c.position = Vector2(0, 40)
+	c.size = parent.size - Vector2(0, 40)
 	c.draw.connect(func() -> void: fn.call(c))
 	parent.add_child(c)
 	return c
@@ -179,7 +183,8 @@ func _draw_next(c: Control) -> void:
 	if _player == null:
 		return
 	for i in mini(3, _player.queue.size()):
-		var box := Rect2(Vector2(14, 8 + i * 106), Vector2(c.size.x - 28, 96))
+		var slot := (c.size.y - 12) / 3.0
+		var box := Rect2(Vector2(12, 4 + i * slot), Vector2(c.size.x - 24, slot - 10))
 		draw_shard(c, int(_player.queue[i]), box, 1.0 if i == 0 else 0.8)
 
 
