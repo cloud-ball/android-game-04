@@ -17,7 +17,7 @@ No physics. A pure functional core reduce(state, action) with a seeded RNG, so a
 | Touch timing | DAS 170 ms, ARR 50 ms |
 
 ## Rules and modes
-Original design — mechanics aren't protected, expression is: a 10-wide × 20-tall glass 'crystal tower' (originally 9 × 18; widened 2026-11-12 for smaller blocks), physically shaded gem materials instead of flat bright colours, pieces named shards A–G, your own music. Optional twist: the tower slowly rotates around a cylinder.
+Original design — mechanics aren't protected, expression is: a 12-wide × 24-tall glass 'crystal tower' (originally 9 × 18; enlarged 2026-11-12 for smaller blocks), physically shaded gem materials instead of flat bright colours, pieces named shards A–G, your own music. Optional twist: the tower slowly rotates around a cylinder.
 
 ## CPU opponent
 Side-by-side race. Classic placement heuristic (aggregate height, holes, bumpiness, lines cleared) evaluated over all rotations/columns; clears send garbage rows to the opponent.

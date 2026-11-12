@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-12 · Stack Drop: 12 x 24 tower (blocks smaller again)
+- User asked for still smaller blocks. Board 10 x 20 -> 12 x 24 visible (W 12, H 26 incl. 2 hidden rows);
+  spawn column now derived from the width so shards still start mid-board.
+- Vivo: cell 91 -> 76 canvas units (35 -> 29 dp, ~4.7 mm); tower unchanged at ~84% of the width.
+  Drag stays 36 dp per column, so moving shards feels the same.
+- 93 tests green, fuzz 0 violations over 30 seeds. Lines need 12 cells now, so matches run longer and the
+  CPU clears more slowly - check on the phone whether its speeds need retuning.
+- Try it: open Stack Drop -> 12 columns, 24 rows.
+
 ## 2026-11-12 · Stack Drop: 10 x 20 tower (smaller blocks, more of them)
 - User: keep the big tower but make the blocks smaller with more of them. Board 9 x 18 -> 10 x 20 visible
   (StackState.W 10, H 22 incl. 2 hidden rows). BoardLayout takes COLS/ROWS from StackState, so the

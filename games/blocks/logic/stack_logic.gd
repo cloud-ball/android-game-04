@@ -13,7 +13,7 @@ const PREVIEW := 3
 const LINE_SCORES := [0, 100, 300, 500, 800]
 ## Garbage rows sent for clearing 0..4 lines at once.
 const GARBAGE_SENT := [0, 0, 1, 2, 4]
-const SPAWN_X := 3
+const SPAWN_X := (StackState.W - 4) >> 1  # shard boxes (3-4 wide) start mid-board
 ## Shards appear in the top visible rows (row HIDDEN); the 2 hidden rows above are headroom
 ## for rotations. Top-out = a new shard cannot fit there.
 const SPAWN_Y := StackState.HIDDEN
