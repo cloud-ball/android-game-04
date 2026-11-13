@@ -30,6 +30,10 @@ func _ready() -> void:
 	_streams["lose"] = _tone([[440.0, 0.14], [349.0, 0.14], [262.0, 0.3]], 0.4)
 	_streams["count"] = _tone([[740.0, 0.08]], 0.35)
 	_streams["go"] = _tone([[1100.0, 0.18]], 0.4)
+	# Pool: ball click, cue strike, pocket drop.
+	_streams["clack"] = _noise(0.018, 0.32)
+	_streams["cue"] = _noise(0.03, 0.26)
+	_streams["pocket"] = _tone([[196.0, 0.05], [147.0, 0.08]], 0.45)
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = MUSIC_DB
 	add_child(_music)

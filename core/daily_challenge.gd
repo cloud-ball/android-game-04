@@ -17,6 +17,8 @@ const LIST: Array[Dictionary] = [
 	},
 	{"id": "blocks_win_medium", "game": "blocks", "text": "Beat the CPU on Medium", "reward": 150},
 	{"id": "blocks_score_5000", "game": "blocks", "text": "Score 5,000 in one game", "reward": 150},
+	{"id": "pool_win", "game": "pool", "text": "Win a game of pool", "reward": 120},
+	{"id": "pool_win_medium", "game": "pool", "text": "Beat the CPU on Medium", "reward": 180},
 ]
 
 
@@ -60,6 +62,10 @@ static func is_met(ch: Dictionary, stats: Dictionary) -> bool:
 			return stats.won and stats.difficulty in ["medium", "hard"]
 		"blocks_score_5000":
 			return stats.score >= 5000
+		"pool_win":
+			return stats.won
+		"pool_win_medium":
+			return stats.won and stats.difficulty in ["medium", "hard"]
 	return false
 
 

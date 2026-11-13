@@ -2,6 +2,23 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club step 3: playable table (branch cue-club; enabled on this branch)
+- games/pool/scenes: PoolView (22 deg KEEP_WIDTH camera pitched 12 deg, table long axis vertical;
+  one MultiMesh + one unshaded shader for all 16 balls - stripes / cue markers roll in object space,
+  numbers are an upright camera-facing disc; painted cloth / cushions / wood / pockets / sights, no
+  real lights; blob shadows; visual-only spin with a per-tick clamp; aim line, ghost ball, object and
+  cue rays, cue stick), PoolControls (power bar v = 8 p^2 m/s, 12 on the break; fine-aim strip
+  0.03 deg/dp; spin button + big spin panel with presets), PoolHud (GameShell: players, groups by
+  name + number chips, pause, message line), PoolHowto (drag to aim, pull to shoot, spin), PoolGame.
+- games/pool/logic: PoolAim (angular sweep around the cue ball, 60 ms lift-off filter, guideline from
+  the real solver incl. throw; cue ray = direction after the spin takes hold), PoolCpu (basic: clear
+  straight-in shots with Gaussian aim noise 0.6 / 0.26 / 0.12 deg; ball in hand sets up a straight
+  shot; breaks at the apex) - the simulation-based CPU is step 4.
+- Ball in hand by dragging the white ball (kitchen line on the break); call the 8's pocket by tapping
+  a pocket; hold a finger down while balls roll to fast-forward. Sounds: clack, cue, pocket.
+- Daily challenges: "Win a game of pool", "Beat the CPU on Medium".
+- 180 tests. Desktop: bot vs CPU plays whole racks. Phone pass: pending (phone not connected).
+
 ## 2026-11-13 · Cue Club step 2: Casual 8 rules engine (branch cue-club, not playable yet)
 - games/pool/logic: PoolState (plain data), PoolShot (built from the solver's event log), PoolRules
   (one pure apply_shot in the researched order: fouls -> break -> 8-ball -> respots -> foul -> open
