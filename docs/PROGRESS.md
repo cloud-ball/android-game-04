@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club feedback: bigger balls, natural rolling, pocket gaps
+- Bigger table/balls (~20 dp): thinner drawn rails, wood to the screen edges, shorter top bar, camera
+  fitted to the height left between the HUD bands too, pitch 12 -> 8 deg.
+- Rolling looked artificial: numbers were upright labels that never turned while stripes rolled.
+  Numbers are now printed on two opposite sides and roll with the ball; an upright label fades in
+  only once the ball has stopped (readability at rest). Pattern fade starts later at speed.
+- Black gaps beside pockets: the cloth now runs under the cushions to the wood; pocket holes sit in
+  the jaws and stay inside the table.
+
 ## 2026-11-13 · Cue Club step 3: playable table (branch cue-club; enabled on this branch)
 - games/pool/scenes: PoolView (22 deg KEEP_WIDTH camera pitched 12 deg, table long axis vertical;
   one MultiMesh + one unshaded shader for all 16 balls - stripes / cue markers roll in object space,

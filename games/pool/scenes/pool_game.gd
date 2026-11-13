@@ -281,6 +281,7 @@ func _physics_process(_delta: float) -> void:
 					_settle()
 					return
 		State.CPU_THINK:
+			_view.physics_tick(STEP)
 			_timer -= STEP
 			if _timer <= 0.0:
 				_cpu_plan = PoolCpu.plan(_match, difficulty, _rng)
@@ -295,6 +296,7 @@ func _physics_process(_delta: float) -> void:
 				state = State.CPU_AIM
 				_timer = 0.8
 		State.CPU_AIM:
+			_view.physics_tick(STEP)
 			_timer -= STEP
 			var pull := clampf(1.0 - _timer / 0.8, 0.0, 1.0) * 0.6
 			_view.show_aim(_cue_pos(), _aim, pull, 0.3, 0.0)

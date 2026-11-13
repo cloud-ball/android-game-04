@@ -13,10 +13,10 @@ extends Node3D
 ## World: sim (x, y) -> (x, height, -y); y up the table = into the screen.
 
 const FOV := 22.0
-const PITCH_DEG := 12.0
-const RAIL := 0.035  # cushion depth beyond the nose
-const WOOD := 0.075
-const TABLE_FILL := 0.92  # outer table width / screen width
+const PITCH_DEG := 8.0
+const RAIL := 0.03  # cushion depth beyond the nose (drawn thin: more screen for the balls)
+const WOOD := 0.05
+const TABLE_FILL := 0.985  # outer table width / screen width (side controls overlay the wood)
 const MAX_SPIN_STEP := 1.2  # rad of visual rotation per tick (fast balls strobe otherwise)
 
 ## Ball colours (sRGB): cue, 1-7 solids, 8, 9-15 stripes of the same colours. Original palette.
@@ -43,6 +43,7 @@ uniform float show_numbers = 1.0;
 varying vec3 obj_n;
 varying float bid;
 varying float fade;
+varying float rest;
 varying vec3 vctr;
 varying vec3 vpos;
 
@@ -50,6 +51,7 @@ void vertex() {
 	obj_n = normalize(VERTEX);
 	bid = INSTANCE_CUSTOM.r * 255.0;
 	fade = INSTANCE_CUSTOM.g;
+	rest = INSTANCE_CUSTOM.b;
 	vctr = (MODELVIEW_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 	vpos = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
@@ -69,11 +71,18 @@ void fragment() {
 		col = mix(white, base, mix(0.75, band, fade));
 	}
 	if (b > 0 && show_numbers > 0.5) {
-		vec2 off = (vpos.xy - vctr.xy) / radius;
-		float rr = length(off);
-		float disc = smoothstep(0.52, 0.47, rr);
-		vec2 cuv = vec2(off.x, -off.y) / 0.5 * 0.5 * 0.9 + 0.5;
 		vec2 cell = vec2(float(b % 4), float(b / 4));
+		// Printed numbers on two opposite sides: they roll with the ball like the real thing.
+		float side = obj_n.z >= 0.0 ? 1.0 : -1.0;
+		vec2 q = vec2(obj_n.x * side, -obj_n.y) / 0.42;
+		float pd = smoothstep(1.0, 0.9, length(q)) * (1.0 - rest) * fade;
+		float pink = texture(digits, (cell + clamp(q * 0.5 * 0.9 + 0.5, 0.0, 1.0)) / 4.0).a * pd;
+		col = mix(col, white, pd);
+		col = mix(col, vec3(0.03, 0.03, 0.04), pink);
+		// At rest an upright label fades in on top, so numbers stay readable from above.
+		vec2 off = (vpos.xy - vctr.xy) / radius;
+		float disc = smoothstep(0.52, 0.47, length(off)) * rest;
+		vec2 cuv = vec2(off.x, -off.y) / 0.5 * 0.5 * 0.9 + 0.5;
 		float ink = texture(digits, (cell + clamp(cuv, 0.0, 1.0)) / 4.0).a * disc;
 		col = mix(col, white, disc);
 		col = mix(col, vec3(0.03, 0.03, 0.04), ink);
@@ -169,6 +178,7 @@ var _quat: Array[Quaternion] = []
 var _prev := PackedVector3Array()
 var _cur := PackedVector3Array()
 var _fade := PackedFloat32Array()
+var _rest := PackedFloat32Array()
 var _digits: SubViewport
 var _cue: MeshInstance3D
 var _aim_line: MeshInstance3D
@@ -193,11 +203,14 @@ func setup(cue_sim: CueSim) -> void:
 	_make_digits()
 	_make_balls()
 	_make_aim()
+	# Start with a printed number facing up (object +z -> world up), each turned a little.
 	for i in CueSim.N:
-		_quat.append(Quaternion.IDENTITY)
+		var yaw := Quaternion(Vector3.UP, (i * 0.618034) * TAU)
+		_quat.append(yaw * Quaternion(Vector3.RIGHT, -PI * 0.5))
 	_prev.resize(CueSim.N)
 	_cur.resize(CueSim.N)
 	_fade.resize(CueSim.N)
+	_rest.resize(CueSim.N)
 	snap()
 
 
@@ -229,9 +242,11 @@ func physics_tick(dt: float) -> void:
 			continue
 		var w := Vector3(sim.wx[i], sim.wz[i], -sim.wy[i])  # table (x, y, z-up) -> world
 		var mag := w.length()
+		var moving := _cur[i].distance_squared_to(_prev[i]) > 1e-10
+		_rest[i] = 0.0 if moving else minf(1.0, _rest[i] + dt * 3.5)
 		if mag > 1e-6:
 			var step := mag * dt
-			_fade[i] = clampf(1.0 - (step - 1.0) / 1.0, 0.25, 1.0)
+			_fade[i] = clampf(1.0 - (step - 1.5), 0.35, 1.0)
 			_quat[i] = (Quaternion(w / mag, minf(step, MAX_SPIN_STEP)) * _quat[i]).normalized()
 		else:
 			_fade[i] = 1.0
@@ -247,7 +262,7 @@ func render(frac: float) -> void:
 			continue
 		var p := _prev[i].lerp(_cur[i], frac)
 		mm.set_instance_transform(i, Transform3D(Basis(_quat[i]), p))
-		mm.set_instance_custom_data(i, Color(i / 255.0, _fade[i], 0, 0))
+		mm.set_instance_custom_data(i, Color(i / 255.0, _fade[i], _rest[i], 0))
 		sm.set_instance_transform(
 			i,
 			Transform3D(
@@ -393,8 +408,11 @@ func _frame_camera() -> void:
 	if camera == null:
 		return
 	var canvas := get_viewport().get_visible_rect().size
-	var outer := 2.0 * (hw + RAIL + WOOD)
-	var visible_w := outer / TABLE_FILL
+	# Fit the outer table by width AND by the height left between the HUD bands.
+	var outer_w := 2.0 * (hw + RAIL + WOOD)
+	var outer_l := 2.0 * (hl + RAIL + WOOD)
+	var avail_h := maxf(canvas.y - _layout_top - _layout_bottom, canvas.y * 0.5)
+	var visible_w := maxf(outer_w / TABLE_FILL, outer_l * 1.02 * canvas.x / avail_h)
 	var dist := visible_w * 0.5 / tan(deg_to_rad(FOV * 0.5))
 	var pitch := deg_to_rad(PITCH_DEG)
 	camera.position = Vector3(0.0, cos(pitch), sin(pitch)) * dist
@@ -407,10 +425,11 @@ func _frame_camera() -> void:
 func _make_table() -> void:
 	var cloth := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(hw * 2.0 + 0.02, hl * 2.0 + 0.02)
+	# Cloth runs under the cushions to the wood, so the pocket cut-outs show cloth, not a void.
+	plane.size = Vector2(hw + RAIL, hl + RAIL) * 2.0
 	cloth.mesh = plane
 	var cm := _material(CLOTH_SHADER)
-	cm.set_shader_parameter("half_size", Vector2(hw, hl))
+	cm.set_shader_parameter("half_size", Vector2(hw + RAIL, hl + RAIL))
 	cloth.material_override = cm
 	add_child(cloth)
 	var cushion_col := Color(0.05, 0.42, 0.40)
@@ -481,15 +500,16 @@ func _make_table() -> void:
 		var corner := k < 4
 		var disc := MeshInstance3D.new()
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.062 if corner else 0.058
+		cyl.top_radius = 0.058 if corner else 0.052
 		cyl.bottom_radius = cyl.top_radius
 		cyl.height = 0.002
 		cyl.radial_segments = 32
 		disc.mesh = cyl
 		disc.material_override = hole
+		# Holes sit in the jaws: corners just past the corner point, sides just past the rail.
 		var out := (
 			m
-			+ (Vector2(sign(m.x), sign(m.y)) * 0.022 if corner else Vector2(sign(m.x) * 0.03, 0.0))
+			+ (Vector2(sign(m.x), sign(m.y)) * 0.008 if corner else Vector2(sign(m.x) * 0.02, 0.0))
 		)
 		disc.position = to_world(out, 0.052)
 		add_child(disc)
