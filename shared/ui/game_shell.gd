@@ -33,6 +33,8 @@ var _start: Control
 var _pause: Control
 var _end: Control
 var _howto: HowtoDeck
+var _howto_from_pause := false
+var _practice: PracticeHint
 var _blurb: Label
 var _start_stats: Label
 var _diff_buttons: Dictionary = {}
@@ -67,6 +69,8 @@ func build_shell() -> void:
 	_hint = _centered_label("", 40, UiKit.MUTED, 1560)
 	_hint.modulate.a = 0.0
 	_count = _centered_label("", 220, Color.WHITE, 760)
+	_practice = PracticeHint.new(accent)
+	add_child(_practice)
 	_start = _build_start()
 	_pause = _build_pause()
 	_end = _build_end()
@@ -192,6 +196,7 @@ func _build_pause() -> Control:
 	var buttons := [
 		["Resume", UiKit.GREEN, 48, 130, func() -> void: resume_requested.emit()],
 		["Restart", Color(1, 1, 1, 0.12), 40, 110, func() -> void: rematch_requested.emit()],
+		["How to play", Color(1, 1, 1, 0.12), 40, 110, func() -> void: show_howto(true)],
 		["Settings", Color(1, 1, 1, 0.12), 40, 110, func() -> void: _settings.open()],
 		["Back to hub", Color(1, 1, 1, 0.12), 40, 110, func() -> void: exit_requested.emit()],
 	]
@@ -236,7 +241,7 @@ func _build_howto() -> HowtoDeck:
 	deck.closed.connect(
 		func(play: bool) -> void:
 			howto_closed.emit()
-			if play:
+			if play and not _howto_from_pause:
 				play_requested.emit(difficulty, mode)
 	)
 	return deck
@@ -305,8 +310,32 @@ func set_start_stats(stats_text: String) -> void:
 	_start_stats.text = stats_text
 
 
-func show_howto() -> void:
-	_howto.open(howto_cards(), bool(SettingsService.get_value("reduce_motion")))
+## from_pause: opened from the pause menu, so the last card says GOT IT and returns to the menu.
+func show_howto(from_pause := false) -> void:
+	_howto_from_pause = from_pause
+	var motion_off := bool(SettingsService.get_value("reduce_motion"))
+	_howto.open(howto_cards(), motion_off, "GOT IT" if from_pause else "PLAY")
+
+
+## First-match practice hint (see PracticeHint.show_hint); the game hides it once the move is done.
+func show_practice(
+	verb: String,
+	kind: String,
+	from: Vector2,
+	to: Vector2,
+	text: String,
+	anchor: Vector2,
+	steps := 1
+) -> void:
+	_practice.show_hint(verb, kind, from, to, text, anchor, steps)
+
+
+func hide_practice(verb := "") -> void:
+	_practice.hide_hint(verb)
+
+
+func practice_showing() -> bool:
+	return _practice.is_showing()
 
 
 func hide_panels() -> void:
@@ -320,6 +349,8 @@ func hide_panels() -> void:
 
 func show_pause(on: bool) -> void:
 	_pause.visible = on
+	if on:
+		hide_practice()
 
 
 func settings_open() -> bool:
@@ -370,3 +401,4 @@ func show_end(info: Dictionary) -> void:
 	_end_daily.text = info.daily
 	_end_daily.visible = info.daily != ""
 	_end.visible = true
+	hide_practice()

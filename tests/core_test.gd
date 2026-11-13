@@ -89,8 +89,10 @@ func test_registry_lists_all_eight_with_released_games_enabled() -> void:
 	var list := GameRegistry.scan("res://games")
 	assert_int(list.size()).is_equal(8)
 	assert_str(list[0].id).is_equal("snake")
-	var enabled := list.filter(func(m: GameManifest) -> bool: return m.enabled).map(
-		func(m: GameManifest) -> String: return m.id
+	var enabled := (
+		list
+		. filter(func(m: GameManifest) -> bool: return m.enabled)
+		. map(func(m: GameManifest) -> String: return m.id)
 	)
 	assert_array(enabled).contains_exactly_in_any_order(["snake", "blocks"])
 

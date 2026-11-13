@@ -12,6 +12,8 @@ extends Node
 ##   --quit-after=<n>     quit after n frames
 ##   --fps                print frames per second to the log once a second
 ##   --time-scale=<x>     run game time x times faster (QA soak runs)
+##   --howto=<card>       open the how-to cards at that card (--howto-ms=<t> freezes it there)
+##   --practice           show first-match practice hints even for moves already learned
 
 var options: Dictionary = {}
 var bot := false

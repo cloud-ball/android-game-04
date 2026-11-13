@@ -66,6 +66,8 @@ static func cards(posters: Dictionary) -> Array:
 			"demo": _demo_hold,
 			"poster": posters["hold"],
 			"gesture": GestureTimeline.new("tap", Vector2(760, 176), Vector2(760, 176), 1, 1600),
+			"try": "hold",
+			"try_rect": Rect2(Vector2(SIDE_X, WELL_LEFT.y), Vector2(SIDE_W, 240)),
 		},
 		{
 			"title": "Clear rows, send garbage",

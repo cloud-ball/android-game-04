@@ -153,3 +153,116 @@ func test_game_cards_are_short_and_well_formed() -> void:
 		assert_int(String(card.sub).split(" ").size()).is_less_equal(9)
 		var g: GestureTimeline = card.gesture
 		assert_float(g.loop_ms).is_between(2400.0, 3800.0)
+
+
+# --- Try it ------------------------------------------------------------------------------------
+
+
+func test_try_gesture_classifies_like_the_games() -> void:
+	assert_str(TryGesture.classify(Vector2(5, 4), 120, 1)).is_equal("tap")
+	assert_str(TryGesture.classify(Vector2(0, 300), 150, 1)).is_equal("flick")
+	assert_str(TryGesture.classify(Vector2(0, 300), 900, 1)).is_equal("swipe")  # slow: not a flick
+	assert_str(TryGesture.classify(Vector2(200, 30), 500, 1)).is_equal("drag")
+	assert_str(TryGesture.classify(Vector2(0, -120), 200, 1)).is_equal("swipe")
+	assert_str(TryGesture.classify(Vector2(2, 2), 80, 2)).is_equal("two_finger")
+	assert_bool(TryGesture.satisfies("swipe", "drag")).is_true()
+	assert_bool(TryGesture.satisfies("flick", "swipe")).is_false()
+	assert_bool(TryGesture.satisfies("hold", "two_finger")).is_true()
+
+
+func test_doing_the_gesture_ticks_the_card_and_replays_without_the_glyph() -> void:
+	var deck := _deck([_card("flick"), _card()])
+	var g := deck.gesture()
+	deck.advance(g.loop_ms + 10.0)
+	assert_bool(deck.try_open()).is_true()
+	assert_bool(deck.try_gesture(Vector2(0, 40), 100.0, 1, Vector2.ZERO)).is_false()  # too short
+	assert_bool(deck.try_gesture(Vector2(0, 300), 150.0, 1, Vector2.ZERO)).is_true()
+	assert_bool(deck.tried.has(0)).is_true()
+	assert_bool(deck.user_turn).is_true()
+	assert_float(deck.t).is_equal(g.press_ms)
+
+
+func test_hold_card_wants_the_hold_chip_or_two_fingers() -> void:
+	var card := _card("tap")
+	card["try"] = "hold"
+	card["try_rect"] = Rect2(640, 56, 240, 240)
+	var deck := _deck([card])
+	var k := deck._side / HowtoDeck.DESIGN
+	assert_bool(deck.try_gesture(Vector2.ZERO, 100.0, 1, Vector2(100, 600) * k)).is_false()
+	assert_bool(deck.try_gesture(Vector2.ZERO, 100.0, 1, Vector2(760, 170) * k)).is_true()
+	deck.tried.clear()
+	assert_bool(deck.try_gesture(Vector2.ZERO, 100.0, 2, Vector2(100, 600) * k)).is_true()
+
+
+func test_rule_cards_have_nothing_to_try() -> void:
+	var deck := _deck([_card("none")])
+	assert_str(deck.try_kind()).is_equal("")
+	assert_bool(deck.try_gesture(Vector2(0, 300), 150.0, 1, Vector2.ZERO)).is_false()
+
+
+func test_from_the_pause_menu_the_last_button_just_closes() -> void:
+	var deck: HowtoDeck = auto_free(HowtoDeck.new(Color.WHITE))
+	add_child(deck)
+	deck.open([_card()], false, "GOT IT")
+	var got: Array = []
+	deck.closed.connect(func(play: bool) -> void: got.append(play))
+	assert_str(deck._next.text).is_equal("GOT IT")
+	deck._next.pressed.emit()
+	assert_array(got).is_equal([false])
+
+
+# --- First-match practice ------------------------------------------------------------------------
+
+
+func test_practice_hints_follow_progress_and_retire_when_learned() -> void:
+	var saved := {}
+	var plan := PracticePlan.new([["rotate", 2], ["move", 3]], saved)
+	assert_str(plan.due(1)).is_equal("")
+	assert_str(plan.due(2)).is_equal("rotate")
+	assert_bool(plan.learn("rotate")).is_true()
+	assert_bool(plan.learn("rotate")).is_false()  # only the first time asks for a save
+	assert_bool(saved.get("rotate", false)).is_true()
+	assert_str(plan.due(5)).is_equal("move")
+	assert_str(plan.due(6)).is_equal("move")  # second showing this match
+	assert_str(plan.due(7)).is_equal("")  # at most twice per match
+	plan.new_match()
+	assert_str(plan.due(7)).is_equal("move")
+
+
+func test_saved_moves_are_never_hinted_unless_forced() -> void:
+	var plan := PracticePlan.new([["swipe", 4.0]], {"swipe": true})
+	assert_str(plan.due(10.0)).is_equal("")
+	var forced := PracticePlan.new([["swipe", 4.0]], {"swipe": true}, true)
+	assert_str(forced.due(10.0)).is_equal("swipe")
+
+
+func test_practice_hint_shows_then_retires_after_its_loops() -> void:
+	var hint: PracticeHint = auto_free(PracticeHint.new(Color.WHITE))
+	add_child(hint)
+	hint.show_hint("rotate", "tap", Vector2(500, 900), Vector2(500, 900), "Tap", Vector2(540, 600))
+	assert_bool(hint.is_showing()).is_true()
+	assert_int(hint.mouse_filter).is_equal(Control.MOUSE_FILTER_IGNORE)  # never blocks play
+	hint.hide_hint("move")  # another verb: stays
+	assert_bool(hint.is_showing()).is_true()
+	for i in 200:
+		hint.advance(50.0)
+	assert_bool(hint.is_showing()).is_false()
+
+
+func test_save_migrations_mark_experienced_players() -> void:
+	var blocks_game: GDScript = load("res://games/blocks/scenes/blocks_game.gd")
+	var old: Dictionary = blocks_game.migrate_save({"schema": 1, "played": 4}, 1, 2)
+	assert_bool(old["learned"].get("hold", false)).is_true()
+	var fresh: Dictionary = blocks_game.migrate_save({"schema": 1, "played": 0}, 1, 2)
+	assert_bool(fresh.has("learned")).is_false()
+	var snake_game: GDScript = load("res://games/snake/scenes/snake_game.gd")
+	var s: Dictionary = snake_game.migrate_save({"schema": 2, "played": 3}, 2, 3)
+	assert_bool(s["learned"].get("swipe", false)).is_true()
+	assert_bool(s["learned"].get("wrap", false)).is_false()  # wrap edges still get a hint
+
+
+func test_container_defaults_are_copied_not_shared() -> void:
+	var defaults := {"learned": {}}
+	var a := SaveService.prepare_namespace(null, 1, defaults)
+	a["learned"]["x"] = true
+	assert_bool(defaults["learned"].is_empty()).is_true()
