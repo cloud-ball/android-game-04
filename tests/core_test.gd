@@ -85,13 +85,16 @@ func test_corrupt_save_falls_back_to_backup() -> void:
 	assert_int(int(svc.data["economy"]["coins"])).is_equal(7)
 
 
-func test_registry_lists_all_eight_with_snake_enabled() -> void:
+func test_registry_lists_all_eight_with_released_games_enabled() -> void:
 	var list := GameRegistry.scan("res://games")
 	assert_int(list.size()).is_equal(8)
 	assert_str(list[0].id).is_equal("snake")
-	assert_bool(list[0].enabled).is_true()
-	for m in list.slice(1):
-		assert_bool(m.enabled).override_failure_message(m.id + " should be disabled").is_false()
+	var enabled := (
+		list
+		. filter(func(m: GameManifest) -> bool: return m.enabled)
+		. map(func(m: GameManifest) -> String: return m.id)
+	)
+	assert_array(enabled).contains_exactly_in_any_order(["snake", "blocks"])
 
 
 func test_enabled_games_have_loadable_scenes() -> void:
@@ -127,3 +130,18 @@ func test_swipe_detector_chains_swipes_in_one_drag() -> void:
 		if d != -1:
 			dirs.append(d)
 	assert_array(dirs).is_equal([SwipeDetector.Dir.RIGHT, SwipeDetector.Dir.DOWN])
+
+
+func test_daily_challenge_only_uses_enabled_games() -> void:
+	for day in 30:
+		assert_str(str(DailyChallenge.for_day(day, ["snake"]).game)).is_equal("snake")
+	var seen := {}
+	for day in 30:
+		seen[DailyChallenge.for_day(day, ["snake", "blocks"]).game] = true
+	assert_bool(seen.has("blocks") and seen.has("snake")).is_true()
+
+
+func test_blocks_challenges_check_their_stats() -> void:
+	var lines := {"id": "blocks_lines_20", "game": "blocks"}
+	assert_bool(DailyChallenge.is_met(lines, {"game": "blocks", "lines": 21})).is_true()
+	assert_bool(DailyChallenge.is_met(lines, {"game": "snake", "lines": 99})).is_false()

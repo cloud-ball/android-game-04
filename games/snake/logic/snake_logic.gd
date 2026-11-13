@@ -129,16 +129,28 @@ func step() -> void:
 		var nb: Array[Vector2i] = [new_heads[i]]
 		nb.append_array(s.body.slice(0, s.body.size() if grows[i] else s.body.size() - 1))
 		new_bodies.append(nb)
-	var crashed: Array[bool] = []
+	var causes: Array[String] = []
 	for i in snakes.size():
-		crashed.append(snakes[i].alive and _crash_cause(i, new_heads, new_bodies) != "")
+		causes.append(_crash_cause(i, new_heads, new_bodies) if snakes[i].alive else "")
+	# A crashed snake does not move, so its tail stays put: a survivor heading into a cell that
+	# crashed body still holds crashes too (otherwise the last frame shows them overlapping).
+	var changed := true
+	while changed:
+		changed = false
+		for i in snakes.size():
+			if not snakes[i].alive or causes[i] != "":
+				continue
+			for j in snakes.size():
+				if j != i and causes[j] != "" and snakes[j].body.has(new_heads[i]):
+					causes[i] = "rival"
+					changed = true
 	for i in snakes.size():
 		var s := snakes[i]
 		if not s.alive:
 			continue
-		if crashed[i]:
+		if causes[i] != "":
 			s.alive = false
-			s.crash_cause = _crash_cause(i, new_heads, new_bodies)
+			s.crash_cause = causes[i]
 			events.append({"type": "crash", "who": i, "cell": new_heads[i], "cause": s.crash_cause})
 			continue
 		s.body = new_bodies[i]

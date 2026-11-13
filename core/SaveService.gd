@@ -62,7 +62,9 @@ static func prepare_namespace(
 		g = {"schema": schema}
 	for k in defaults.keys():
 		if not g.has(k):
-			g[k] = defaults[k]
+			var v: Variant = defaults[k]
+			# Containers are copied: defaults are often consts (read-only) and must not be shared.
+			g[k] = v.duplicate(true) if v is Dictionary or v is Array else v
 	return g
 
 

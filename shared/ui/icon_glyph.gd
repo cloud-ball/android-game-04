@@ -34,6 +34,8 @@ func _draw() -> void:
 			_sound(o, u, kind == "sound_off")
 		"vibrate":
 			_vibrate(o, u)
+		"motion":
+			_motion(o, u)
 		"close":
 			draw_line(o + Vector2(26, 26) * u, o + Vector2(74, 74) * u, color, 10 * u, true)
 			draw_line(o + Vector2(74, 26) * u, o + Vector2(26, 74) * u, color, 10 * u, true)
@@ -86,6 +88,14 @@ func _sound(o: Vector2, u: float, muted: bool) -> void:
 		return
 	draw_arc(o + Vector2(54, 50) * u, 16 * u, -0.9, 0.9, 16, color, 7 * u, true)
 	draw_arc(o + Vector2(54, 50) * u, 32 * u, -0.9, 0.9, 20, color, 7 * u, true)
+
+
+## Reduce motion: a ball with a short motion trail behind it.
+func _motion(o: Vector2, u: float) -> void:
+	draw_circle(o + Vector2(66, 50) * u, 18 * u, color)
+	for i in 3:
+		var y := 36.0 + i * 14.0
+		draw_line(o + Vector2(14 + i * 6, y) * u, o + Vector2(42, y) * u, color, 6 * u, true)
 
 
 func _vibrate(o: Vector2, u: float) -> void:
