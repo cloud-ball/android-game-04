@@ -24,6 +24,8 @@ var difficulty := "medium"
 
 var _match: PoolMatch
 var _aim := PoolAim.new()
+## What the player sees: eases towards _aim so the lines glide instead of jumping.
+var _shown := PoolAim.new()
 var _view: PoolView
 var _hud: PoolHud
 var _save: Dictionary
@@ -45,6 +47,8 @@ var _potted_by := PackedInt32Array([0, 0])
 
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see CLAUDE.md
+	get_viewport().msaa_3d = Viewport.MSAA_2X  # thin aim lines and ball edges (research default)
+	tree_exiting.connect(func() -> void: get_viewport().msaa_3d = Viewport.MSAA_DISABLED)
 	_save = SaveService.game("pool", SAVE_SCHEMA, SAVE_DEFAULTS)
 	difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))
 	if not GUIDE.has(difficulty):
@@ -95,6 +99,8 @@ func _new_match() -> void:
 	_potted_by = PackedInt32Array([0, 0])
 	_aim = PoolAim.new()
 	_aim.set_dir(Vector2(0.0, 1.0))
+	_shown = PoolAim.new()
+	_shown.angle = _aim.angle
 	if _view != null:
 		_view.sim = _match.sim
 		_view.snap()
@@ -308,13 +314,17 @@ func _physics_process(_delta: float) -> void:
 
 func _process(_delta: float) -> void:
 	if state == State.AIM:
+		var diff := angle_difference(_shown.angle, _aim.angle)
+		if absf(diff) > 1e-5:
+			_shown.angle += diff * (1.0 - exp(-28.0 * _delta))
+			_preview_dirty = true
 		if _preview_dirty:
 			_preview_dirty = false
 			var breaking := _match.state.phase == PoolState.Phase.BREAK
 			var speed := PoolAim.speed_for(_power, breaking) if _power > 0.0 else PREVIEW_SPEED
-			_aim.predict(_match.sim, speed, _side, _top)
+			_shown.predict(_match.sim, speed, _side, _top)
 		var guide: Array = GUIDE[difficulty]
-		_view.show_aim(_cue_pos(), _aim, _power, guide[0], guide[1])
+		_view.show_aim(_cue_pos(), _shown, _power, guide[0], guide[1])
 	_view.render(Engine.get_physics_interpolation_fraction())
 
 

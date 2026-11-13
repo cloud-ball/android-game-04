@@ -6,8 +6,11 @@ extends RefCounted
 ##   otherwise: the clear (ball, pocket) pair with the best cut and distance, ghost-ball aim.
 ## Difficulty lives in execution noise (research: Gaussian aim sigma 0.6 / 0.26 / 0.12 deg).
 
-const AIM_SIGMA := {"easy": 0.6, "medium": 0.26, "hard": 0.12}
-const SPEED_SIGMA := {"easy": 0.08, "medium": 0.05, "hard": 0.03}
+## Made weaker after phone play (2026-11-13): roughly double the research's starting sigmas.
+const AIM_SIGMA := {"easy": 1.4, "medium": 0.7, "hard": 0.32}
+const SPEED_SIGMA := {"easy": 0.14, "medium": 0.09, "hard": 0.05}
+## Easy / Medium pick among their best few shots (not always the best one).
+const PICK_FROM := {"easy": 4, "medium": 2, "hard": 1}
 const MAX_CUT_DEG := 72.0
 
 
@@ -30,16 +33,22 @@ static func plan(m: PoolMatch, difficulty: String, rng: RandomNumberGenerator) -
 		if spot != Vector2.INF:
 			out.place = spot
 	var cue: Vector2 = out.place if out.place != null else _pos(sim, 0)
-	var best := -1.0
+	var options: Array = []
 	for b in targets:
 		for k in sim.table.pocket_count():
 			var c := _candidate(sim, cue, b, k)
-			if c.is_empty() or c.score <= best:
-				continue
-			best = c.score
-			out.dir = c.dir
-			out.speed = c.speed
-			out.pocket = k
+			if not c.is_empty():
+				c["pocket"] = k
+				options.append(c)
+	options.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x.score > y.score)
+	var best := -1.0
+	if not options.is_empty():
+		var n := mini(int(PICK_FROM.get(difficulty, 1)), options.size())
+		var c: Dictionary = options[rng.randi_range(0, n - 1)]
+		best = c.score
+		out.dir = c.dir
+		out.speed = c.speed
+		out.pocket = c.pocket
 	if best < 0.0 and not targets.is_empty():
 		# Nothing clear: hit the nearest legal ball firmly (avoid the no-rail foul).
 		var nearest: int = targets[0]

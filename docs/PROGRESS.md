@@ -2,6 +2,16 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club feedback 2: weaker CPU, bigger balls, smooth lines, pocket drops
+- CPU weaker: Gaussian aim sigma 0.6/0.26/0.12 -> 1.4/0.7/0.32 deg, speed noise up; Easy / Medium pick
+  among their best 4 / 2 shots instead of always the best.
+- Bigger balls (+~9%): top bar 120 -> 108, bottom band 200 -> 150 (+ gesture inset), wood 5 -> 4 cm,
+  camera pitch 8 -> 5 deg, no extra height margin.
+- Smoother aim lines: 2x MSAA in Cue Club only, soft dash ends and edges, and the drawn aim eases
+  towards the finger (shots still use the exact aim).
+- Pocketing: a captured ball rolls on into the hole and sinks over 0.32 s with its shadow fading,
+  instead of vanishing.
+
 ## 2026-11-13 · Cue Club feedback: bigger balls, natural rolling, pocket gaps
 - Bigger table/balls (~20 dp): thinner drawn rails, wood to the screen edges, shorter top bar, camera
   fitted to the height left between the HUD bands too, pitch 12 -> 8 deg.
