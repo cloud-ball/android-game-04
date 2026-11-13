@@ -52,7 +52,10 @@ var drag_step := 0.0
 
 
 ## insets: {top, bottom, left, right} in canvas units. units_per_dp = 1080 / screen width in dp.
-static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: float) -> BoardLayout:
+## has_cpu = false (Solo) drops the CPU mini-board column so the status plate and HOLD move left.
+static func compute(
+	canvas_size: Vector2, insets: Dictionary, units_per_dp: float, has_cpu := true
+) -> BoardLayout:
 	var l := BoardLayout.new()
 	l.canvas = canvas_size
 	var side := maxf(SIDE, maxf(float(insets.get("left", 0.0)), float(insets.get("right", 0.0))))
@@ -72,12 +75,13 @@ static func compute(canvas_size: Vector2, insets: Dictionary, units_per_dp: floa
 	var h := l.cell * ROWS
 	var extra := maxf(0.0, avail_h - h)
 	l.well = Rect2((canvas_size.x - w) * 0.5, well_top_min + extra * 0.5, w, h)
-	var inner_x := side + CPU_W + 16.0
+	var inner_x := side + CPU_W + 16.0 if has_cpu else side
 	l.status = Rect2(inner_x, l.top, canvas_size.x - side - PAUSE_HIT - 14.0 - inner_x, STATUS_H)
 	# Pause hit area: PAUSE_HIT wide, as tall as fits above row 2 (>= 48 dp on every phone).
 	var pause_h := minf(PAUSE_HIT, STATUS_H + ROW_GAP + 12.0)
 	l.pause = Rect2(canvas_size.x - side - PAUSE_HIT, l.top - 12.0, PAUSE_HIT, pause_h)
-	l.cpu = Rect2(side, l.top, CPU_W, row2_y + row2_h - l.top)
+	if has_cpu:
+		l.cpu = Rect2(side, l.top, CPU_W, row2_y + row2_h - l.top)
 	l.hold = Rect2(inner_x, row2_y, HOLD_W, row2_h)
 	var next_x := l.hold.end.x + 14.0
 	l.next = Rect2(next_x, row2_y, canvas_size.x - side - next_x, row2_h)

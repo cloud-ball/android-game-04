@@ -2,6 +2,21 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Thorough QA pass (Stack Drop 12 x 24 + Serpent Grid)
+- Headless: 96 tests; rules fuzz 150 seeds; soak runs of both games x vs/solo x 3 difficulties at 8x
+  speed (no errors); layouts at 16:9, 19.5:9, 20:9, 21:9 and 2:3 (no overlaps or cut-offs).
+- Phone (Vivo): hub -> Stack Drop -> how-to -> play (tap rotate, drag 2 columns, flick drop, HOLD once
+  per shard, back = pause/resume) -> top-out -> results -> play again -> pause -> restart / back to hub ->
+  Serpent Grid play. No errors in logcat; load 166 ms + 431 ms warm-up.
+- Fixed: Serpent Grid - a snake moving into the tail cell of a snake that crashed on the same tick
+  overlapped it on the final frame; it now crashes too (draw). Found by the fuzzer, test added.
+- Fixed: Stack Drop start screen showed the old difficulty's level behind the panel (GameShell now emits
+  difficulty_changed); Solo left an empty CPU column in the top band (layout is now mode-aware, test).
+- CPU retuned for the 12 x 24 board with new tools/stack_selfplay.gd (difficulty table moved to
+  games/blocks/logic/stack_difficulty.gd). vs an "average" simulated player: Easy was 0% -> 27%
+  (it barely cleared lines), Medium 75% -> 53%, Hard unchanged (100%; 35% vs a strong player).
+- Note: the QA match on the phone used the real save (one extra Stack Drop loss, +2 coins).
+
 ## 2026-11-12 · Stack Drop: slower falling speed until level 25
 - User: blocks come too fast. Gravity was 1 + 0.55/level (L10 5.95 rows/s, L25 14.2). Now 1 + 0.2/level up
   to level 25 (L2 1.2, L10 2.8, L25 5.8 rows/s), then +0.7/level after 25, capped at 20. Test added.

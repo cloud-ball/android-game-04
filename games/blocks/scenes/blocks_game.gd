@@ -18,12 +18,7 @@ const SAVE_DEFAULTS := {
 	"mode": "vs",
 	"tutorial_seen": false,
 }
-## Per difficulty: player's start level, CPU seconds per shard, CPU top_k, noise, hold.
-const LEVELS := {
-	"easy": {"start": 1, "think": 2.4, "top_k": 5, "noise": 1.6, "hold": false},
-	"medium": {"start": 2, "think": 1.7, "top_k": 3, "noise": 0.8, "hold": true},
-	"hard": {"start": 4, "think": 1.15, "top_k": 1, "noise": 0.2, "hold": true},
-}
+const LEVELS := StackDifficulty.LEVELS
 const WIN_BONUS := {"easy": 15, "medium": 30, "hard": 60}
 const CLEAR_NAMES := ["", "SINGLE", "DOUBLE!", "TRIPLE!", "QUAD CLEAR!"]
 const KEY_ACTIONS := {
@@ -100,6 +95,16 @@ func _ready() -> void:
 		func(m: String) -> void:
 			mode = m
 			_hud.set_start_stats(_stats_text())
+			_on_resize()  # Solo has no CPU column in the top band
+			_refresh_preview()
+	)
+	# The board behind the start panel shows the chosen difficulty's start level.
+	_hud.difficulty_changed.connect(
+		func(d: String) -> void:
+			if state == State.READY:
+				difficulty = d
+				_new_match()
+				_refresh_preview()
 	)
 	_hud.set_difficulty(difficulty)
 	_hud.set_mode(mode)
@@ -130,7 +135,7 @@ func compute_layout() -> BoardLayout:
 			"right": (win.x - safe.end.x) * k,
 		}
 		dp_width = win.x / maxf(1.0, DisplayServer.screen_get_dpi() / 160.0)
-	return BoardLayout.compute(canvas, insets, canvas.x / dp_width)
+	return BoardLayout.compute(canvas, insets, canvas.x / dp_width, mode == "vs")
 
 
 func _on_resize() -> void:
@@ -138,6 +143,12 @@ func _on_resize() -> void:
 	_gestures.cell_px = _layout.drag_step
 	_view.apply_layout(_layout)
 	_hud.apply_layout(_layout)
+
+
+func _refresh_preview() -> void:
+	if _hud != null and _hud.layout != null:
+		_hud.update_states(player, cpu if mode == "vs" else null)
+		_view.render(player, 0.0)
 
 
 func _new_match() -> void:
@@ -226,7 +237,7 @@ func _cpu_step() -> void:
 		_start_cpu_plan()
 	_cpu_timer += STEP
 	var lv: Dictionary = LEVELS[difficulty]
-	var think: float = lv.think / (1.0 + 0.07 * (cpu.level - 1))
+	var think := StackDifficulty.cpu_think(difficulty, cpu.level)
 	if _cpu_timer < think or not WorkerThreadPool.is_task_completed(_cpu_task):
 		return
 	_finish_cpu_task()
