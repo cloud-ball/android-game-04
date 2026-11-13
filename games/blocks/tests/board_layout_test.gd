@@ -74,6 +74,19 @@ func test_pedestal_fits_inside_the_side_margins() -> void:
 		assert_bool(l.pedestal.end.x <= l.canvas.x - BoardLayout.SIDE).is_true()
 
 
+func test_solo_layout_drops_the_cpu_column() -> void:
+	var spec: Array = PHONES["20:9 Vivo (420 dp)"]
+	var vs := _layout(spec)
+	var solo := BoardLayout.compute(
+		Vector2(1080.0, spec[0]), {"top": spec[1], "bottom": spec[2]}, spec[3], false
+	)
+	assert_float(solo.status.position.x).is_equal_approx(BoardLayout.SIDE, 0.01)
+	assert_float(solo.hold.position.x).is_equal_approx(BoardLayout.SIDE, 0.01)
+	assert_float(solo.status.size.x).is_greater(vs.status.size.x)
+	assert_float(solo.cpu.size.x).is_equal(0.0)
+	assert_that(solo.well).is_equal(vs.well)
+
+
 func test_tap_targets_meet_48dp_on_the_narrowest_phone() -> void:
 	var l := _layout(PHONES["16:9 legacy (360 dp)"])
 	var units_per_dp := 1080.0 / 360.0

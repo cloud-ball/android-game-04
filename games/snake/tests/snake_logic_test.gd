@@ -134,6 +134,19 @@ func test_head_on_is_draw() -> void:
 	assert_int(g.result).is_equal(SnakeLogic.Result.DRAW)
 
 
+func test_following_a_crashed_snakes_tail_is_a_crash_too() -> void:
+	# The CPU hits the wall; its tail at (3,5) stays where it is, so the player entering that
+	# cell on the same tick crashes into it (found by tools/qa_fuzz.gd).
+	var g := SnakeLogic.new(_cfg(), 1, true)
+	_place(g, 1, [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5), Vector2i(3, 5)], L)
+	_place(g, 0, [Vector2i(3, 6), Vector2i(3, 7), Vector2i(3, 8)], U)
+	g.step()
+	assert_bool(g.snakes[1].alive).is_false()
+	assert_bool(g.snakes[0].alive).is_false()
+	assert_str(g.snakes[0].crash_cause).is_equal("rival")
+	assert_int(g.result).is_equal(SnakeLogic.Result.DRAW)
+
+
 func test_swapping_heads_is_draw() -> void:
 	var g := SnakeLogic.new(_cfg(), 1, true)
 	_place(g, 0, [Vector2i(5, 10), Vector2i(5, 11), Vector2i(5, 12)], U)

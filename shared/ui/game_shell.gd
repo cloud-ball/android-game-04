@@ -11,6 +11,7 @@ signal pause_requested
 signal resume_requested
 signal howto_closed
 signal mode_changed(mode: String)
+signal difficulty_changed(difficulty: String)
 
 const DIFFICULTIES := ["easy", "medium", "hard"]
 
@@ -263,6 +264,7 @@ func set_difficulty(d: String) -> void:
 	difficulty = d
 	_highlight(_diff_buttons, d)
 	_on_labels_changed()
+	difficulty_changed.emit(d)
 
 
 func set_mode(m: String) -> void:
