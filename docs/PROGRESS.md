@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club step 1: deterministic pool physics (branch cue-club, not playable yet)
+- Research: docs/research/Cue Club pool game design.md (+ notes): physics, portrait UX, Casual 8 rules,
+  CPU, rendering. pool.md and .claude/rules/cue-sim.md updated with its 15 corrections (rolling
+  deceleration is mu_roll*g, not 5/7 of it; 7-ft table; CPU budget 1-3 s, not 150 ms; ...).
+  Plan: docs/plans/2026-11-13-cue-club.md.
+- shared/cue_sim: CueParams, CueTable (7-ft, rails + angled pocket facings + jaw points + capture
+  circles), CueSim (closed-form sliding / rolling / spinning phases, 1/240 s substeps with swept
+  time-of-impact events in time order, ball-ball impulse with capped friction (throw), Han 2005
+  cushions from pooltool's corrected source, cue strike with tip offset; 64-bit packed state, no trig in
+  the hot path). Clusters: slow contacts are inelastic, creeping contacts stop, 64-event cap with an
+  energy-safe fallback; no overlaps in random breaks. games/pool/logic/pool_rack.gd (seeded jitter).
+- 15 new tests (stun 5/7, draw-back 2/7, mu_roll*g, 90/30-degree rules, throw + gearing english, energy,
+  overlaps, stop shot, pockets, rails + english, render-rate independence, golden break).
+- Benchmark (Boot --bench=cue): desktop 77 us/substep live, ~113 ms per break to rest (65 ms at the
+  1/120 s planning step). Phone numbers + Android-vs-desktop golden hash: next.
+
 ## 2026-11-13 · Bigger Serpent Grid pause button
 - Serpent Grid's pause was a small 96 px "II" text button. Both games now share UiKit.pause_button():
   a 112 px dark disc with drawn bars in a 144 px touch area (Serpent Grid: top-right under the score
