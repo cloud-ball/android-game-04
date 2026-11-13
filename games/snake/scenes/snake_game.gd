@@ -352,6 +352,8 @@ func _notification(what: int) -> void:
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			if _hud.settings_open():
 				_hud.close_settings()
+			elif _hud.howto_open():
+				_hud.close_howto()
 			elif state == State.PLAYING or state == State.COUNTDOWN:
 				_pause()
 			elif state == State.PAUSED:

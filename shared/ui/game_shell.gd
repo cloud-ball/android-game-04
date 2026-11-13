@@ -18,7 +18,7 @@ const DIFFICULTIES := ["easy", "medium", "hard"]
 var difficulty := "medium"
 var mode := ""
 ## Set by configure(): title, accent, modes {id: label}, blurbs {id: text},
-## howto [[icon_draw: Callable(Control), title, subtitle], ...]
+## howto [{title, sub, demo, poster, gesture, modes?}, ...] (cards for HowtoDeck)
 var title := ""
 var accent := Color.WHITE
 var modes: Dictionary = {}
@@ -32,7 +32,7 @@ var _count: Label
 var _start: Control
 var _pause: Control
 var _end: Control
-var _howto: Control
+var _howto: HowtoDeck
 var _blurb: Label
 var _start_stats: Label
 var _diff_buttons: Dictionary = {}
@@ -73,6 +73,18 @@ func build_shell() -> void:
 	_howto = _build_howto()
 	_settings = SettingsSheet.new()
 	add_child(_settings)
+	if Boot.options.has("howto"):
+		_debug_howto.call_deferred()
+
+
+## Dev/screenshot hook: --howto=<card> [--howto-ms=<t>] opens the cards frozen at that moment.
+func _debug_howto() -> void:
+	show_howto()
+	var card := int(Boot.options["howto"])
+	if Boot.options.has("howto-ms"):
+		_howto.debug_freeze(card, float(Boot.options["howto-ms"]))
+	else:
+		_howto.show_card(card)
 
 
 ## Centres banners and the countdown on a play area (e.g. the board) instead of fixed heights.
@@ -218,36 +230,36 @@ func _build_end() -> Control:
 	return parts[0]
 
 
-func _build_howto() -> Control:
-	var parts := _overlay()
-	var col: VBoxContainer = parts[1]
-	col.add_child(_center(UiKit.label("HOW TO PLAY", 64, accent, 900)))
-	for step in howto_steps:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 30)
-		var icon := Control.new()
-		icon.custom_minimum_size = Vector2(150, 150)
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var draw_fn: Callable = step[0]
-		icon.draw.connect(func() -> void: draw_fn.call(icon))
-		row.add_child(icon)
-		var text := VBoxContainer.new()
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		text.alignment = BoxContainer.ALIGNMENT_CENTER
-		text.add_child(UiKit.label(step[1], 40, Color.WHITE, 800))
-		var sub := UiKit.label(step[2], 32, UiKit.MUTED, 500)
-		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		text.add_child(sub)
-		row.add_child(text)
-		col.add_child(row)
-	var ok := UiKit.button("GOT IT", UiKit.GREEN, Color.WHITE, 52, 130)
-	ok.pressed.connect(
-		func() -> void:
-			_howto.visible = false
+func _build_howto() -> HowtoDeck:
+	var deck := HowtoDeck.new(accent)
+	add_child(deck)
+	deck.closed.connect(
+		func(play: bool) -> void:
 			howto_closed.emit()
+			if play:
+				play_requested.emit(difficulty, mode)
 	)
-	col.add_child(ok)
-	return parts[0]
+	return deck
+
+
+## The how-to cards for the current mode (cards with "modes" list only appear in those modes).
+func howto_cards() -> Array:
+	var out: Array = []
+	for card in howto_steps:
+		var only: Array = card.get("modes", [])
+		if only.is_empty() or only.has(mode):
+			out.append(card)
+	return out
+
+
+func howto_open() -> bool:
+	return _howto.is_open()
+
+
+## Closes the cards as if Skip was pressed (Android back).
+func close_howto() -> void:
+	if _howto.is_open():
+		_howto.close(false)
 
 
 func _highlight(buttons: Dictionary, selected: String) -> void:
@@ -294,14 +306,16 @@ func set_start_stats(stats_text: String) -> void:
 
 
 func show_howto() -> void:
-	_howto.visible = true
+	_howto.open(howto_cards(), bool(SettingsService.get_value("reduce_motion")))
 
 
 func hide_panels() -> void:
 	_start.visible = false
 	_pause.visible = false
 	_end.visible = false
-	_howto.visible = false
+	if _howto.is_open():
+		_howto.visible = false
+		_howto.set_process(false)
 
 
 func show_pause(on: bool) -> void:

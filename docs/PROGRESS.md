@@ -2,6 +2,24 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Animated how-to cards (both games)
+- Research: docs/research/How to play tutorial videos.md (+ notes). Live drawn demos instead of
+  video files: 0 bytes of APK, crisp at any DPI, always match the current rules and art.
+  Plan: docs/plans/2026-11-13-howto-cards.md.
+- shared/ui/howto_deck.gd replaces the static 4-row panel: one verb per card, a ~3 s looping demo on a
+  stylised mini-board with an original fingertip glyph (GestureTimeline: Android ripple 75/225/150 ms,
+  swipe 200 ms, drag 60+100 ms per column, flick 120 ms). Loops 3 times, then rests on the result with
+  Replay; tap the demo to pause. Skip at the top, Back / Next, PLAY on the last card starts the match.
+  Cards change only by buttons (players copy the gestures in the demo).
+- Serpent Grid: Swipe to turn · Edges wrap around · Make the CPU crash (vs only).
+- Stack Drop: Tap to rotate · Drag to move · Flick down to drop · Tap HOLD to keep ·
+  Clear rows, send garbage (vs only; the garbage rule was never taught before).
+- Settings: new "Reduce motion" toggle -> cards show the old icons as still pictures.
+- Android back closes the cards. Dev: --howto=<card> --howto-ms=<t> freezes a card for screenshots.
+- 108 tests (timeline phases, ripple timing, drag steps, 3-loop stop + replay, pause, Next/PLAY/Skip,
+  reduce motion, Solo filtering, caption length). Verified on the Vivo: all 8 cards, PLAY, Reduce motion.
+- Try it: open either game -> How to play. Settings -> Reduce motion to see the still version.
+
 ## 2026-11-13 · Thorough QA pass (Stack Drop 12 x 24 + Serpent Grid)
 - Headless: 96 tests; rules fuzz 150 seeds; soak runs of both games x vs/solo x 3 difficulties at 8x
   speed (no errors); layouts at 16:9, 19.5:9, 20:9, 21:9 and 2:3 (no overlaps or cut-offs).
