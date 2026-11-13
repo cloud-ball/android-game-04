@@ -36,3 +36,35 @@ static func _rand(state: Array) -> float:
 	x ^= (x << 5) & 0xFFFFFFFF
 	state[0] = x
 	return float(x & 0xFFFFFF) / 16777216.0
+
+
+## Puts a ball back (WPA 1.5): on the foot spot, else the nearest free point on the long string
+## (the centre line) towards the foot rail, then towards the head. Never touching the cue ball.
+static func spot(sim: CueSim, ball: int) -> void:
+	var r := sim.p.radius
+	var foot := sim.table.hl * 0.5
+	var y := foot
+	while y <= sim.table.hl - r:
+		if _free(sim, ball, 0.0, y):
+			sim.place(ball, 0.0, y)
+			return
+		y += 0.0005
+	y = foot
+	while y >= -sim.table.hl + r:
+		if _free(sim, ball, 0.0, y):
+			sim.place(ball, 0.0, y)
+			return
+		y -= 0.0005
+
+
+static func _free(sim: CueSim, ball: int, x: float, y: float) -> bool:
+	var r := sim.p.radius
+	for i in CueSim.N:
+		if i == ball or not sim.on_table(i):
+			continue
+		var dx: float = sim.px[i] - x
+		var dy: float = sim.py[i] - y
+		var need := 2.0 * r + (0.001 if i == 0 else 0.0)  # a gap from the cue ball
+		if dx * dx + dy * dy < need * need:
+			return false
+	return true

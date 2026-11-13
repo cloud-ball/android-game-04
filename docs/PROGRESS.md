@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club step 2: Casual 8 rules engine (branch cue-club, not playable yet)
+- games/pool/logic: PoolState (plain data), PoolShot (built from the solver's event log), PoolRules
+  (one pure apply_shot in the researched order: fouls -> break -> 8-ball -> respots -> foul -> open
+  table -> assigned -> stalemate), PoolMatch (solver + rules in step: strike / settle, respots, ball in
+  hand, cue-ball return, re-rack), PoolRack.spot (foot spot, then along the long string).
+- Rules: only the 8's pocket is called; ball in hand anywhere after every foul (break too); 8 on the
+  break re-spotted; table open after the break; groups to the first legal pot (first-hit group wins a
+  mixed pot; "take what you make"); "group cleared" snapshotted at shot start (last ball + 8 = loss);
+  loss reasons: 8 off table > early 8 > 8 with a foul > wrong pocket; no-rail foul; 24 shots without a
+  pot re-rack; strict break and scratch-on-8-loses as Pro flags.
+- Solver: balls frozen to a cushion at the strike don't count as new rail contacts (WPA 2.7).
+- 41 new tests (the research's 40 fixtures + random full games through the solver). 174 total.
+
 ## 2026-11-13 · Cue Club step 1: deterministic pool physics (branch cue-club, not playable yet)
 - Research: docs/research/Cue Club pool game design.md (+ notes): physics, portrait UX, Casual 8 rules,
   CPU, rendering. pool.md and .claude/rules/cue-sim.md updated with its 15 corrections (rolling
