@@ -10,6 +10,7 @@ const ROWS := [
 	["music", "music", "Music", "Background music in menus and games"],
 	["sound", "sound", "Sound effects", "Taps, orbs, crashes and wins"],
 	["haptics", "vibrate", "Vibration", "Short buzzes when you eat or crash"],
+	["reduce_motion", "motion", "Reduce motion", "Still pictures instead of how-to animations"],
 ]
 const SHEET_BG := Color(0.09, 0.1, 0.21)
 

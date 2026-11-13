@@ -22,6 +22,6 @@ func test_set_pressed_is_silent() -> void:
 
 
 func test_icons_draw_without_errors() -> void:
-	for kind in ["gear", "music", "sound", "sound_off", "vibrate", "close", "info"]:
+	for kind in ["gear", "music", "sound", "sound_off", "vibrate", "motion", "close", "info"]:
 		var icon: IconGlyph = auto_free(IconGlyph.new(kind))
 		assert_str(icon.kind).is_equal(kind)

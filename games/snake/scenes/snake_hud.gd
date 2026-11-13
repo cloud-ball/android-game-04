@@ -24,28 +24,16 @@ func _ready() -> void:
 				"solo": "Eat orbs, grow long, beat your best score.",
 			},
 			"howto":
-			[
-				[
-					_draw_howto.bind("swipe"),
-					"Swipe anywhere to turn.",
-					"Two quick swipes make a tight U-turn."
-				],
-				[
-					_draw_howto.bind("orb"),
-					"Eat glowing orbs to grow.",
-					"Each orb is +10. Longer snakes move faster."
-				],
-				[
-					_draw_howto.bind("crash"),
-					"Make the CPU crash first.",
-					"Cut it off so it runs into you or itself."
-				],
-				[
-					_draw_howto.bind("wall"),
-					"Edges wrap around.",
-					"Go out one side, come back on the other. Only tails crash."
-				],
-			],
+			(
+				SnakeHowto
+				. cards(
+					{
+						"swipe": _draw_howto.bind("swipe"),
+						"wall": _draw_howto.bind("wall"),
+						"crash": _draw_howto.bind("crash"),
+					}
+				)
+			),
 		}
 	)
 	mode = "vs"

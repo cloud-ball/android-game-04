@@ -43,20 +43,18 @@ func _ready() -> void:
 				"solo": "Clear rows, level up and chase your best score.",
 			},
 			"howto":
-			[
-				[_icon_tap, "Tap to rotate.", "Shards turn and slide off walls when they can."],
-				[
-					_icon_drag,
-					"Drag to move.",
-					"Slide your finger left or right; each short step moves one column."
-				],
-				[_icon_drop, "Flick down to drop.", "A quick flick drops the shard straight down."],
-				[
-					_icon_hold,
-					"Tap HOLD to keep a shard.",
-					"Or tap with two fingers. Once per shard."
-				],
-			],
+			(
+				BlocksHowto
+				. cards(
+					{
+						"tap": _icon_tap,
+						"drag": _icon_drag,
+						"drop": _icon_drop,
+						"hold": _icon_hold,
+						"garbage": BlocksHowto.poster_garbage,
+					}
+				)
+			),
 		}
 	)
 	_build_status()
