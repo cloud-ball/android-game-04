@@ -26,6 +26,7 @@ var _shots_taken := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	options = parse_args(OS.get_cmdline_user_args())
+	options.merge(_dev_args_file(), true)
 	bot = options.has("bot")
 	if options.has("time-scale"):
 		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
@@ -86,6 +87,19 @@ func _save_shot(pattern: String) -> void:
 	var err := img.save_png(abs_path)
 	print("[shot] %s -> %s" % [abs_path, error_string(err)])
 	_shots_taken += 1
+
+
+## Debug builds only: one-shot dev arguments from user://dev_args.txt (deleted after reading).
+## Android cannot pass command-line arguments to the game activity from adb, so the phone gets
+## them via: adb shell run-as <package> sh -c 'echo "--bench=cue" > files/dev_args.txt'
+func _dev_args_file() -> Dictionary:
+	const PATH := "user://dev_args.txt"
+	if not OS.is_debug_build() or not FileAccess.file_exists(PATH):
+		return {}
+	var text := FileAccess.get_file_as_string(PATH).strip_edges()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
+	print("[boot] dev args from file: ", text)
+	return parse_args(PackedStringArray(text.split(" ", false)))
 
 
 ## Accepts "--key=value", "--key value" and bare "--flag".
