@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · How-to phase 2+3: practice hints, "Try it", How to play in the pause menu
+- Pause menu has "How to play"; from there the last card says GOT IT and returns to the menu.
+- "Try it": after a demo plays once, "Your turn - try it!" appears; doing the gesture on the demo
+  (tap / drag / flick / swipe / HOLD chip or two fingers) shows "✓ Nice!" and replays the board's
+  reaction without the finger. Pause moved to a small corner button on the demo.
+- First-match practice hints: a looping finger + caption over the real board, never blocking play,
+  until the move is done (max twice per match). Stack Drop: Tap to rotate (after 2 shards), Drag to
+  move (3), Flick down to drop (5), Tap HOLD (8). Serpent Grid: swipe hint 4 s after GO if no turn;
+  "Edges wrap around - keep going!" ~1 s before the first edge.
+- Saves: "learned" moves (Stack Drop schema 2, Serpent Grid schema 3); players who had already played
+  are migrated as knowing the moves (Serpent Grid still teaches wrap edges). SaveService now copies
+  container defaults (const dictionaries are read-only).
+- 118 tests; soak runs clean. Phone: Try it (tap, drag, flick), pause -> How to play -> GOT IT,
+  wrap hint in a real Serpent Grid match. Dev: --practice forces hints on.
+- Try it: open a game -> How to play -> wait one loop -> do the move on the demo. Pause -> How to play.
+
 ## 2026-11-13 · Animated how-to cards (both games)
 - Research: docs/research/How to play tutorial videos.md (+ notes). Live drawn demos instead of
   video files: 0 bytes of APK, crisp at any DPI, always match the current rules and art.

@@ -219,9 +219,10 @@ func show_start(stats_text: String) -> void:
 	_pause_btn.visible = false
 
 
-func show_howto() -> void:
-	super.show_howto()
-	_pause_btn.visible = false
+func show_howto(from_pause := false) -> void:
+	super(from_pause)
+	if not from_pause:  # from the pause menu the match resumes afterwards
+		_pause_btn.visible = false
 
 
 func hide_panels() -> void:

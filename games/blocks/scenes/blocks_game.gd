@@ -5,7 +5,7 @@ extends Node3D
 enum State { READY, COUNTDOWN, PLAYING, PAUSED, OVER }
 
 const STEP := 1.0 / 60.0
-const SAVE_SCHEMA := 1
+const SAVE_SCHEMA := 2
 const SAVE_DEFAULTS := {
 	"played": 0,
 	"wins": 0,
@@ -17,7 +17,10 @@ const SAVE_DEFAULTS := {
 	"difficulty": "medium",
 	"mode": "vs",
 	"tutorial_seen": false,
+	"learned": {},  # moves the player has done ({verb: true}); retires practice hints (schema 2)
 }
+## First-match practice hints: [move, shards placed before its hint appears].
+const PRACTICE := [["rotate", 2], ["move", 3], ["drop", 5], ["hold", 8]]
 const LEVELS := StackDifficulty.LEVELS
 const WIN_BONUS := {"easy": 15, "medium": 30, "hard": 60}
 const CLEAR_NAMES := ["", "SINGLE", "DOUBLE!", "TRIPLE!", "QUAD CLEAR!"]
@@ -61,11 +64,20 @@ var _held_key := ""
 var _held_time := 0.0
 var _bot_timer := 0.0
 var _layout: BoardLayout
+var _practice: PracticePlan
+
+
+## Schema 1 -> 2 adds "learned"; anyone who has already played knows the moves.
+static func migrate_save(old: Dictionary, from: int, _to: int) -> Dictionary:
+	if from < 2 and int(old.get("played", 0)) + int(old.get("solo_played", 0)) > 0:
+		old["learned"] = {"rotate": true, "move": true, "drop": true, "hold": true}
+	return old
 
 
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see CLAUDE.md
-	_save = SaveService.game("blocks", SAVE_SCHEMA, SAVE_DEFAULTS)
+	_save = SaveService.game("blocks", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
+	_practice = PracticePlan.new(PRACTICE, _save["learned"], Boot.options.has("practice"))
 	difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))
 	if not LEVELS.has(difficulty):
 		difficulty = "medium"
@@ -153,6 +165,8 @@ func _refresh_preview() -> void:
 
 func _new_match() -> void:
 	_finish_cpu_task()
+	if _practice != null:
+		_practice.new_match()
 	var seed_value := Rng.next_seed()
 	var lv: Dictionary = LEVELS[difficulty]
 	player = StackLogic.new_game(seed_value, lv.start)
@@ -290,15 +304,20 @@ func _on_player_event(e: Dictionary) -> void:
 	match e.type:
 		"rotate":
 			AudioService.play("turn", 1.15)
+			_learn("rotate")
 		"move":
 			AudioService.play("turn", 0.8)
+			_learn("move")
 		"hard_drop":
 			_view.hard_drop_fx()
 			AudioService.buzz(12)
+			_learn("drop")
 		"lock":
 			AudioService.play("tap", 0.7)
+			_maybe_practice.call_deferred()
 		"hold":
 			AudioService.play("tap", 1.3)
+			_learn("hold")
 		"clear":
 			var n: int = e.count
 			_view.clear_fx(e.rows)
@@ -431,6 +450,46 @@ func _resume() -> void:
 	if state == State.PAUSED:
 		_hud.show_pause(false)
 		state = _paused_from
+		_maybe_practice()
+
+
+## The player did a move: remember it (saved once) and retire its hint.
+func _learn(verb: String) -> void:
+	if _bot:
+		return
+	if _practice.learn(verb):
+		SaveService.save()
+	_hud.hide_practice(verb)
+
+
+## Shows the next due practice hint over the real board (never during bot runs or overlays).
+func _maybe_practice() -> void:
+	if _bot or state != State.PLAYING or _hud.practice_showing():
+		return
+	var verb := _practice.due(player.pieces)
+	if verb == "":
+		return
+	var w := _layout.well
+	var mid := w.get_center()
+	var cap := Vector2(mid.x, w.position.y + w.size.y * 0.25)
+	match verb:
+		"rotate":
+			var at := Vector2(mid.x + w.size.x * 0.2, mid.y)
+			_hud.show_practice(verb, "tap", at, at, "Tap to rotate", cap)
+		"move":
+			var step := _layout.drag_step
+			var from := Vector2(mid.x - 1.5 * step, mid.y)
+			_hud.show_practice(
+				verb, "drag", from, from + Vector2(3 * step, 0), "Drag to move", cap, 3
+			)
+		"drop":
+			var from := Vector2(mid.x, w.position.y + w.size.y * 0.35)
+			_hud.show_practice(
+				verb, "flick", from, from + Vector2(0, 320), "Flick down to drop", cap
+			)
+		"hold":
+			var at := _layout.hold.get_center()
+			_hud.show_practice(verb, "tap", at, at, "Tap HOLD to save a shard", cap)
 
 
 func _notification(what: int) -> void:

@@ -26,5 +26,13 @@ Source: docs/research/How to play tutorial videos.md (user chose "animated cards
 - core/Boot.gd: --howto=<card> --howto-ms=<t> for screenshots of a card at a fixed time.
 - tests: gesture timeline, deck (mode filtering, 3-loop stop, skip/play signals, reduce motion).
 
-## Later (not in this change)
-First-match hints (phase 2), "try it" inside cards (phase 3), How to play in the pause menu.
+## Phase 2 + 3 (built 2026-11-13, user request)
+- Pause menu: "How to play" (last button reads GOT IT and returns to the pause menu).
+- "Try it": after the first loop the stage accepts the real gesture (shared/ui/try_gesture.gd);
+  success replays the board's reaction without the glyph and shows "✓ Nice!". The pause control
+  moved to a corner button so taps on the stage are attempts.
+- First-match practice hints (shared/ui/practice_hint.gd + practice_plan.gd): the fingertip loops a
+  move over the real board until the player does it (max 2 showings per match, 3 loops each).
+  Stack Drop: rotate after 2 shards, move 3, drop 5, HOLD 8. Serpent Grid: swipe 4 s after GO,
+  "edges wrap" caption ~1 s before the first edge. Learned moves saved per game
+  (blocks schema 2, snake schema 3, migrate marks experienced players). Dev: --practice.
