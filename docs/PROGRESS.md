@@ -15,8 +15,13 @@ Newest first. Claude appends: date · what changed · how to try it on a phone �
   energy-safe fallback; no overlaps in random breaks. games/pool/logic/pool_rack.gd (seeded jitter).
 - 15 new tests (stun 5/7, draw-back 2/7, mu_roll*g, 90/30-degree rules, throw + gearing english, energy,
   overlaps, stop shot, pockets, rails + english, render-rate independence, golden break).
-- Benchmark (Boot --bench=cue): desktop 77 us/substep live, ~113 ms per break to rest (65 ms at the
-  1/120 s planning step). Phone numbers + Android-vs-desktop golden hash: next.
+- Benchmark (Boot --bench=cue) on the Vivo (Adreno 642L): golden break hash IDENTICAL to desktop
+  (433143a3...) -> bit-exact cross-platform, one golden file is enough. Live: 144 us/substep (worst
+  case ~0.6 ms per 60 Hz frame during a break). AI planning (1/120 s): ~122 ms per break, ~4 ms per
+  typical mid-game shot -> ~100 rollouts in ~0.4 s on one core; the research's 35-130 ms guess was
+  pessimistic. Desktop: 77 us/substep, 113 ms per break.
+- Debug builds read one-shot dev args from user://dev_args.txt (adb can't pass args to the game
+  activity): adb shell run-as com.cloud198.pocketarena8 sh -c 'echo --bench=cue > files/dev_args.txt'
 
 ## 2026-11-13 · Bigger Serpent Grid pause button
 - Serpent Grid's pause was a small 96 px "II" text button. Both games now share UiKit.pause_button():
