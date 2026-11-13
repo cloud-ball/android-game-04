@@ -47,6 +47,11 @@ var pocket_of := PackedInt32Array()
 ## Cushion segment each ball was frozen against when the shot was struck (-1 = none); cleared by
 ## its first contact with any cushion.
 var frozen_seg := PackedInt32Array()
+## Positions of the two balls at the shot's first ball-ball contact (ax, ay, bx, by): the aim
+## guideline's ghost ball.
+var first_hit := PackedFloat64Array([0.0, 0.0, 0.0, 0.0])
+## Velocities right after that first impulse: a (vx, vy, wx, wy), b (vx, vy).
+var first_hit_v := PackedFloat64Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 ## Events since the last strike (kind, a, b triples); see Ev.
 var log := PackedInt32Array()
 var time := 0.0
@@ -448,6 +453,12 @@ func _ball_ball(a: int, b: int) -> void:
 	var vn := (vx[a] - vx[b]) * nx + (vy[a] - vy[b]) * ny
 	if vn <= 1e-9:
 		return  # already separating (or round-off)
+	var first := not _logged(Ev.BALL_HIT)
+	if first:
+		first_hit[0] = px[a]
+		first_hit[1] = py[a]
+		first_hit[2] = px[b]
+		first_hit[3] = py[b]
 	_log(Ev.BALL_HIT, a, b)
 	if d < 2.0 * _r:
 		# Round-off left them overlapping (micrometres): push apart along the normal.
@@ -489,6 +500,13 @@ func _ball_ball(a: int, b: int) -> void:
 		var dw := j * _r / p.inertia()
 		wz[a] -= dw
 		wz[b] -= dw
+	if first:
+		first_hit_v[0] = vx[a]
+		first_hit_v[1] = vy[a]
+		first_hit_v[2] = wx[a]
+		first_hit_v[3] = wy[a]
+		first_hit_v[4] = vx[b]
+		first_hit_v[5] = vy[b]
 	_classify(a)
 	_classify(b)
 
@@ -644,6 +662,13 @@ func _mark_frozen() -> void:
 			if s >= 0.0 and s <= tb.seg_len[k]:
 				frozen_seg[i] = k
 				break
+
+
+func _logged(kind: int) -> bool:
+	for i in range(0, log.size(), 3):
+		if log[i] == kind:
+			return true
+	return false
 
 
 func _log(kind: int, a: int, b: int) -> void:
