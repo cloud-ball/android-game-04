@@ -4,6 +4,7 @@ extends Control
 
 var _coins_label: Label
 var _toast: Label
+var _last_back_ms := -100000
 var _settings: SettingsSheet
 
 
@@ -20,8 +21,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		if _settings != null and _settings.is_open():
 			_settings.close()
-		else:
+		elif Time.get_ticks_msec() - _last_back_ms < 2000:
 			get_tree().quit()
+		else:
+			_last_back_ms = Time.get_ticks_msec()
+			_show_toast("Press back again to exit")
 
 
 func _build() -> void:
@@ -70,7 +74,9 @@ func _build() -> void:
 	_toast = UiKit.label("", 36, UiKit.TEXT)
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_toast.position.y -= 220
+	_toast.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_toast.offset_bottom = -180
 	_toast.modulate.a = 0.0
 	add_child(_toast)
 	_settings = SettingsSheet.new()
@@ -136,7 +142,7 @@ func _gear_button() -> Button:
 
 func _daily_card() -> Control:
 	var day := DailyChallenge.today()
-	var ch := DailyChallenge.for_day(day)
+	var ch := DailyChallenge.for_day(day, DailyChallenge.enabled_games())
 	var done := DailyChallenge.done_today(SaveService.data["profile"], day)
 	var card := Button.new()
 	card.focus_mode = Control.FOCUS_NONE
@@ -231,6 +237,11 @@ func _show_toast(text: String) -> void:
 	_toast.add_theme_stylebox_override(
 		"normal", UiKit.box(UiKit.PANEL, 28, Color.TRANSPARENT, 0, 22)
 	)
+	# Re-centre on the new text (a shorter message must not keep the old, wider box).
+	var m := _toast.get_combined_minimum_size()
+	_toast.offset_left = -m.x * 0.5
+	_toast.offset_right = m.x * 0.5
+	_toast.offset_top = _toast.offset_bottom - m.y
 	var tw := create_tween()
 	tw.tween_property(_toast, "modulate:a", 1.0, 0.15)
 	tw.tween_interval(1.6)

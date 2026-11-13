@@ -5,7 +5,7 @@ extends Node3D
 
 enum State { READY, COUNTDOWN, PLAYING, PAUSED, OVER }
 
-const SAVE_SCHEMA := 2
+const SAVE_SCHEMA := 3
 const SAVE_DEFAULTS := {
 	"played": 0,
 	"wins": 0,
@@ -18,7 +18,10 @@ const SAVE_DEFAULTS := {
 	"solo_played": 0,
 	"solo_best": 0,
 	"tutorial_seen": false,
+	"learned": {},  # moves the player has done ({verb: true}); retires practice hints (schema 3)
 }
+## First-match practice hint: [move, seconds after GO before its hint appears].
+const PRACTICE := [["swipe", 4.0]]
 const WIN_BONUS := {"easy": 10, "medium": 25, "hard": 50}
 const SOLO_BEST_BONUS := 20
 const MAX_TICKS_PER_FRAME := 3
@@ -47,13 +50,16 @@ var _acc := 0.0
 var _countdown := 0.0
 var _paused_from: int = State.PLAYING
 var _bot := false
+var _practice: PracticePlan
+var _since_go := 0.0
 var _rows := 18
 
-
 ## Schema 1 -> 2 added solo mode and the tutorial flag; defaults fill the new keys.
-static func migrate_save(old: Dictionary, _from: int, _to: int) -> Dictionary:
+static func migrate_save(old: Dictionary, from: int, _to: int) -> Dictionary:
 	if int(old.get("played", 0)) > 0:
 		old["tutorial_seen"] = true
+		if from < 3:
+			old["learned"] = {"swipe": true}  # wrap-around edges are newer: still worth a hint
 	return old
 
 
@@ -63,6 +69,7 @@ func _ready() -> void:
 	# stale ones and smear the board on the first frames and on wrap-around moves.
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_save = SaveService.game("snake", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
+	_practice = PracticePlan.new(PRACTICE, _save["learned"], Boot.options.has("practice"))
 	difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))
 	if not SnakeHud.DIFFICULTIES.has(difficulty):
 		difficulty = "medium"
@@ -127,6 +134,8 @@ func _process(delta: float) -> void:
 		State.COUNTDOWN:
 			_step_countdown(delta)
 		State.PLAYING:
+			_since_go += delta
+			_maybe_practice()
 			_acc += delta
 			var n := 0
 			while state == State.PLAYING and _acc >= logic.tick_interval():
@@ -154,8 +163,10 @@ func _step_countdown(delta: float) -> void:
 		AudioService.play("go")
 		state = State.PLAYING
 		_acc = 0.0
+		_since_go = 0.0
+		_practice.new_match()
 		if not _bot:
-			_hud.show_hint()
+			_hud.show_hint("Swipe anywhere to turn")
 
 
 func _tick() -> void:
@@ -163,7 +174,17 @@ func _tick() -> void:
 		logic.queue_turn(SnakeLogic.PLAYER, SnakeAI.choose(logic, SnakeLogic.PLAYER, _ai_rng))
 	if logic.vs_cpu:
 		logic.queue_turn(SnakeLogic.CPU, SnakeAI.choose(logic, SnakeLogic.CPU, _ai_rng))
+	var you := logic.snakes[SnakeLogic.PLAYER]
+	var before := you.head()
 	logic.step()
+	if you.alive and (you.head() - before).length() > 1.5:
+		_learn("wrap", false)  # went through an edge; let its caption finish (it is short)
+	elif you.alive and logic.cfg.wrap and not _bot and not _hud.practice_showing():
+		var ahead := before + SnakeLogic.STEP[you.dir] * 5  # ~1 s before the edge
+		if not logic.in_bounds(ahead) and _practice.request("wrap"):
+			var vis := get_viewport().get_visible_rect().size
+			var at := Vector2(vis.x * 0.5, vis.y * 0.3)
+			_hud.show_practice("wrap", "none", at, at, "Edges wrap around - keep going!", at)
 	for e in logic.events:
 		_on_event(e)
 	_refresh_hud()
@@ -216,9 +237,8 @@ func _finish() -> void:
 		daily = DailyChallenge.report(profile, DailyChallenge.today(), stats)
 		SaveService.save()
 		Economy.add_coins(coins + daily)
-	info["score"] = you.score
-	info["length"] = you.body.size()
-	info["best"] = int(_save["solo_best" if mode == "solo" else "best_score"])
+	var best := int(_save["solo_best" if mode == "solo" else "best_score"])
+	info["stats"] = "Score %d  ·  Length %d  ·  Best %d" % [you.score, you.body.size(), best]
 	info["coins"] = coins + daily
 	info["daily"] = "Daily challenge complete! +%d" % daily if daily > 0 else ""
 	var happy := won or new_best
@@ -341,6 +361,28 @@ func _resume() -> void:
 
 
 ## Re-aims the small › in front of the head at the newest buffered turn.
+## The player did a move: remember it (saved once) and retire its hint.
+func _learn(verb: String, hide := true) -> void:
+	if _bot:
+		return
+	if _practice.learn(verb):
+		SaveService.save()
+	if hide:
+		_hud.hide_practice(verb)
+
+
+## Swipe hint over the board if the player has not turned a few seconds after GO.
+func _maybe_practice() -> void:
+	if _bot or _hud.practice_showing():
+		return
+	if _practice.due(_since_go) == "swipe":
+		var vis := get_viewport().get_visible_rect().size
+		var from := Vector2(vis.x * 0.62, vis.y * 0.66)
+		var to := Vector2(vis.x * 0.62, vis.y * 0.5)
+		var cap := Vector2(vis.x * 0.5, vis.y * 0.42)
+		_hud.show_practice("swipe", "swipe", from, to, "Swipe anywhere to turn", cap)
+
+
 func _show_turn_hint() -> void:
 	var you := logic.snakes[SnakeLogic.PLAYER]
 	_view.turn_hint(you.queue.back() if not you.queue.is_empty() else you.dir)
@@ -353,6 +395,8 @@ func _notification(what: int) -> void:
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			if _hud.settings_open():
 				_hud.close_settings()
+			elif _hud.howto_open():
+				_hud.close_howto()
 			elif state == State.PLAYING or state == State.COUNTDOWN:
 				_pause()
 			elif state == State.PAUSED:
@@ -369,6 +413,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		d = int(KEY_DIRS.get(event.keycode, -1))
 	if d != -1 and logic.queue_turn(SnakeLogic.PLAYER, d):
+		_learn("swipe")
 		AudioService.play("turn")
 		AudioService.buzz(8)
 		_show_turn_hint()
