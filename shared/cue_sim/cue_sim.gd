@@ -13,7 +13,9 @@ extends RefCounted
 ## Design + sources: docs/games/pool.md, docs/research/Cue Club pool game design.md.
 
 enum { STATIONARY, SPINNING, ROLLING, SLIDING, POCKETED }
-## Shot log entries (triples): kind, a, b.
+## Shot log entries (triples): kind, a, b. BALL_HIT (ball, ball); CUSHION (ball, 0 = a new
+## contact, 1 = a ball frozen to that cushion at the strike pressed into it: not a new contact,
+## WPA 2.7); POCKET (ball, pocket).
 enum Ev { BALL_HIT, CUSHION, POCKET }
 
 const N := 16
@@ -42,6 +44,9 @@ var wz := PackedFloat64Array()
 var phase := PackedInt32Array()
 ## Which pocket each pocketed ball fell into (-1 = on the table).
 var pocket_of := PackedInt32Array()
+## Cushion segment each ball was frozen against when the shot was struck (-1 = none); cleared by
+## its first contact with any cushion.
+var frozen_seg := PackedInt32Array()
 ## Events since the last strike (kind, a, b triples); see Ev.
 var log := PackedInt32Array()
 var time := 0.0
@@ -71,6 +76,7 @@ func _init(params: CueParams = null) -> void:
 		arr.resize(N)
 	phase.resize(N)
 	pocket_of.resize(N)
+	frozen_seg.resize(N)
 	clear()
 
 
@@ -123,6 +129,7 @@ func strike(dir_x: float, dir_y: float, speed: float, side := 0.0, top := 0.0) -
 	wy[0] = dir_x * top * k2
 	wz[0] = side * k2
 	_classify(0)
+	_mark_frozen()
 
 
 ## Advances the simulation by dt in fixed substeps (dt should be a multiple of the substep).
@@ -313,8 +320,11 @@ func _resolve() -> void:
 		1:
 			_ball_ball(_ev_a, _ev_b)
 		2:
-			_cushion(_ev_a, table.seg_nx[_ev_b], table.seg_ny[_ev_b])
+			var frozen := frozen_seg[_ev_a] == _ev_b
+			frozen_seg[_ev_a] = -1
+			_cushion(_ev_a, table.seg_nx[_ev_b], table.seg_ny[_ev_b], frozen)
 		3:
+			frozen_seg[_ev_a] = -1
 			var dx := table.pt_x[_ev_b] - px[_ev_a]
 			var dy := table.pt_y[_ev_b] - py[_ev_a]
 			var d := sqrt(dx * dx + dy * dy)
@@ -485,7 +495,7 @@ func _ball_ball(a: int, b: int) -> void:
 
 ## Han (2005) cushion impulse, from pooltool's corrected implementation, in the cushion frame
 ## (x' into the cushion, y' along it). n_in: unit normal from the ball into the cushion.
-func _cushion(i: int, nx_out: float, ny_out: float) -> void:
+func _cushion(i: int, nx_out: float, ny_out: float, frozen := false) -> void:
 	var nx := -nx_out
 	var ny := -ny_out
 	var tx := -ny
@@ -493,7 +503,7 @@ func _cushion(i: int, nx_out: float, ny_out: float) -> void:
 	var v_x := vx[i] * nx + vy[i] * ny
 	if v_x <= 0.0:
 		return
-	_log(Ev.CUSHION, i, 0)
+	_log(Ev.CUSHION, i, 1 if frozen else 0)
 	var v_y := vx[i] * tx + vy[i] * ty
 	var w_x := wx[i] * nx + wy[i] * ny
 	var w_y := wx[i] * tx + wy[i] * ty
@@ -617,6 +627,23 @@ func _separate_pass() -> bool:
 				py[j] += ny * push
 				changed = true
 	return changed
+
+
+## Remembers which balls touch a cushion segment at the strike (frozen to it).
+func _mark_frozen() -> void:
+	var tb := table
+	for i in N:
+		frozen_seg[i] = -1
+		if phase[i] == POCKETED:
+			continue
+		for k in tb.seg_x.size():
+			var dist := (px[i] - tb.seg_x[k]) * tb.seg_nx[k] + (py[i] - tb.seg_y[k]) * tb.seg_ny[k]
+			if absf(dist - _r) > 1e-6:
+				continue
+			var s := (px[i] - tb.seg_x[k]) * tb.seg_dx[k] + (py[i] - tb.seg_y[k]) * tb.seg_dy[k]
+			if s >= 0.0 and s <= tb.seg_len[k]:
+				frozen_seg[i] = k
+				break
 
 
 func _log(kind: int, a: int, b: int) -> void:
