@@ -2,6 +2,11 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Bigger Serpent Grid pause button
+- Serpent Grid's pause was a small 96 px "II" text button. Both games now share UiKit.pause_button():
+  a 112 px dark disc with drawn bars in a 144 px touch area (Serpent Grid: top-right under the score
+  bar). Verified on the Vivo: visible and opens the pause menu.
+
 ## 2026-11-13 · How-to phase 2+3: practice hints, "Try it", How to play in the pause menu
 - Pause menu has "How to play"; from there the last card says GOT IT and returns to the menu.
 - "Try it": after a demo plays once, "Your turn - try it!" appears; doing the gesture on the demo

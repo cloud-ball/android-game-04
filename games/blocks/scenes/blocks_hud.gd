@@ -138,30 +138,13 @@ func _build_cpu() -> void:
 
 
 func _build_pause_button() -> void:
-	_pause_btn = Button.new()
-	_pause_btn.focus_mode = Control.FOCUS_NONE
-	for st in ["normal", "hover", "pressed", "focus"]:
-		_pause_btn.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+	_pause_btn = UiKit.pause_button(112.0)
 	_pause_btn.pressed.connect(
 		func() -> void:
 			AudioService.play("tap")
 			pause_requested.emit()
 	)
 	add_child(_pause_btn)
-	var disc := Panel.new()
-	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	disc.add_theme_stylebox_override("panel", UiKit.box(PLATE, 48, Color(1, 1, 1, 0.14), 2, 0))
-	_pause_btn.add_child(disc)
-	UiKit.center(disc, 96)
-	var bars := Control.new()
-	bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bars.draw.connect(
-		func() -> void:
-			bars.draw_rect(Rect2(Vector2(32, 28), Vector2(10, 40)), Color.WHITE)
-			bars.draw_rect(Rect2(Vector2(54, 28), Vector2(10, 40)), Color.WHITE)
-	)
-	disc.add_child(bars)
-	bars.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 func _drawer(parent: Control, fn: Callable) -> Control:

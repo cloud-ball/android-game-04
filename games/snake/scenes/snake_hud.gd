@@ -66,10 +66,15 @@ func _build_bar(top: float) -> void:
 	_speed.position = Vector2(0, 222 + top)
 	_speed.size = Vector2(1080, 40)
 	add_child(_speed)
-	_pause_btn = UiKit.button("II", Color(1, 1, 1, 0.12), Color.WHITE, 36, 96)
-	_pause_btn.custom_minimum_size = Vector2(96, 96)
-	_pause_btn.position = Vector2(952, 206 + top)
-	_pause_btn.pressed.connect(func() -> void: pause_requested.emit())
+	# 112 px disc (like Stack Drop's) in a 144 px touch area at the top-right under the score bar.
+	_pause_btn = UiKit.pause_button(112.0)
+	_pause_btn.position = Vector2(1080 - 24 - 144, 190 + top)
+	_pause_btn.size = Vector2(144, 144)
+	_pause_btn.pressed.connect(
+		func() -> void:
+			AudioService.play("tap")
+			pause_requested.emit()
+	)
 	add_child(_pause_btn)
 
 
