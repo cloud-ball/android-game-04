@@ -13,11 +13,13 @@ extends Node3D
 ## World: sim (x, y) -> (x, height, -y); y up the table = into the screen.
 
 const FOV := 22.0
-const PITCH_DEG := 8.0
+const PITCH_DEG := 5.0
 const RAIL := 0.03  # cushion depth beyond the nose (drawn thin: more screen for the balls)
-const WOOD := 0.05
+const WOOD := 0.04
 const TABLE_FILL := 0.985  # outer table width / screen width (side controls overlay the wood)
 const MAX_SPIN_STEP := 1.2  # rad of visual rotation per tick (fast balls strobe otherwise)
+const PHYS_DT := 1.0 / 60.0
+const DROP_TIME := 0.32  # seconds a potted ball takes to roll into the hole and sink
 
 ## Ball colours (sRGB): cue, 1-7 solids, 8, 9-15 stripes of the same colours. Original palette.
 const BALL_COLORS := [
@@ -145,8 +147,9 @@ uniform vec4 color : source_color = vec4(1.0, 1.0, 1.0, 0.85);
 uniform float length_m = 1.0;
 uniform float dash = 0.0;
 void fragment() {
-	float on = dash > 0.0 ? step(0.4, fract(UV.x * length_m / dash)) : 1.0;
-	float edge = smoothstep(0.0, 0.25, UV.y) * smoothstep(1.0, 0.75, UV.y);
+	float f = fract(UV.x * length_m / max(dash, 1e-4));
+	float on = dash > 0.0 ? smoothstep(0.35, 0.45, f) * smoothstep(1.0, 0.92, f) : 1.0;
+	float edge = smoothstep(0.0, 0.35, UV.y) * smoothstep(1.0, 0.65, UV.y);
 	ALBEDO = color.rgb;
 	ALPHA = color.a * on * edge;
 }
@@ -179,6 +182,10 @@ var _prev := PackedVector3Array()
 var _cur := PackedVector3Array()
 var _fade := PackedFloat32Array()
 var _rest := PackedFloat32Array()
+## Pocket drop animation per ball: time since capture (-1 = none), start and hole positions.
+var _drop := PackedFloat32Array()
+var _drop_from := PackedVector3Array()
+var _drop_to := PackedVector3Array()
 var _digits: SubViewport
 var _cue: MeshInstance3D
 var _aim_line: MeshInstance3D
@@ -211,6 +218,10 @@ func setup(cue_sim: CueSim) -> void:
 	_cur.resize(CueSim.N)
 	_fade.resize(CueSim.N)
 	_rest.resize(CueSim.N)
+	_drop.resize(CueSim.N)
+	_drop.fill(-1.0)
+	_drop_from.resize(CueSim.N)
+	_drop_to.resize(CueSim.N)
 	snap()
 
 
@@ -225,21 +236,46 @@ func set_margins(top: float, bottom: float) -> void:
 
 
 ## Copy the solver state as both previous and current (after a placement / re-rack).
+## Balls already dropping into a pocket keep animating.
 func snap() -> void:
 	for i in CueSim.N:
-		_cur[i] = _world(i)
+		if not sim.on_table(i) and _drop[i] >= 0.0:
+			continue
+		_cur[i] = _world(i) if sim.on_table(i) else Vector3(0, -1, 0)
 		_prev[i] = _cur[i]
+		if sim.on_table(i):
+			_drop[i] = -1.0
 	render(1.0)
+
+
+## Centre of a pocket hole as drawn (balls sink towards it).
+func _hole(k: int) -> Vector2:
+	var m := _pocket_mouth(k)
+	if k < 4:
+		return m + Vector2(sign(m.x), sign(m.y)) * 0.008
+	return m + Vector2(sign(m.x) * 0.016, 0.0)
 
 
 ## Call after each fixed step: integrates the visual spin and shifts current -> previous.
 func physics_tick(dt: float) -> void:
 	for i in CueSim.N:
+		var was := _cur[i]
 		_prev[i] = _cur[i]
 		_cur[i] = _world(i)
 		if not sim.on_table(i):
+			if _drop[i] < 0.0 and was.y > 0.0:
+				# Just captured: roll on into the hole and sink instead of vanishing.
+				_drop[i] = 0.0
+				_drop_from[i] = was
+				var k := sim.pocket_of[i]
+				var hole := _hole(k) if k >= 0 else Vector2(sim.px[i], sim.py[i])
+				_drop_to[i] = to_world(hole, radius)
+			elif _drop[i] >= 0.0:
+				_drop[i] += dt
+			_cur[i] = Vector3(0, -1, 0)  # marks "off the table" for the next capture check
 			_prev[i] = _cur[i]
 			continue
+		_drop[i] = -1.0
 		var w := Vector3(sim.wx[i], sim.wz[i], -sim.wy[i])  # table (x, y, z-up) -> world
 		var mag := w.length()
 		var moving := _cur[i].distance_squared_to(_prev[i]) > 1e-10
@@ -257,8 +293,27 @@ func render(frac: float) -> void:
 	var sm := _shadows.multimesh
 	for i in CueSim.N:
 		if not sim.on_table(i):
-			mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO))
-			sm.set_instance_color(i, Color(1, 1, 1, 0))
+			var k := (_drop[i] + frac * PHYS_DT) / DROP_TIME if _drop[i] >= 0.0 else 2.0
+			if k >= 1.0:
+				mm.set_instance_transform(
+					i, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
+				)
+				sm.set_instance_color(i, Color(1, 1, 1, 0))
+				continue
+			var e := GestureTimeline.decel(k)
+			var p := _drop_from[i].lerp(_drop_to[i], e)
+			p.y = radius - 0.06 * k * k
+			mm.set_instance_transform(
+				i, Transform3D(Basis(_quat[i]).scaled(Vector3.ONE * (1.0 - 0.15 * k)), p)
+			)
+			mm.set_instance_custom_data(i, Color(i / 255.0, _fade[i], 0.0, 0))
+			sm.set_instance_transform(
+				i,
+				Transform3D(
+					Basis.from_scale(Vector3(3.2, 1, 3.2) * radius), Vector3(p.x, 0.0006, p.z)
+				)
+			)
+			sm.set_instance_color(i, Color(1, 1, 1, 1.0 - k))
 			continue
 		var p := _prev[i].lerp(_cur[i], frac)
 		mm.set_instance_transform(i, Transform3D(Basis(_quat[i]), p))
@@ -412,7 +467,7 @@ func _frame_camera() -> void:
 	var outer_w := 2.0 * (hw + RAIL + WOOD)
 	var outer_l := 2.0 * (hl + RAIL + WOOD)
 	var avail_h := maxf(canvas.y - _layout_top - _layout_bottom, canvas.y * 0.5)
-	var visible_w := maxf(outer_w / TABLE_FILL, outer_l * 1.02 * canvas.x / avail_h)
+	var visible_w := maxf(outer_w / TABLE_FILL, outer_l * canvas.x / avail_h)
 	var dist := visible_w * 0.5 / tan(deg_to_rad(FOV * 0.5))
 	var pitch := deg_to_rad(PITCH_DEG)
 	camera.position = Vector3(0.0, cos(pitch), sin(pitch)) * dist
@@ -500,7 +555,7 @@ func _make_table() -> void:
 		var corner := k < 4
 		var disc := MeshInstance3D.new()
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.058 if corner else 0.052
+		cyl.top_radius = 0.058 if corner else 0.048
 		cyl.bottom_radius = cyl.top_radius
 		cyl.height = 0.002
 		cyl.radial_segments = 32
@@ -509,7 +564,7 @@ func _make_table() -> void:
 		# Holes sit in the jaws: corners just past the corner point, sides just past the rail.
 		var out := (
 			m
-			+ (Vector2(sign(m.x), sign(m.y)) * 0.008 if corner else Vector2(sign(m.x) * 0.02, 0.0))
+			+ (Vector2(sign(m.x), sign(m.y)) * 0.008 if corner else Vector2(sign(m.x) * 0.016, 0.0))
 		)
 		disc.position = to_world(out, 0.052)
 		add_child(disc)

@@ -9,7 +9,7 @@ signal nudge(dp: float)
 signal spin_changed(side: float, top: float)
 
 const ACCENT := Color(0.3, 0.85, 0.8)
-const TOP_BAR_H := 120.0
+const TOP_BAR_H := 108.0
 
 var power_bar: PoolControls.PowerBar
 var fine: PoolControls.FineStrip
@@ -39,8 +39,8 @@ func _ready() -> void:
 	)
 	mode = "vs"
 	var top := UiKit.safe_top(self)
-	top_band = top + 16.0 + TOP_BAR_H + 16.0
-	bottom_band = 200.0 + _safe_bottom()
+	top_band = top + 10.0 + TOP_BAR_H + 8.0
+	bottom_band = 150.0 + _safe_bottom()
 	_build_bar(top)
 	_build_controls()
 	build_shell()
@@ -68,21 +68,21 @@ func _build_bar(top: float) -> void:
 	var panel := Panel.new()
 	panel.add_theme_stylebox_override("panel", UiKit.box(UiKit.PANEL, 28, Color(1, 1, 1, 0.08), 2))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.position = Vector2(24, top + 16)
+	panel.position = Vector2(24, top + 10)
 	panel.size = Vector2(1080 - 48 - 144 - 12, TOP_BAR_H)
 	add_child(panel)
 	for p in 2:
 		var x := 26.0 if p == 0 else panel.size.x * 0.5 + 10.0
 		var name := UiKit.label("YOU" if p == 0 else "CPU", 38, Color.WHITE, 900)
-		name.position = Vector2(x, 10)
+		name.position = Vector2(x, 6)
 		panel.add_child(name)
 		_names.append(name)
 		var grp := UiKit.label("Open table", 28, UiKit.MUTED, 700)
-		grp.position = Vector2(x + 100, 18)
+		grp.position = Vector2(x + 100, 14)
 		panel.add_child(grp)
 		_groups.append(grp)
 		var chips := Control.new()
-		chips.position = Vector2(x, 60)
+		chips.position = Vector2(x, 54)
 		chips.size = Vector2(panel.size.x * 0.5 - 40, 60)
 		chips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var who := p
@@ -90,7 +90,7 @@ func _build_bar(top: float) -> void:
 		panel.add_child(chips)
 		_chips.append(chips)
 	_pause_btn = UiKit.pause_button(112.0)
-	_pause_btn.position = Vector2(1080 - 24 - 144, top + 16 + (TOP_BAR_H - 144) * 0.5)
+	_pause_btn.position = Vector2(1080 - 24 - 144, top + 10 + (TOP_BAR_H - 144) * 0.5)
 	_pause_btn.size = Vector2(144, 144)
 	_pause_btn.pressed.connect(
 		func() -> void:
@@ -115,14 +115,14 @@ func _build_controls() -> void:
 	fine.nudged.connect(func(dp: float) -> void: nudge.emit(dp))
 	add_child(fine)
 	spin_btn = PoolControls.SpinButton.new()
-	spin_btn.position = Vector2(34, h - bottom_band + 8)
-	spin_btn.size = Vector2(150, 150)
+	spin_btn.position = Vector2(30, h - bottom_band - 8)
+	spin_btn.size = Vector2(108, 108)
 	spin_btn.pressed.connect(func() -> void: spin_panel.open(spin_btn.side, spin_btn.top))
 	add_child(spin_btn)
 	_msg = UiKit.label("", 34, Color(1, 1, 1, 0.9), 700)
 	_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_msg.position = Vector2(200, h - bottom_band + 30)
+	_msg.position = Vector2(180, h - bottom_band + 14)
 	_msg.size = Vector2(680, 110)
 	add_child(_msg)
 	set_controls(false)
