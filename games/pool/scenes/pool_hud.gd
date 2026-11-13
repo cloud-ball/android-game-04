@@ -9,14 +9,14 @@ signal nudge(dp: float)
 signal spin_changed(side: float, top: float)
 
 const ACCENT := Color(0.3, 0.85, 0.8)
-const TOP_BAR_H := 150.0
+const TOP_BAR_H := 120.0
 
 var power_bar: PoolControls.PowerBar
 var fine: PoolControls.FineStrip
 var spin_btn: PoolControls.SpinButton
 var spin_panel: PoolControls.SpinPanel
 var top_band := 0.0
-var bottom_band := 260.0
+var bottom_band := 210.0
 
 var _names: Array[Label] = []
 var _groups: Array[Label] = []
@@ -39,7 +39,8 @@ func _ready() -> void:
 	)
 	mode = "vs"
 	var top := UiKit.safe_top(self)
-	top_band = top + 16.0 + TOP_BAR_H + 24.0
+	top_band = top + 16.0 + TOP_BAR_H + 16.0
+	bottom_band = 200.0 + _safe_bottom()
 	_build_bar(top)
 	_build_controls()
 	build_shell()
@@ -52,6 +53,15 @@ func _ready() -> void:
 			spin_btn.queue_redraw()
 			spin_changed.emit(s, t)
 	)
+
+
+## Height of the system gesture / navigation area at the bottom, in canvas units.
+func _safe_bottom() -> float:
+	if not OS.has_feature("mobile"):
+		return 0.0
+	var win := Vector2(DisplayServer.window_get_size())
+	var k := get_viewport().get_visible_rect().size.x / maxf(1.0, win.x)
+	return maxf(0.0, (win.y - DisplayServer.get_display_safe_area().end.y) * k)
 
 
 func _build_bar(top: float) -> void:
@@ -72,7 +82,7 @@ func _build_bar(top: float) -> void:
 		panel.add_child(grp)
 		_groups.append(grp)
 		var chips := Control.new()
-		chips.position = Vector2(x, 70)
+		chips.position = Vector2(x, 60)
 		chips.size = Vector2(panel.size.x * 0.5 - 40, 60)
 		chips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var who := p
@@ -105,14 +115,14 @@ func _build_controls() -> void:
 	fine.nudged.connect(func(dp: float) -> void: nudge.emit(dp))
 	add_child(fine)
 	spin_btn = PoolControls.SpinButton.new()
-	spin_btn.position = Vector2(34, h - bottom_band + 30)
+	spin_btn.position = Vector2(34, h - bottom_band + 8)
 	spin_btn.size = Vector2(150, 150)
 	spin_btn.pressed.connect(func() -> void: spin_panel.open(spin_btn.side, spin_btn.top))
 	add_child(spin_btn)
 	_msg = UiKit.label("", 34, Color(1, 1, 1, 0.9), 700)
 	_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_msg.position = Vector2(200, h - bottom_band + 60)
+	_msg.position = Vector2(200, h - bottom_band + 30)
 	_msg.size = Vector2(680, 110)
 	add_child(_msg)
 	set_controls(false)
