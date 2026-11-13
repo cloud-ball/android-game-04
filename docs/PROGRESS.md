@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-13 · Cue Club: point-to-aim
+- Turning the cue from the side was hard with the dial-style sweep (a sideways drag beside the ball
+  barely rotates it). Now the cue points from the white ball at the finger: touch a ball to aim at
+  it, drag to adjust; FINE strip for small corrections; finger within 7 cm of the white is ignored.
+  Easy / Medium lock onto a legal ball's centre when within 0.6 / 0.3 deg. How-to card updated.
+- Verified on the Vivo; test added (181).
+
 ## 2026-11-13 · Cue Club feedback 2: weaker CPU, bigger balls, smooth lines, pocket drops
 - CPU weaker: Gaussian aim sigma 0.6/0.26/0.12 -> 1.4/0.7/0.32 deg, speed noise up; Easy / Medium pick
   among their best 4 / 2 shots instead of always the best.

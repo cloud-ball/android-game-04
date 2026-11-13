@@ -71,3 +71,18 @@ func test_guideline_cut_shows_throw_and_draw_bends_back() -> void:
 	assert_float(a.cue_dir.y).is_greater(0.9)
 	a.predict(sim, 1.2, 0.0, 0.0)  # centre ball from 30 cm: a little natural roll -> follows
 	assert_float(a.cue_dir.y).is_greater_equal(0.0)
+
+
+func test_aim_points_at_the_finger_and_snaps_to_close_balls() -> void:
+	var a := PoolAim.new()
+	var cue := Vector2(0.0, -0.5)
+	a.point_at(cue, Vector2(0.3, -0.5), 0)
+	assert_float(a.angle).is_equal_approx(0.0, 1e-6)
+	var before := a.angle
+	a.point_at(cue, cue + Vector2(0.02, 0.03), 10)  # too close to the cue ball: ignored
+	assert_float(a.angle).is_equal(before)
+	var ball := Vector2(0.0, 0.5)
+	a.point_at(cue, Vector2(0.01, 0.5), 20, [ball], deg_to_rad(0.6))  # 0.57 deg off: snaps
+	assert_float(a.angle).is_equal_approx(PI * 0.5, 1e-6)
+	a.point_at(cue, Vector2(0.05, 0.5), 30, [ball], deg_to_rad(0.6))  # 2.9 deg off: no snap
+	assert_float(absf(a.angle - PI * 0.5)).is_greater(0.04)

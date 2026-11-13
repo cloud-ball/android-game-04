@@ -367,7 +367,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mm != null and _drag != "" and state == State.AIM:
 		var now := _view.table_point(mm.position)
 		if _drag == "aim":
-			_aim.sweep(_cue_pos(), _drag_last, now, Time.get_ticks_msec())
+			_point(now)
 		elif _drag == "place":
 			var target := _cue_pos() + (now - _drag_last)
 			if _match.place_cue(target.x, target.y):
@@ -396,6 +396,19 @@ func _press(screen: Vector2) -> void:
 		_drag = "place"
 	else:
 		_drag = "aim"
+		_point(at)
+		_preview_dirty = true
+
+
+## The cue points from the white ball at the finger; Easy / Medium lock onto a legal ball's centre
+## when the aim passes within 0.6 / 0.3 degrees of it.
+func _point(at: Vector2) -> void:
+	var snap := {"easy": 0.6, "medium": 0.3}.get(difficulty, 0.0) as float
+	var centres := []
+	if snap > 0.0:
+		for b in PoolRules.legal_targets(_match.state):
+			centres.append(Vector2(_match.sim.px[b], _match.sim.py[b]))
+	_aim.point_at(_cue_pos(), at, Time.get_ticks_msec(), centres, deg_to_rad(snap))
 
 
 func _pause() -> void:

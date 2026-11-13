@@ -13,12 +13,12 @@ const BALL := 26.0
 static func cards() -> Array:
 	return [
 		{
-			"title": "Drag to aim",
-			"sub": "Drag anywhere around the white ball.",
+			"title": "Point to aim",
+			"sub": "Touch and drag - the cue points at your finger.",
 			"demo": _demo_aim,
 			"poster": _poster_aim,
-			"gesture": GestureTimeline.new("drag", Vector2(250, 760), Vector2(550, 760), 3, 1000),
-			"try": "drag",
+			"gesture": GestureTimeline.new("drag", Vector2(250, 420), Vector2(480, 330), 3, 1000),
+			"try": "swipe",
 		},
 		{
 			"title": "Pull to shoot",
@@ -83,9 +83,9 @@ static func _demo_aim(c: Control, t: float, g: GestureTimeline) -> void:
 	var cue := Vector2(400, 620)
 	var obj := Vector2(480, 330)
 	_ball(c, obj, Color("#D9312B"), a, "3")
-	var k := clampf((t - g.press_ms) / g.action_ms(), 0.0, 1.0)
-	var ang := lerpf(-2.2, (obj - cue).angle(), k)
-	var d := Vector2.from_angle(ang)
+	g.evaluate(t)
+	var finger := g.pos if g.visible and t >= g.press_ms else g.to
+	var d := (finger - cue).normalized()
 	_dashes(c, cue, cue + d * 300.0, Color(1, 1, 1, 0.8 * a))
 	c.draw_line(cue - d * 60.0, cue - d * 320.0, Color(0.86, 0.72, 0.5, a), 10.0)
 	_ball(c, cue, Color("#F4F1E6"), a)

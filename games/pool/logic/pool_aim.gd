@@ -14,6 +14,8 @@ const GAMMA := 2.0
 const MIN_POWER := 0.02  # below this the shot is cancelled
 const LIFT_MS := 60
 const FINE_DEG_PER_DP := 0.03
+## Closer than this to the cue ball the finger does not set a direction (metres).
+const MIN_POINT_DIST := 0.07
 
 ## Aim angle in radians (table frame: 0 = +x, pi/2 = +y = up the table).
 var angle := PI * 0.5
@@ -43,6 +45,25 @@ func dir() -> Vector2:
 func set_dir(d: Vector2) -> void:
 	if d.length_squared() > 1e-12:
 		angle = atan2(d.y, d.x)
+
+
+## Points the cue from the cue ball at the finger (table coordinates). Ignored when the finger is
+## within MIN_POINT_DIST of the cue ball (direction too jumpy). snap_to: candidate ball centres;
+## if the aim passes within snap_rad of one's direction it locks onto it (Easy/Medium assist).
+func point_at(
+	cue: Vector2, finger: Vector2, now_ms: int, snap_to: Array = [], snap_rad := 0.0
+) -> void:
+	var d := finger - cue
+	if d.length() < MIN_POINT_DIST:
+		return
+	var a := d.angle()
+	for c in snap_to:
+		var to: Vector2 = c - cue
+		if absf(angle_difference(a, to.angle())) < snap_rad:
+			a = to.angle()
+			break
+	angle = a
+	record(now_ms)
 
 
 ## Rotates the aim by the angle the finger swept around the cue ball (table coordinates).
