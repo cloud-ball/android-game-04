@@ -449,10 +449,9 @@ func _sounds() -> void:
 		var v: float = speeds[_log_seen / 3]
 		var kind := log[_log_seen]
 		var ball := log[_log_seen + 1]
-		var pocket := log[_log_seen + 2]
 		_log_seen += 3
 		if kind == CueSim.Ev.POCKET and ball != 0:
-			_hud.fly_ball(ball, _view.pocket_screen(pocket), _match.state)
+			_hud.ball_potted(ball, _match.state)
 		if plays >= 4 or (v < 0.05 and kind != CueSim.Ev.POCKET):
 			continue
 		var vol := clampf(linear_to_db(clampf(v / 3.0, 0.08, 1.0)), -22.0, 0.0)
