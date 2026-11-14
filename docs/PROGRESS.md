@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick: flight preview on the phone (branch fairway-flick)
+- The golf placeholder is now a flight preview: a flat practice hole with a green at 150 m, distance
+  markers, Driver / 7-iron / Wedge (average-amateur launches), seeded wind per shot. Tap the course
+  to hit; tap left / right of centre to curve. Real solver (GolfFlight.step_over, 4 x 1/240 s per
+  tick, allocation-free) with a trail ribbon and a chase camera; shows carry, apex, lie and distance
+  to the flag. No bounce / roll / swing yet (steps 4 and 6).
+- Try it: hidden from the hub. On the test phone files/dev_args.txt holds --game=golf, so the app
+  opens straight into the preview (remove the file to get the hub back).
+
 ## 2026-11-14 · Fairway Flick step 3: hole terrain + exact ground contact (branch fairway-flick)
 - games/golf/logic/hole_data.gd: per-hole vertex height grid + one surface type per cell (tee,
   fairway, rough, fringe, green, sand, water, path, out). Height / slope / normal follow the render
@@ -13,7 +22,7 @@ Newest first. Claude appends: date · what changed · how to try it on a phone �
   70 m/s ball cannot pass through a ridge 0.13 m thick (a step is 0.29 m), 30 random launches over
   rolling ground land within 5 cm of a 20x finer step and never below the surface, flat-hole
   landing matches flat flight. 211 tests green.
-- Try it: logic only, nothing on the phone yet.
+- Try it: logic only (see the flight preview entry above for something to tap).
 
 ## 2026-11-14 · Fairway Flick step 2: ball flight (branch fairway-flick)
 - games/golf/logic/golf_flight.gd: RK4 flight with Re-dependent drag (tabulated drag-crisis
