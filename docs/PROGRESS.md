@@ -2,6 +2,15 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Cue Club: wooden knock sounds, no more twirling balls
+- Sounds: ball, cushion, cue and pocket sounds are now filtered-noise knocks with a short low body
+  (core/AudioService.gd `_knocks`) instead of ringing sine partials, which sounded like glass. Gains
+  set below clipping (checked offline with a Python replica of the generator).
+- Physics: spin about the vertical axis now decays at 22 rad/s^2 (was 10.9) and twice that once the
+  ball has stopped, so a stopped ball no longer twirls in place for seconds after side spin or a cut
+  (~0.7 s at most, was ~2.8 s). Golden break regenerated with the justification in the file.
+- Try it: install the debug APK, play a few cuts with side spin and a break; listen to the clacks.
+
 ## 2026-11-14 · Cue Club vs similar games: research + first fixes
 - Research: docs/research/Cue Club versus mobile pool games.md (+ notes): features, physics feel
   (measured), polish, CPU fairness. Verdict: not shippable yet; blockers were dry breaks, unmeasured

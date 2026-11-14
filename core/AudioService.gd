@@ -30,21 +30,20 @@ func _ready() -> void:
 	_streams["lose"] = _tone([[440.0, 0.14], [349.0, 0.14], [262.0, 0.3]], 0.4)
 	_streams["count"] = _tone([[740.0, 0.08]], 0.35)
 	_streams["go"] = _tone([[1100.0, 0.18]], 0.4)
-	# Pool: modal "impacts" (damped partials + a short noise transient) instead of UI blips.
-	# Ball-ball: bright, very short click. Cushion: low rubbery thud. Cue: woody tick.
-	# Pocket: a rattle off the jaw, then a dull drop.
-	_streams["clack"] = _impact(
-		[[3150.0, 0.010, 0.0, 1.0], [5400.0, 0.006, 0.0, 0.45]], 0.5, 0.06, 0.5
-	)
-	_streams["cushion"] = _impact(
-		[[150.0, 0.045, 0.0, 1.0], [410.0, 0.02, 0.0, 0.4]], 0.35, 0.14, 0.55
-	)
-	_streams["cue"] = _impact([[880.0, 0.012, 0.0, 1.0], [2300.0, 0.006, 0.0, 0.5]], 0.6, 0.05, 0.4)
-	_streams["pocket"] = _impact(
-		[[2600.0, 0.008, 0.0, 0.6], [2100.0, 0.008, 0.03, 0.4], [118.0, 0.09, 0.055, 1.0]],
-		0.25,
-		0.24,
-		0.6
+	# Pool: short band-limited noise "knocks" with a faint body - real ball clicks are 2-4 ms of
+	# broadband noise, not ringing tones (the earlier tonal version sounded like glass).
+	# Event: [delay_s, centre_hz, q, decay_s, noise_amp, body_hz, body_decay_s, body_amp]
+	_streams["clack"] = _knocks([[0.0, 2400.0, 1.1, 0.0032, 1.0, 1250.0, 0.0022, 0.35]], 0.05, 0.8)
+	_streams["cushion"] = _knocks([[0.0, 320.0, 0.8, 0.028, 1.0, 150.0, 0.035, 0.6]], 0.16, 0.75)
+	_streams["cue"] = _knocks([[0.0, 1500.0, 0.9, 0.006, 1.0, 650.0, 0.005, 0.4]], 0.06, 0.7)
+	_streams["pocket"] = _knocks(
+		[
+			[0.0, 2100.0, 1.0, 0.003, 0.7, 1100.0, 0.002, 0.2],
+			[0.024, 1800.0, 1.0, 0.003, 0.5, 950.0, 0.002, 0.15],
+			[0.05, 240.0, 0.7, 0.06, 0.8, 105.0, 0.08, 1.0],
+		],
+		0.26,
+		0.62
 	)
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = MUSIC_DB
@@ -160,27 +159,43 @@ static func _noise(seconds: float, gain: float) -> AudioStreamWAV:
 	return _wav(bytes)
 
 
-## A struck object: partials [[freq_hz, decay_s, delay_s, amp], ...] (exponential decay) plus a
-## noise transient of noise_amt over the first 3 ms. Deterministic (fixed noise seed).
-static func _impact(
-	partials: Array, noise_amt: float, seconds: float, gain: float
-) -> AudioStreamWAV:
+## Knocks: each event is white noise through a band-pass (biquad) with an exponential envelope,
+## plus a quickly damped sine "body". Deterministic noise seed.
+static func _knocks(events: Array, seconds: float, gain: float) -> AudioStreamWAV:
 	var count := int(seconds * MIX_RATE)
+	var out := PackedFloat32Array()
+	out.resize(count)
+	var state := 777
+	for e in events:
+		var start := int(float(e[0]) * MIX_RATE)
+		var w0: float = TAU * float(e[1]) / MIX_RATE
+		var alpha: float = sin(w0) / (2.0 * float(e[2]))
+		var a0 := 1.0 + alpha
+		var b0 := alpha / a0
+		var b2 := -alpha / a0
+		var a1 := -2.0 * cos(w0) / a0
+		var a2 := (1.0 - alpha) / a0
+		var x1 := 0.0
+		var x2 := 0.0
+		var y1 := 0.0
+		var y2 := 0.0
+		for n in range(start, count):
+			var t := float(n - start) / MIX_RATE
+			state = (state * 1103515245 + 12345) & 0x7fffffff
+			var x := float(state) / 0x7fffffff * 2.0 - 1.0
+			var y := b0 * x + b2 * x2 - a1 * y1 - a2 * y2
+			x2 = x1
+			x1 = x
+			y2 = y1
+			y1 = y
+			var noise: float = y * float(e[4]) * exp(-t / float(e[3])) * 3.0
+			var body: float = float(e[7]) * sin(TAU * float(e[5]) * t) * exp(-t / float(e[6]))
+			out[n] += (noise + body) * minf(1.0, t * MIX_RATE / 4.0)
 	var bytes := PackedByteArray()
 	bytes.resize(count * 2)
-	var state := 4242
-	for s in count:
-		var t := float(s) / MIX_RATE
-		var v := 0.0
-		for p in partials:
-			var dt: float = t - p[2]
-			if dt >= 0.0:
-				v += p[3] * sin(TAU * p[0] * dt) * exp(-dt / p[1]) * minf(1.0, dt * MIX_RATE / 12.0)
-		if t < 0.003:
-			state = (state * 1103515245 + 12345) & 0x7fffffff
-			v += (float(state) / 0x7fffffff * 2.0 - 1.0) * noise_amt * (1.0 - t / 0.003)
-		var fade := minf(1.0, (count - s) / 200.0)
-		bytes.encode_s16(s * 2, int(clampf(v * gain * fade, -1.0, 1.0) * 32000.0))
+	for n in count:
+		var fade := minf(1.0, (count - n) / 150.0)
+		bytes.encode_s16(n * 2, int(clampf(out[n] * gain * fade, -1.0, 1.0) * 32000.0))
 	return _wav(bytes)
 
 

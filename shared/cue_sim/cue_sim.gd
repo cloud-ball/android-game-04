@@ -335,7 +335,7 @@ func _transition_time(i: int) -> float:
 		ROLLING:
 			return sqrt(vx[i] * vx[i] + vy[i] * vy[i]) / _a_roll
 		SPINNING:
-			return absf(wz[i]) / _a_spin
+			return absf(wz[i]) / (_a_spin * p.spin_decel_still)
 	return NEVER
 
 
@@ -404,7 +404,7 @@ func _advance_all(t: float) -> void:
 
 func _decay_spin(i: int, t: float) -> void:
 	var w := wz[i]
-	var d := _a_spin * t
+	var d := _a_spin * t * (p.spin_decel_still if phase[i] == SPINNING else 1.0)
 	if w > d:
 		wz[i] = w - d
 	elif w < -d:

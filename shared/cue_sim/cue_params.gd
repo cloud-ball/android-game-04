@@ -12,8 +12,11 @@ var mass := 0.17
 ## 12.7 / 14.0 cm (were pro-spec 11.8 / 13.0) for friendlier breaks and cuts.
 var mu_slide := 0.2
 var mu_roll := 0.010
-## Deceleration of spin about the vertical axis (rad/s^2).
-var spin_decel := 10.9
+## Deceleration of spin about the vertical axis (rad/s^2). 2026-11-14: 10.9 -> 22 (the top of the
+## measured range) and x2 again once the ball has stopped: stopped balls twirled in place for
+## seconds after side english or a cut (phone feedback).
+var spin_decel := 22.0
+var spin_decel_still := 2.0
 var e_ball := 0.93
 var mu_ball := 0.055
 ## Cushions (Han 2005): restitution, friction, contact height as sin/cos of the contact angle
