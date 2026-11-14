@@ -2,6 +2,20 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Cue Club vs similar games: research + first fixes
+- Research: docs/research/Cue Club versus mobile pool games.md (+ notes): features, physics feel
+  (measured), polish, CPU fairness. Verdict: not shippable yet; blockers were dry breaks, unmeasured
+  CPU, the Easy/Medium snap blocking thin cuts, and silent cushions / flat sounds.
+- Physics retune (golden break regenerated with justification): mu_roll 0.012 -> 0.010, e_cushion
+  0.85 -> 0.95 (WPA rail test 3.4 -> 4.16 table lengths), casual pockets 12.7 / 14.0 cm. Break power
+  13 * p^1.2 (85% of the bar = 10.7 m/s, was ~9). Breaks that pot a ball: 3-25% -> 46% at 85% power,
+  58% at full; scratches 8-15%.
+- Aim snap (Easy/Medium) now locks onto pocket lines (ghost-ball aims), not ball centres.
+- Sound: the solver logs impact speed per event; clicks / cushion thuds / pocket drops scale with it
+  (quiet touches skipped). New synthesized impacts (damped partials + transient) replace the UI blips;
+  cushions finally make a sound. Seeded RNG for pitch variation.
+- Next: the simulation-based CPU with measured difficulty (blocker 2).
+
 ## 2026-11-13 · Cue Club: point-to-aim
 - Turning the cue from the side was hard with the dial-style sweep (a sideways drag beside the ball
   barely rotates it). Now the cue points from the white ball at the finger: touch a ball to aim at

@@ -555,7 +555,7 @@ func _make_table() -> void:
 		var corner := k < 4
 		var disc := MeshInstance3D.new()
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.058 if corner else 0.048
+		cyl.top_radius = 0.062 if corner else 0.05
 		cyl.bottom_radius = cyl.top_radius
 		cyl.height = 0.002
 		cyl.radial_segments = 32
@@ -567,6 +567,8 @@ func _make_table() -> void:
 			+ (Vector2(sign(m.x), sign(m.y)) * 0.008 if corner else Vector2(sign(m.x) * 0.016, 0.0))
 		)
 		disc.position = to_world(out, 0.052)
+		if not corner:
+			disc.scale = Vector3(1.0, 1.0, 1.45)  # side holes are long along the rail (14 cm mouth)
 		add_child(disc)
 		var ring := MeshInstance3D.new()
 		var q := QuadMesh.new()

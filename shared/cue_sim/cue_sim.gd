@@ -54,6 +54,9 @@ var first_hit := PackedFloat64Array([0.0, 0.0, 0.0, 0.0])
 var first_hit_v := PackedFloat64Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 ## Events since the last strike (kind, a, b triples); see Ev.
 var log := PackedInt32Array()
+## Impact speed (m/s) of each log entry (one per triple): closing speed for ball-ball, speed into
+## the cushion, ball speed into the pocket. Drives sound volume and haptics.
+var log_speed := PackedFloat32Array()
 var time := 0.0
 var substep := SUBSTEP
 var events_capped := 0
@@ -94,6 +97,7 @@ func clear() -> void:
 		phase[i] = POCKETED
 		pocket_of[i] = -1
 	log.clear()
+	log_speed.clear()
 	time = 0.0
 
 
@@ -127,6 +131,7 @@ func strike(dir_x: float, dir_y: float, speed: float, side := 0.0, top := 0.0) -
 		side *= k
 		top *= k
 	log.clear()
+	log_speed.clear()
 	vx[0] = dir_x * speed
 	vy[0] = dir_y * speed
 	var k2 := 2.5 * speed / _r  # |R w| = 5/2 (offset/R) v
@@ -459,7 +464,7 @@ func _ball_ball(a: int, b: int) -> void:
 		first_hit[1] = py[a]
 		first_hit[2] = px[b]
 		first_hit[3] = py[b]
-	_log(Ev.BALL_HIT, a, b)
+	_log(Ev.BALL_HIT, a, b, vn)
 	if d < 2.0 * _r:
 		# Round-off left them overlapping (micrometres): push apart along the normal.
 		var push := (2.0 * _r - d) * 0.5
@@ -521,7 +526,7 @@ func _cushion(i: int, nx_out: float, ny_out: float, frozen := false) -> void:
 	var v_x := vx[i] * nx + vy[i] * ny
 	if v_x <= 0.0:
 		return
-	_log(Ev.CUSHION, i, 1 if frozen else 0)
+	_log(Ev.CUSHION, i, 1 if frozen else 0, v_x)
 	var v_y := vx[i] * tx + vy[i] * ty
 	var w_x := wx[i] * nx + wy[i] * ny
 	var w_y := wx[i] * tx + wy[i] * ty
@@ -562,7 +567,7 @@ func _cushion(i: int, nx_out: float, ny_out: float, frozen := false) -> void:
 
 
 func _pocket(i: int, k: int) -> void:
-	_log(Ev.POCKET, i, k)
+	_log(Ev.POCKET, i, k, sqrt(vx[i] * vx[i] + vy[i] * vy[i]))
 	_zero_motion(i)
 	phase[i] = POCKETED
 	pocket_of[i] = k
@@ -671,7 +676,8 @@ func _logged(kind: int) -> bool:
 	return false
 
 
-func _log(kind: int, a: int, b: int) -> void:
+func _log(kind: int, a: int, b: int, speed := 0.0) -> void:
+	log_speed.append(speed)
 	log.append(kind)
 	log.append(a)
 	log.append(b)

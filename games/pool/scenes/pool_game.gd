@@ -334,21 +334,28 @@ func _cue_pos() -> Vector2:
 	return Vector2(_match.sim.px[0], _match.sim.py[0])
 
 
-## Click on contacts (rate-limited), drop sound on pots.
+## Contact sounds scaled by impact speed (rate-limited per tick; quiet touches skipped):
+## ball clicks, cushion thuds, pocket drops; a light buzz only on pots.
 func _sounds() -> void:
 	var log := _match.sim.log
+	var speeds := _match.sim.log_speed
 	var plays := 0
-	while _log_seen + 2 < log.size() and plays < 3:
-		match log[_log_seen]:
-			CueSim.Ev.BALL_HIT:
-				AudioService.play("clack", _fx_rng.randf_range(0.9, 1.15))
-			CueSim.Ev.POCKET:
-				AudioService.play("pocket")
-				AudioService.buzz(15)
+	while _log_seen + 2 < log.size():
+		var v: float = speeds[_log_seen / 3]
+		var kind := log[_log_seen]
 		_log_seen += 3
+		if plays >= 4 or (v < 0.05 and kind != CueSim.Ev.POCKET):
+			continue
+		var vol := clampf(linear_to_db(clampf(v / 3.0, 0.08, 1.0)), -22.0, 0.0)
+		match kind:
+			CueSim.Ev.BALL_HIT:
+				AudioService.play("clack", _fx_rng.randf_range(0.94, 1.08), vol)
+			CueSim.Ev.CUSHION:
+				AudioService.play("cushion", _fx_rng.randf_range(0.92, 1.06), vol - 2.0)
+			CueSim.Ev.POCKET:
+				AudioService.play("pocket", _fx_rng.randf_range(0.95, 1.05), maxf(vol, -10.0))
+				AudioService.buzz(14)
 		plays += 1
-	if plays >= 3:
-		_log_seen = log.size() - log.size() % 3
 
 
 # --- input --------------------------------------------------------------------------------------
@@ -402,15 +409,20 @@ func _press(screen: Vector2) -> void:
 		_preview_dirty = true
 
 
-## The cue points from the white ball at the finger; Easy / Medium lock onto a legal ball's centre
-## when the aim passes within 0.6 / 0.3 degrees of it.
+## The cue points from the white ball at the finger. Easy / Medium lock onto a pocket line - the
+## ghost-ball aim that sends a legal ball at a pocket - when within 0.6 / 0.3 degrees of it.
+## (Snapping to ball centres blocked thin cuts.)
 func _point(at: Vector2) -> void:
 	var snap := {"easy": 0.6, "medium": 0.3}.get(difficulty, 0.0) as float
-	var centres := []
+	var ghosts := []
 	if snap > 0.0:
+		var sim := _match.sim
 		for b in PoolRules.legal_targets(_match.state):
-			centres.append(Vector2(_match.sim.px[b], _match.sim.py[b]))
-	_aim.point_at(_cue_pos(), at, Time.get_ticks_msec(), centres, deg_to_rad(snap))
+			var obj := Vector2(sim.px[b], sim.py[b])
+			for k in sim.table.pocket_count():
+				var to_pocket := Vector2(sim.table.pocket_x[k], sim.table.pocket_y[k]) - obj
+				ghosts.append(obj - to_pocket.normalized() * 2.0 * sim.p.radius)
+	_aim.point_at(_cue_pos(), at, Time.get_ticks_msec(), ghosts, deg_to_rad(snap))
 
 
 func _pause() -> void:

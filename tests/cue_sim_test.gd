@@ -50,7 +50,7 @@ func test_rolling_deceleration_is_mu_roll_times_g() -> void:
 	sim.strike(0.0, 1.0, 1.0, 0.0, 0.4)  # 0.4 R above centre: natural roll at once
 	assert_int(sim.phase[0]).is_equal(CueSim.ROLLING)
 	sim.step(1.0)
-	assert_float(sim.vy[0]).is_equal_approx(1.0 - 0.012 * G, 1e-9)
+	assert_float(sim.vy[0]).is_equal_approx(1.0 - sim.p.mu_roll * G, 1e-9)
 
 
 func test_ninety_degree_rule_for_a_stun_cut() -> void:

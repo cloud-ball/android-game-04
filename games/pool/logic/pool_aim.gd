@@ -9,7 +9,9 @@ extends RefCounted
 ##   so the object-ball and cue-ball rays include throw and spin (a geometric line would lie).
 
 const V_MAX := 8.0
-const V_BREAK := 12.0
+const V_BREAK := 13.0
+## Break power is gentler than v ~ p^2: a firm pull (85%) breaks at ~11 m/s, not ~9.
+const BREAK_GAMMA := 1.2
 const GAMMA := 2.0
 const MIN_POWER := 0.02  # below this the shot is cancelled
 const LIFT_MS := 60
@@ -35,7 +37,9 @@ var _hist_a := PackedFloat64Array()
 
 static func speed_for(power: float, breaking := false) -> float:
 	var p := clampf(power, 0.0, 1.0)
-	return (V_BREAK if breaking else V_MAX) * pow(p, GAMMA)
+	if breaking:
+		return V_BREAK * pow(p, BREAK_GAMMA)
+	return V_MAX * pow(p, GAMMA)
 
 
 func dir() -> Vector2:

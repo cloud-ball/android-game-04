@@ -30,10 +30,22 @@ func _ready() -> void:
 	_streams["lose"] = _tone([[440.0, 0.14], [349.0, 0.14], [262.0, 0.3]], 0.4)
 	_streams["count"] = _tone([[740.0, 0.08]], 0.35)
 	_streams["go"] = _tone([[1100.0, 0.18]], 0.4)
-	# Pool: ball click, cue strike, pocket drop.
-	_streams["clack"] = _noise(0.018, 0.32)
-	_streams["cue"] = _noise(0.03, 0.26)
-	_streams["pocket"] = _tone([[196.0, 0.05], [147.0, 0.08]], 0.45)
+	# Pool: modal "impacts" (damped partials + a short noise transient) instead of UI blips.
+	# Ball-ball: bright, very short click. Cushion: low rubbery thud. Cue: woody tick.
+	# Pocket: a rattle off the jaw, then a dull drop.
+	_streams["clack"] = _impact(
+		[[3150.0, 0.010, 0.0, 1.0], [5400.0, 0.006, 0.0, 0.45]], 0.5, 0.06, 0.5
+	)
+	_streams["cushion"] = _impact(
+		[[150.0, 0.045, 0.0, 1.0], [410.0, 0.02, 0.0, 0.4]], 0.35, 0.14, 0.55
+	)
+	_streams["cue"] = _impact([[880.0, 0.012, 0.0, 1.0], [2300.0, 0.006, 0.0, 0.5]], 0.6, 0.05, 0.4)
+	_streams["pocket"] = _impact(
+		[[2600.0, 0.008, 0.0, 0.6], [2100.0, 0.008, 0.03, 0.4], [118.0, 0.09, 0.055, 1.0]],
+		0.25,
+		0.24,
+		0.6
+	)
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = MUSIC_DB
 	add_child(_music)
@@ -96,13 +108,15 @@ func _music_ready(variant: String, bytes: PackedByteArray) -> void:
 	_apply_music()
 
 
-func play(name: String, pitch := 1.0) -> void:
+## volume_db: e.g. scaled from impact speed so soft touches are quiet.
+func play(name: String, pitch := 1.0, volume_db := 0.0) -> void:
 	if not SettingsService.sound_on() or not _streams.has(name):
 		return
 	var p := _players[_next]
 	_next = (_next + 1) % _players.size()
 	p.stream = _streams[name]
 	p.pitch_scale = pitch
+	p.volume_db = volume_db
 	p.play()
 
 
@@ -143,6 +157,30 @@ static func _noise(seconds: float, gain: float) -> AudioStreamWAV:
 		low = lerpf(low, white, 0.25)
 		var env := pow(1.0 - float(s) / count, 2.0)
 		bytes.encode_s16(s * 2, int(clampf(low * env * gain * 2.0, -1.0, 1.0) * 32000.0))
+	return _wav(bytes)
+
+
+## A struck object: partials [[freq_hz, decay_s, delay_s, amp], ...] (exponential decay) plus a
+## noise transient of noise_amt over the first 3 ms. Deterministic (fixed noise seed).
+static func _impact(
+	partials: Array, noise_amt: float, seconds: float, gain: float
+) -> AudioStreamWAV:
+	var count := int(seconds * MIX_RATE)
+	var bytes := PackedByteArray()
+	bytes.resize(count * 2)
+	var state := 4242
+	for s in count:
+		var t := float(s) / MIX_RATE
+		var v := 0.0
+		for p in partials:
+			var dt: float = t - p[2]
+			if dt >= 0.0:
+				v += p[3] * sin(TAU * p[0] * dt) * exp(-dt / p[1]) * minf(1.0, dt * MIX_RATE / 12.0)
+		if t < 0.003:
+			state = (state * 1103515245 + 12345) & 0x7fffffff
+			v += (float(state) / 0x7fffffff * 2.0 - 1.0) * noise_amt * (1.0 - t / 0.003)
+		var fade := minf(1.0, (count - s) / 200.0)
+		bytes.encode_s16(s * 2, int(clampf(v * gain * fade, -1.0, 1.0) * 32000.0))
 	return _wav(bytes)
 
 
