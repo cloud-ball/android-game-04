@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick step 1: research, plan, scaffold (branch fairway-flick)
+- Research: docs/research/Fairway Flick golf game design.md (+ notes): ball physics, phone controls and
+  camera, 9-hole design, CPU golfer, Godot/Android implementation.
+- Plan: docs/plans/2026-11-14-fairway-flick.md (10 gated steps). Key decisions: one custom deterministic
+  solver strike-to-rest (no Jolt hand-off), real-metre physics on a short par-32 course, pull-and-release
+  swing with timing, expected-strokes CPU with real-handicap error, Mobile renderer.
+- Corrected the old assumptions in docs/games/golf.md and .claude/rules/golf.md: smooth Re-dependent drag
+  (the 0.27 -> 0.32 step carried drives ~12% short), unclamped polynomial lift (the 0.25 clamp flattened
+  irons), (5/7) g slope pull on greens, offset-dependent cup capture, carry tolerance +-5% / +-8%.
+- Scaffold: games/golf/{logic,scenes,assets,tests}; GolfParams (ball constants, Cd/Cl curves without
+  pow/exp); placeholder scene; save namespace schema 1 + migrate stub; 4 tests (195 green). The manifest
+  points at the scene but stays enabled = false (hub shows SOON).
+- Try it: nothing on the phone yet (dev only: `godot --path . -- --game=golf`).
+- Open: release exports are --headless, which skips the shader baker (slower first launch) - decide before
+  the next store build.
+
 ## 2026-11-14 · Break & Bank: smarter CPU (shot checking, 8-ball bug fixed)
 - Bug: on the 8 the planner simulated shots without calling a pocket, and the rules reject an
   uncalled 8 - so the CPU could not see a scratch on the 8 or the 8 in the wrong pocket. Rollouts
