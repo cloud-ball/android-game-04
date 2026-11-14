@@ -7,6 +7,8 @@ extends RefCounted
 ## positions need no conversion. State is PackedFloat64Array; the hot path uses only + - * / and
 ## sqrt (no pow / exp / trig) so results match across devices.
 
+enum Over { FLYING, HIT, OUT }
+
 ## Live: 4 substeps per 60 Hz tick. Tests show 1/60 s is within 0.3 m of carry (planner use).
 const SUBSTEP := 1.0 / 240.0
 ## Wind height profile: w(h) = w_ref * (h / 10 m)^0.15, floored at 0.3, tabulated (no pow).
@@ -32,6 +34,7 @@ var _k := 0.0  # 0.5 * rho * A / m
 var _sr := 0.0  # radius for the spin ratio
 var _st := PackedFloat64Array()  # RK4 scratch
 var _d := PackedFloat64Array()
+var _prev := PackedFloat64Array()
 
 
 func _init(params: GolfParams = null) -> void:
@@ -41,6 +44,7 @@ func _init(params: GolfParams = null) -> void:
 	s.resize(6)
 	_st.resize(6)
 	_d.resize(24)
+	_prev.resize(6)
 
 
 ## Launch from `at` (Vector3) with ball speed (m/s), launch angle above the horizon, backspin
@@ -178,39 +182,37 @@ func fly_to_ground(dt := SUBSTEP, ground_y := 0.0, max_time := 20.0) -> Dictiona
 	return {"pos": at, "vel": v, "time": lerpf(t_prev, time, f), "apex": apex, "spin": spin}
 
 
-## Flies over a hole's terrain until the ball first touches the ground (exact swept contact per
-## step, so no tunnelling at driver speed). The state is moved to the contact point.
-## Returns {hit: bool, pos, vel, normal, surface, time}; hit = false if max_time ran out or the
-## ball left the grid (OUT surface is reported then).
-func fly_over(hole: HoleData, dt := SUBSTEP, max_time := 20.0) -> Dictionary:
-	var r := p.radius
-	var prev := PackedFloat64Array(s)  # one copy per flight; refilled in place each step
-	while time < max_time:
+## One step over a hole's terrain with exact swept contact (no tunnelling at driver speed). On a
+## hit the state is moved back to the contact point. Allocation-free (live use, 4 per tick).
+func step_over(hole: HoleData, dt := SUBSTEP) -> int:
+	for i in 6:
+		_prev[i] = s[i]
+	var ta := time
+	step(dt, hole.height(s[0], s[2]))
+	var t := hole.sweep_d(_prev[0], _prev[1], _prev[2], s[0], s[1], s[2], p.radius)
+	if t >= 0.0:
 		for i in 6:
-			prev[i] = s[i]
-		var ta := time
-		step(dt, hole.height(s[0], s[2]))
-		var t := hole.sweep_d(prev[0], prev[1], prev[2], s[0], s[1], s[2], r)
-		if t >= 0.0:
-			for i in 6:
-				s[i] = prev[i] + (s[i] - prev[i]) * t
-			time = ta + (time - ta) * t
-			return {
-				"hit": true,
-				"pos": pos(),
-				"vel": vel(),
-				"normal": hole.normal(s[0], s[2]),
-				"surface": hole.surface_at(s[0], s[2]),
-				"time": time
-			}
-		if not hole.contains(s[0], s[2]):
-			break  # left the grid: out of bounds
+			s[i] = _prev[i] + (s[i] - _prev[i]) * t
+		time = ta + (time - ta) * t
+		return Over.HIT
+	if not hole.contains(s[0], s[2]):
+		return Over.OUT  # left the grid: out of bounds
+	return Over.FLYING
+
+
+## Flies over a hole until the ball first touches the ground or leaves the grid.
+## Returns {hit: bool, pos, vel, normal, surface, time}; OUT surface when it did not land.
+func fly_over(hole: HoleData, dt := SUBSTEP, max_time := 20.0) -> Dictionary:
+	var r := Over.FLYING
+	while r == Over.FLYING and time < max_time:
+		r = step_over(hole, dt)
+	var hit := r == Over.HIT
 	return {
-		"hit": false,
+		"hit": hit,
 		"pos": pos(),
 		"vel": vel(),
-		"normal": Vector3.UP,
-		"surface": HoleData.Surface.OUT,
+		"normal": hole.normal(s[0], s[2]) if hit else Vector3.UP,
+		"surface": hole.surface_at(s[0], s[2]) if hit else HoleData.Surface.OUT,
 		"time": time
 	}
 
