@@ -151,6 +151,8 @@ func _next_turn() -> void:
 		return
 	if _match.state.shooter == 0 and not _bot:
 		state = State.AIM
+		if _match.state.phase == PoolState.Phase.BREAK:
+			_hud.reset_spin(PoolAim.BREAK_TOP)
 		_hud.set_controls(true)
 		_preview_dirty = true
 		_update_message()
@@ -233,8 +235,8 @@ func _settle() -> void:
 		var text: String = PoolRules.FOUL_TEXT.get(r.fouls[0], "Foul")
 		var next := "Ball in hand for the CPU" if shooter == 0 else "Ball in hand for you"
 		_hud.banner("FOUL", "%s · %s" % [text, next], Color(1.0, 0.45, 0.4))
-		AudioService.play("crash", 1.4)
-		AudioService.buzz(30)
+		AudioService.play("foul", 1.0, -4.0)
+		AudioService.buzz(18)
 	elif r.assigned:
 		var g := _match.state.group[0]
 		var gname := "SOLIDS 1-7" if g == PoolState.Group.SOLIDS else "STRIPES 9-15"

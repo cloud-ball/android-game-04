@@ -17,7 +17,7 @@ Custom deterministic solver (shared/cue_sim): balls move in the table plane with
 | Ball–ball friction | 0.055 constant; tangential impulse capped at m·|slip|/7 (throw, no energy gain) |
 | Cushions | Han 2005 (pooltool's corrected source), sinθ 0.27, e_c 0.85, μ_c 0.2; ball slides after every rail |
 | Cue tip offset | clamp spin input to 0.5 R (avoids miscues); squirt / swerve / massé / jump off |
-| Balls / table | 57.15 mm, 170 g; **7-ft playfield 1.981 × 0.991 m** (same 2:1, balls 28% bigger on screen) |
+| Balls / table | 57.15 mm, 170 g; **6-ft bar playfield 1.676 × 0.838 m** (2026-11-14, was 7-ft: balls ~16% bigger on screen; break preset to a light follow, BREAK_TOP 0.15) |
 | Pockets | mouths: corner 11.8 cm, side 13.0 cm; facings into the pocket; capture circle |
 
 ## Rules and modes

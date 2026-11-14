@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Cue Club: bigger balls (6-ft table), cleaner pockets, softer foul, fuller how-to
+- Table: 7-ft -> 6-ft bar table (0.838 x 1.676 m). The phone fits the table to its width, so every
+  ball draws ~16% bigger; physics constants unchanged (golden break regenerated with justification).
+- Break: the shorter table made centre-ball breaks scratch into the side pockets (29% at 85% power).
+  The break now starts with a light follow preset (PoolAim.BREAK_TOP 0.15, visible on the spin
+  button, changeable); CPU breaks the same way. 200 breaks: 54% pot a ball, 12% scratch at 85%;
+  66% / 9% at full power (7-ft was 34% / 12% and 48% / 22%).
+- Pockets: rails and wood are drawn low, so a ball resting in the jaws draws over the hole instead of
+  only its numbered top showing through; a potted ball darkens as it sinks.
+- Foul: a soft low two-note tone (sines, slow attack/release) instead of the noise burst; lighter buzz.
+- How to play: clearer control text (fine-aim edge, power bar side, spin button) and three rule
+  cards: Solids or stripes, Call the 8, Fouls give ball in hand (try-it drag).
+- CPU self-play on the 6-ft table (20 games each): easy 20% / 35%, medium 40%, hard 65% / 70% -
+  ladder intact, easy and medium a little softer than on 7-ft.
+- Try it: install the debug APK; open How to play from the pause menu; break a few racks.
+
 ## 2026-11-14 · Cue Club: wooden knock sounds, no more twirling balls
 - Sounds: ball, cushion, cue and pocket sounds are now filtered-noise knocks with a short low body
   (core/AudioService.gd `_knocks`) instead of ringing sine partials, which sounded like glass. Gains
