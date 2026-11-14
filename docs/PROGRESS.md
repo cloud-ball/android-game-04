@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Cue Club: ball trays, best of 3, end-of-match stats
+- Plan: docs/plans/2026-11-14-cue-club-tray-series.md (research priority 10 + race-to-2 frames).
+- Ball trays in the top bar: each player's 7 group balls + the 8; bright = still to pot, dimmed =
+  potted, the 8 gets a gold ring once it is the target. A potted ball flies from its pocket to its
+  slot (open-table pots fly to the shooter's name and fade).
+- Best of 3: second mode on the start screen ("Single rack" / "Best of 3"). Breaks alternate by
+  frame; a banner between frames shows the winner, score and who breaks next; frame pips by each
+  group. Coins and the daily challenge count once per match; a best-of-3 win pays double.
+- End card: potted, best run (consecutive potting shots), pot rate, CPU potted, wins (+ frame score).
+- New pure PoolSeries (games/pool/logic/pool_series.gd) with tests; save schema 1 -> 2 adds "mode"
+  (migrate keeps everything; tested). 188 tests green.
+- Try it: start screen -> Best of 3 -> PLAY; watch the trays fill as balls drop.
+
 ## 2026-11-14 · Cue Club: bigger balls (6-ft table), cleaner pockets, softer foul, fuller how-to
 - Table: 7-ft -> 6-ft bar table (0.838 x 1.676 m). The phone fits the table to its width, so every
   ball draws ~16% bigger; physics constants unchanged (golden break regenerated with justification).

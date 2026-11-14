@@ -1,8 +1,10 @@
 class_name PoolHud
 extends GameShell
 ## Cue Club HUD on the shared GameShell: a top bar with both players (group by name AND number
-## chips, never colour alone), the pause button, the power bar (right), the fine-aim strip (left),
-## the spin button + panel, and a one-line message. Holds no game state.
+## chips, never colour alone) - each row is a ball tray: the group's 7 balls + the 8, bright while
+## still to pot, dimmed once potted, the 8 ringed when it is the target; potted balls fly in from
+## their pocket - frame pips for best of 3, the pause button, the power bar (right), the fine-aim
+## strip (left), the spin button + panel, and a one-line message. Holds no game state.
 
 signal shoot(power: float)
 signal nudge(dp: float)
@@ -10,6 +12,8 @@ signal spin_changed(side: float, top: float)
 
 const ACCENT := Color(0.3, 0.85, 0.8)
 const TOP_BAR_H := 108.0
+const SLOT := 50.0  # tray slot pitch
+const FLY_TIME := 0.45
 
 var power_bar: PoolControls.PowerBar
 var fine: PoolControls.FineStrip
@@ -21,7 +25,18 @@ var bottom_band := 210.0
 var _names: Array[Label] = []
 var _groups: Array[Label] = []
 var _chips: Array[Control] = []
-var _chip_balls: Array = [[], []]
+var _pips: Array[Control] = []
+var _panel: Panel
+## Tray state per player: group (PoolState.Group), balls in slot order, on the 8.
+var _tray_group := PackedInt32Array([0, 0])
+var _on_eight := [false, false]
+var _on_table := PackedByteArray()
+var _frames := PackedInt32Array([0, 0])
+var _frame_target := 1
+## Balls flying from a pocket to the tray: [ball, from, to, t]; landed balls dim at once.
+var _flights: Array = []
+var _landed := {}
+var _fly_layer: Control
 var _msg: Label
 var _pause_btn: Button
 var _turn := 0
@@ -32,8 +47,12 @@ func _ready() -> void:
 		{
 			"title": "Cue Club",
 			"accent": ACCENT,
-			"modes": {"vs": "vs CPU"},
-			"blurbs": {"vs": "Pot your group - solids or stripes - then call and sink the 8."},
+			"modes": {"vs": "Single rack", "bo3": "Best of 3"},
+			"blurbs":
+			{
+				"vs": "Pot your group - solids or stripes - then call and sink the 8.",
+				"bo3": "First to two racks wins. Breaks alternate; a match win pays double.",
+			},
 			"howto": PoolHowto.cards(),
 		}
 	)
@@ -41,8 +60,16 @@ func _ready() -> void:
 	var top := UiKit.safe_top(self)
 	top_band = top + 10.0 + TOP_BAR_H + 8.0
 	bottom_band = 150.0 + _safe_bottom()
+	_on_table.resize(16)
+	_on_table.fill(1)
 	_build_bar(top)
 	_build_controls()
+	_fly_layer = Control.new()
+	_fly_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fly_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fly_layer.draw.connect(_draw_flights)
+	add_child(_fly_layer)
+	set_process(false)
 	build_shell()
 	spin_panel = PoolControls.SpinPanel.new()
 	add_child(spin_panel)
@@ -71,6 +98,7 @@ func _build_bar(top: float) -> void:
 	panel.position = Vector2(24, top + 10)
 	panel.size = Vector2(1080 - 48 - 144 - 12, TOP_BAR_H)
 	add_child(panel)
+	_panel = panel
 	for p in 2:
 		var x := 26.0 if p == 0 else panel.size.x * 0.5 + 10.0
 		var name := UiKit.label("YOU" if p == 0 else "CPU", 38, Color.WHITE, 900)
@@ -89,6 +117,13 @@ func _build_bar(top: float) -> void:
 		chips.draw.connect(func() -> void: _draw_chips(chips, who))
 		panel.add_child(chips)
 		_chips.append(chips)
+		var pips := Control.new()
+		pips.position = Vector2(x + 330, 12)
+		pips.size = Vector2(80, 34)
+		pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pips.draw.connect(func() -> void: _draw_pips(pips, who))
+		panel.add_child(pips)
+		_pips.append(pips)
 	_pause_btn = UiKit.pause_button(112.0)
 	_pause_btn.position = Vector2(1080 - 24 - 144, top + 10 + (TOP_BAR_H - 144) * 0.5)
 	_pause_btn.size = Vector2(144, 144)
@@ -150,11 +185,17 @@ func set_message(text: String) -> void:
 	_msg.text = text
 
 
-## Shooter highlight, groups and remaining balls per player.
-func set_players(state: PoolState) -> void:
+## Shooter highlight, groups, the ball trays and (best of 3) the frame score.
+func set_players(state: PoolState, series: PoolSeries = null) -> void:
 	_turn = state.shooter
+	_on_table = state.on_table.duplicate()
+	_landed.clear()
+	if series != null:
+		_frames = series.frames.duplicate()
+		_frame_target = series.target
 	for p in 2:
 		var g := state.group[p]
+		_tray_group[p] = g
 		_groups[p].text = (
 			"Open table"
 			if g == PoolState.Group.NONE
@@ -163,33 +204,130 @@ func set_players(state: PoolState) -> void:
 		_names[p].add_theme_color_override(
 			"font_color", ACCENT if state.shooter == p else Color(1, 1, 1, 0.55)
 		)
-		var balls := []
-		if g != PoolState.Group.NONE:
-			for b in range(1, 16):
-				if PoolState.group_of(b) == g and state.on_table[b] == 1:
-					balls.append(b)
-			if balls.is_empty() and state.on_table[8] == 1:
-				balls.append(8)
-		_chip_balls[p] = balls
+		var left := 0
+		for b in range(1, 16):
+			if g != PoolState.Group.NONE and PoolState.group_of(b) == g and _on_table[b] == 1:
+				left += 1
+		_on_eight[p] = g != PoolState.Group.NONE and left == 0
 		_chips[p].queue_redraw()
+		_pips[p].queue_redraw()
+
+
+## Slot index of ball b in its owner's tray (the 8 is the last slot).
+static func slot_of(b: int) -> int:
+	if b == 8:
+		return 7
+	return b - 1 if b < 8 else b - 9
+
+
+## Owner of a potted ball for the fly-in: its group's player, else the shooter.
+func _owner(b: int, state: PoolState) -> int:
+	var g := PoolState.group_of(b)
+	for p in 2:
+		if g != PoolState.Group.NONE and state.group[p] == g:
+			return p
+	return state.shooter
+
+
+## Canvas position of a tray slot (or of the player's name on an open table).
+func _slot_pos(who: int, b: int) -> Vector2:
+	var base := _panel.position + _chips[who].position
+	if _tray_group[who] == PoolState.Group.NONE:
+		return _panel.position + _names[who].position + Vector2(40, 22)
+	return base + Vector2(24 + slot_of(b) * SLOT, 26)
+
+
+## A ball dropped into pocket screen position `from`: it flies to its tray slot.
+func fly_ball(b: int, from: Vector2, state: PoolState) -> void:
+	var who := _owner(b, state)
+	_flights.append([b, from, _slot_pos(who, b), 0.0, who])
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	var i := 0
+	while i < _flights.size():
+		var f: Array = _flights[i]
+		f[3] += delta / FLY_TIME
+		if f[3] >= 1.0:
+			_landed[f[0]] = true
+			_chips[f[4]].queue_redraw()
+			_flights.remove_at(i)
+			continue
+		i += 1
+	_fly_layer.queue_redraw()
+	if _flights.is_empty():
+		set_process(false)
+
+
+func _draw_flights() -> void:
+	for f in _flights:
+		var k: float = f[3]
+		var e := 1.0 - pow(1.0 - k, 3.0)
+		var from: Vector2 = f[1]
+		var to: Vector2 = f[2]
+		var pos := from.lerp(to, e) + Vector2(0, -120.0 * sin(PI * e))
+		var r := lerpf(30.0, 21.0, e)
+		var open: bool = _tray_group[f[4]] == PoolState.Group.NONE
+		draw_ball_chip(_fly_layer, pos, f[0], r, 1.0 - (0.8 * k if open else 0.0))
 
 
 func _draw_chips(c: Control, who: int) -> void:
-	var balls: Array = _chip_balls[who]
-	var font := UiKit.font(900)
-	for i in balls.size():
-		var b: int = balls[i]
-		var ctr := Vector2(24 + i * 50, 26)
-		var col: Color = PoolView.BALL_COLORS[b if b <= 8 else b - 8]
-		c.draw_circle(ctr, 21, Color(0.9, 0.88, 0.82) if b >= 9 else col)
-		if b >= 9:
-			c.draw_rect(Rect2(ctr - Vector2(21, 9), Vector2(42, 18)), col)
-		c.draw_circle(ctr, 11, Color(0.95, 0.94, 0.9))
-		var t := str(b)
-		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-		c.draw_string(
-			font, ctr + Vector2(-tw * 0.5, 6), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.BLACK
+	var g := _tray_group[who]
+	if g == PoolState.Group.NONE:
+		return
+	var balls := range(1, 8) if g == PoolState.Group.SOLIDS else range(9, 16)
+	balls.append(8)
+	for b in balls:
+		var ctr := Vector2(24 + slot_of(b) * SLOT, 26)
+		var gone: bool = _on_table[b] == 0 or _landed.has(b)
+		if b == 8:
+			var target: bool = _on_eight[who] and not gone
+			if target:
+				c.draw_arc(ctr, 25, 0.0, TAU, 32, UiKit.GOLD, 4.0)
+			draw_ball_chip(c, ctr, b, 21.0, 1.0 if target else 0.35)
+		elif gone:
+			c.draw_circle(ctr, 21, Color(1, 1, 1, 0.07))
+			draw_ball_chip(c, ctr, b, 15.0, 0.3)
+		else:
+			draw_ball_chip(c, ctr, b, 21.0, 1.0)
+
+
+## Best of 3: one pip per frame needed, filled for frames won.
+func _draw_pips(c: Control, who: int) -> void:
+	if _frame_target < 2:
+		return
+	for i in _frame_target:
+		var ctr := Vector2(14 + i * 32, 17)
+		if i < _frames[who]:
+			c.draw_circle(ctr, 11, UiKit.GOLD)
+		else:
+			c.draw_arc(ctr, 10, 0.0, TAU, 24, Color(1, 1, 1, 0.45), 3.0)
+
+
+## A numbered ball chip (stripes as a band), radius r, faded by alpha.
+static func draw_ball_chip(c: CanvasItem, ctr: Vector2, b: int, r: float, alpha: float) -> void:
+	var col: Color = PoolView.BALL_COLORS[b if b <= 8 else b - 8]
+	var white := Color(0.9, 0.88, 0.82, alpha)
+	c.draw_circle(ctr, r, white if b >= 9 else Color(col, alpha))
+	if b >= 9:
+		c.draw_rect(
+			Rect2(ctr - Vector2(r, r * 0.43), Vector2(r * 2.0, r * 0.86)), Color(col, alpha)
 		)
+	c.draw_circle(ctr, r * 0.52, Color(0.95, 0.94, 0.9, alpha))
+	var font := UiKit.font(900)
+	var size := int(r * 0.76)
+	var t := str(b)
+	var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	c.draw_string(
+		font,
+		ctr + Vector2(-tw * 0.5, size * 0.37),
+		t,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		size,
+		Color(0, 0, 0, alpha)
+	)
 
 
 func show_start(stats_text: String) -> void:
