@@ -86,6 +86,24 @@ func gradient(x: float, z: float) -> Vector2:
 	return Vector2(h11 - h01, h01 - h00) / cell
 
 
+## Slope (dh/dx, dh/dz) written into out[0], out[1] in 64-bit (Vector2 is 32-bit); no allocation.
+func grad_into(x: float, z: float, out: PackedFloat64Array) -> void:
+	var fx := clampf((x - x0) / cell, 0.0, nx)
+	var fz := clampf((z - z0) / cell, 0.0, nz)
+	var i := mini(int(fx), nx - 1)
+	var j := mini(int(fz), nz - 1)
+	var h00 := _h(i, j)
+	var h11 := _h(i + 1, j + 1)
+	if fx - i >= fz - j:
+		var h10 := _h(i + 1, j)
+		out[0] = (h10 - h00) / cell
+		out[1] = (h11 - h10) / cell
+	else:
+		var h01 := _h(i, j + 1)
+		out[0] = (h11 - h01) / cell
+		out[1] = (h01 - h00) / cell
+
+
 ## Unit surface normal under (x, z).
 func normal(x: float, z: float) -> Vector3:
 	var g := gradient(x, z)
