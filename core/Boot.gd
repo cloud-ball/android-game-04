@@ -15,6 +15,7 @@ extends Node
 ##   --howto=<card>       open the how-to cards at that card (--howto-ms=<t> freezes it there)
 ##   --practice           show first-match practice hints even for moves already learned
 ##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
+##   --bench=golf         run the golf solver benchmark, print "[golf-bench]" lines and quit
 
 var options: Dictionary = {}
 var bot := false
@@ -32,8 +33,8 @@ func _ready() -> void:
 		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
 	if options.has("seed"):
 		Rng.session_seed = int(options["seed"])
-	if str(options.get("bench", "")) == "cue":
-		_run_bench.call_deferred()
+	if str(options.get("bench", "")) in ["cue", "golf"]:
+		_run_bench.call_deferred(str(options["bench"]))
 		return
 	if options.has("game"):
 		var extra := {}
@@ -46,9 +47,12 @@ func _ready() -> void:
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
 
 
-func _run_bench() -> void:
+func _run_bench(which: String) -> void:
 	await get_tree().create_timer(0.5).timeout  # let the first frame settle
-	CueBench.run()
+	if which == "golf":
+		GolfBench.run()
+	else:
+		CueBench.run()
 	get_tree().quit()
 
 

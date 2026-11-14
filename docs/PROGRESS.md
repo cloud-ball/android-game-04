@@ -2,6 +2,16 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick step 5: phone benchmark (branch fairway-flick)
+- `--bench=golf` (GolfBench; Boot passes the name). Golden fixtures moved into GolfBench so the phone
+  prints the same hashes the tests check.
+- Test phone (Adreno 642L, release-like debug build): golden flight and golden ball hashes identical to
+  desktop (bit-exact). 25.5 us per substep at 1/240 (live: 4 substeps = ~0.1 ms per frame); a full shot
+  to rest costs 49 / 25 / 13 ms at 1/240 / 1/120 / 1/60; a putt 17 ms at 1/120. Desktop: ~2.3x faster.
+- Decision: live play stays at 1/240; the CPU plans at 1/60 (carry within 1 cm of 1/240), so ~75 full
+  rollouts per second of thinking - enough for the shortlist + noise samples in the plan.
+- Try it: `adb shell run-as com.cloud198.pocketarena8 sh -c 'echo --bench=golf > files/dev_args.txt'`.
+
 ## 2026-11-14 · Fairway Flick step 4: bounce, roll, cup, water, out of bounds (branch fairway-flick)
 - GolfBall (games/golf/logic/golf_ball.gd): one shot from strike to rest - flight, Penner bounces with
   a per-surface tilt (GolfSurfaces), a skid phase where friction turns backspin into roll (so wedges

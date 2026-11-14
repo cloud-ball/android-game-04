@@ -128,10 +128,12 @@ func test_planning_step_matches_live_step() -> void:
 
 
 func test_golden_shot_is_bit_identical() -> void:
-	var o := golden_shot()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(GOLDEN))
-	assert_str((o.flight as GolfFlight).fingerprint()).is_equal(data["fingerprint"])
-	assert_str(golden_shot().flight.fingerprint()).is_equal(o.flight.fingerprint())
+	var a := GolfBench.golden_flight()
+	assert_str(a.fingerprint()).is_equal(data["fingerprint"])
+	assert_str(GolfBench.golden_flight().fingerprint()).is_equal(a.fingerprint())
+	# The bench copy is the same shot as the table-driven helper.
+	assert_str((golden_shot().flight as GolfFlight).fingerprint()).is_equal(a.fingerprint())
 
 
 ## Tour 7-iron, 6 deg of curve, a quartering 4 m/s wind, 12 deg heading.

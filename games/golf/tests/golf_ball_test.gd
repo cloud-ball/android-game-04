@@ -190,17 +190,7 @@ func test_every_shot_finishes_above_ground() -> void:
 
 
 func test_golden_ball_is_bit_identical() -> void:
-	var a := golden_ball()
+	var a := GolfBench.golden_ball()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(GOLDEN))
 	assert_str(a.fingerprint()).is_equal(data["fingerprint"])
-	assert_str(golden_ball().fingerprint()).is_equal(a.fingerprint())
-
-
-## 7-iron with a little curve onto a sloped, firm green with a pin: flight, bounces, skid, roll.
-static func golden_ball() -> GolfBall:
-	var d := hole(HoleData.Surface.GREEN, 0.012, Vector3(4.0, 0.0, -150.0))
-	var b := GolfBall.new(d, preset(11.0, true))
-	b.strike(Vector3(0, R, 0), 96 * GolfFlight.MPH, 17.5, 6500 * GolfFlight.RPM, 3.0, 2.0)
-	b.flight.set_wind(Vector3(1.2, 0.0, 0.8))
-	b.run_to_rest()
-	return b
+	assert_str(GolfBench.golden_ball().fingerprint()).is_equal(a.fingerprint())
