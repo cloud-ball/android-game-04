@@ -1,6 +1,6 @@
 class_name PoolHowto
 extends RefCounted
-## Cue Club how-to cards (HowtoDeck, 920 x 920 design units): a stylised top-down mini table.
+## Break & Bank how-to cards (HowtoDeck, 920 x 920 design units): a stylised top-down mini table.
 ## Controls: point to aim (+ the fine-aim edge), pull the power bar to shoot, spin the cue ball.
 ## Rules: solids or stripes then the 8, call the 8's pocket, fouls give ball in hand.
 

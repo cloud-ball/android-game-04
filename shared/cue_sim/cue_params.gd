@@ -1,6 +1,6 @@
 class_name CueParams
 extends RefCounted
-## Physical constants for the cue solver (SI units). Defaults are pool on a 7-ft table; sources
+## Physical constants for the cue solver (SI units). Defaults are pool on a 6-ft bar table; sources
 ## and reasoning in docs/research/Cue Club pool game design.md. Plain vars so tests can vary them.
 
 var g := 9.81

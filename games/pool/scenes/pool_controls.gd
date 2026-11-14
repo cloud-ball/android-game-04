@@ -1,6 +1,6 @@
 class_name PoolControls
 extends RefCounted
-## Cue Club touch controls (docs/research/Cue Club pool game design.md, portrait touch controls).
+## Break & Bank touch controls (docs/research/Cue Club pool game design.md, portrait touch controls).
 ##   PowerBar: pull down to load (v = v_max p^2), release to shoot; back under 2% cancels.
 ##   FineStrip: vertical drag nudges the aim by 0.03 deg per dp (wide touch area at the edge).
 ##   SpinPad: a cue-ball button; tap opens a large panel where the dot moves by relative drag at

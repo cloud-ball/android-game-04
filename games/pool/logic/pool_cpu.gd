@@ -1,6 +1,6 @@
 class_name PoolCpu
 extends RefCounted
-## Cue Club CPU. Pure: reads a PoolMatch, returns a plan
+## Break & Bank CPU. Pure: reads a PoolMatch, returns a plan
 ## {dir: Vector2, speed, side, top, pocket, place: Vector2 or null}.
 ##   break: hard at the apex ball; ball in hand: sets up a straight-in shot;
 ##   otherwise PoolPlanner (simulated shots, position play, Hard safeties); if it finds nothing,

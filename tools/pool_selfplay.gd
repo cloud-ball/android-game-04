@@ -1,5 +1,5 @@
 extends SceneTree
-## Headless Cue Club self-play: CPU levels vs reference "greedy" players (best straight shot,
+## Headless Break & Bank self-play: CPU levels vs reference "greedy" players (best straight shot,
 ## Gaussian aim error), alternating breaks, same rack seeds for both sides of a pairing.
 ## Prints win rate, shots per game, pot rate and the planner's decision time.
 ## Run: godot --headless --path . -s res://tools/pool_selfplay.gd -- [games]
