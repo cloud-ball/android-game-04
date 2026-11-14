@@ -1,5 +1,8 @@
 # Fairway Flick: build plan (2026-11-14)
 
+> **Superseded for scope and steps 4+** by docs/plans/2026-11-14-fairway-flick-courses.md (several themed
+> courses, revised hole lengths, spec-baked holes, progression). Steps 1-3 below are done.
+
 Source: docs/research/Fairway Flick golf game design.md (+ notes). Branch: `fairway-flick`. The game stays
 `enabled = false` in games/golf/manifest.tres until step 10 passes.
 

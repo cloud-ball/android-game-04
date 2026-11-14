@@ -2,6 +2,17 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick: full-game scope - courses, holes, progression (branch fairway-flick)
+- Feedback: the preview is "just a flick"; the game must be real golf with holes and different maps.
+- Research: docs/research/Fairway Flick courses and maps.md (+ notes): course structure and unlocks in
+  well-rated golf games, themes and art direction, 22 hole archetypes and a difficulty ramp, a
+  spec -> bake -> validate pipeline.
+- New plan: docs/plans/2026-11-14-fairway-flick-courses.md - four themed 9-hole courses (parkland,
+  coastal links, canyon desert, volcanic tropical) + an all-par-3 alpine bonus, named CPU rivals,
+  3-hole legs to unlock courses, stars, championship, daily; holes authored as specs and baked to
+  HoleData with automatic playability checks. Launch with Courses 1-2.
+- Try it: nothing new on the phone (the flight preview is unchanged).
+
 ## 2026-11-14 · Fairway Flick: flight preview on the phone (branch fairway-flick)
 - The golf placeholder is now a flight preview: a flat practice hole with a green at 150 m, distance
   markers, Driver / 7-iron / Wedge (average-amateur launches), seeded wind per shot. Tap the course
