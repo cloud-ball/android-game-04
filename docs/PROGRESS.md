@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick step 3: hole terrain + exact ground contact (branch fairway-flick)
+- games/golf/logic/hole_data.gd: per-hole vertex height grid + one surface type per cell (tee,
+  fairway, rough, fringe, green, sand, water, path, out). Height / slope / normal follow the render
+  triangles (each cell split on the same diagonal), so the ball never floats or sinks.
+- Swept contact: the ground under a step is piecewise linear, so the first touch is solved exactly
+  per triangle piece (64-bit). GolfFlight.fly_over(hole) flies over terrain to the first contact;
+  leaving the grid = out of bounds.
+- Tests (7): planes reproduced exactly, continuity across edges, surface lookup, exact contact, a
+  70 m/s ball cannot pass through a ridge 0.13 m thick (a step is 0.29 m), 30 random launches over
+  rolling ground land within 5 cm of a 20x finer step and never below the surface, flat-hole
+  landing matches flat flight. 211 tests green.
+- Try it: logic only, nothing on the phone yet.
+
 ## 2026-11-14 · Fairway Flick step 2: ball flight (branch fairway-flick)
 - games/golf/logic/golf_flight.gd: RK4 flight with Re-dependent drag (tabulated drag-crisis
   logistic), unclamped lift, Magnus via a fixed spin axis (tilt = curve), spin decay per metre and a
