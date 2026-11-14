@@ -7,8 +7,14 @@ extends RefCounted
 ##   2. Each survivor x speed/spin variants is simulated (1/120 s planning step) and judged by the
 ##      real rules: fouls are rejected; a pot is scored by pot chance x (1 + position value), where
 ##      position = best next shots from where the cue ball stops (1.0 / 0.33 / 0.15).
-##   3. Hard plays a safety when nothing is likely: a soft legal hit that leaves the opponent the
-##      worst next shot. Easy picks among its few best plans (human-like variety).
+##   3. Robustness: the best few plans are replayed with the CPU's own typical error (aim +-0.8
+##      sigma, speed +-1 sigma). Shots that only work when struck perfectly - the cue ball follows
+##      into a pocket, another ball is hit first, the 8 drops early - are marked down. Self-play
+##      before this: medium scratched on 17% of its shots and lost 6 of 16 games on the 8.
+##   4. Hard plays a safety when nothing is likely: a soft legal hit that leaves the opponent the
+##      worst next shot. When no pot survives at all, medium and hard play the safest legal hit
+##      instead of a blind one (easy keeps the blind hit - beginners do that). Easy picks among
+##      its few best plans (human-like variety).
 ## Execution noise is applied by the caller (PoolCpu._noisy), so planning and luck stay separate.
 
 const LEVEL := {
@@ -34,7 +40,13 @@ const LEVEL := {
 	},
 }
 const MAX_CUT_DEG := 78.0
+## Planner shots stop within ~8 s (159 sampled: median 4.1 s, max 7.9 s); 9 s is a safety cap.
 const ROLLOUT_SECONDS := 9.0
+## Robustness check: plans replayed per level, and how hard fouls / a lost game count.
+## Easy skips the check on purpose: careless shots that give away fouls are part of its level.
+const ROBUST := {"easy": 0, "medium": 3, "hard": 4}
+const FOUL_COST := 0.5
+const LOSE_COST := 3.0
 
 var rollouts := 0
 var _sim: CueSim
@@ -55,7 +67,7 @@ func plan(
 		for sm in lv.speeds:
 			for top in lv.spins:
 				var speed: float = c.speed * sm
-				var r := _rollout(m, c.dir, speed, top)
+				var r := _rollout(m, c.dir, speed, top, c.pocket)
 				if r.foul or not r.potted_target(c.ball):
 					continue
 				var pos := 0.0
@@ -69,13 +81,15 @@ func plan(
 						"side": 0.0,
 						"top": top,
 						"pocket": c.pocket,
+						"ball": c.ball,
 						"safety": false,
 						"score": score
 					}
 				)
 	plans.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.score > b.score)
+	_robust(m, plans, int(ROBUST.get(difficulty, 3)), sigma_deg, difficulty)
 	var best: Dictionary = plans[0] if not plans.is_empty() else {}
-	if lv.safety and (best.is_empty() or best.score < 0.3):
+	if (plans.is_empty() and difficulty != "easy") or (lv.safety and best.score < 0.3):
 		var safe := _safety(m, sigma_deg)
 		if not safe.is_empty() and (best.is_empty() or safe.score > best.score):
 			return safe
@@ -158,6 +172,8 @@ class Rollout:
 	var sim: CueSim
 	var state: PoolState
 	var foul := false
+	var lost := false
+	var won := false
 	var continues := false
 	var shot: PoolShot
 
@@ -166,7 +182,10 @@ class Rollout:
 
 
 ## Plays the shot noiselessly on a copy (coarse planning step) and applies the real rules.
-func _rollout(m: PoolMatch, dir: Vector2, speed: float, top: float) -> Rollout:
+## On the 8 the pocket is called first, as the game does (pocket < 0 -> pocket 0, like
+## PoolCpu's callers): without a call the rules reject the shot, which hid scratches on the 8
+## and wrong-pocket 8s from the planner (self-play: most of hard's games lost on the 8).
+func _rollout(m: PoolMatch, dir: Vector2, speed: float, top: float, pocket: int) -> Rollout:
 	if _sim == null:
 		_sim = CueSim.new(m.sim.p)
 		_sim.substep = CueSim.SUBSTEP * 2.0
@@ -178,13 +197,60 @@ func _rollout(m: PoolMatch, dir: Vector2, speed: float, top: float) -> Rollout:
 	var r := Rollout.new()
 	r.sim = _sim
 	r.shot = PoolShot.from_sim(_sim)
-	var res := PoolRules.apply_shot(m.state, r.shot)
+	var state := m.state
+	if PoolRules.requires_call(state) and state.called_pocket < 0:
+		state = PoolRules.call_pocket(state, maxi(0, pocket))
+	var res := PoolRules.apply_shot(state, r.shot)
 	r.state = res.state
-	r.foul = (
-		res.foul() or res.outcome == PoolRules.Outcome.GAME_OVER and res.winner != m.state.shooter
-	)
+	var over := res.outcome == PoolRules.Outcome.GAME_OVER
+	r.lost = over and res.winner != m.state.shooter
+	r.won = over and res.winner == m.state.shooter
+	r.foul = res.foul() or r.lost
 	r.continues = res.outcome == PoolRules.Outcome.CONTINUE
 	return r
+
+
+## Replays the top n plans with typical execution error and re-ranks them: the score is scaled
+## by how often the pot survives the error, minus the chance of a foul or of losing on the 8.
+func _robust(m: PoolMatch, plans: Array, n: int, sigma_deg: float, difficulty: String) -> void:
+	var count := mini(n, plans.size())
+	if count == 0:
+		return
+	var sig := deg_to_rad(maxf(sigma_deg, 0.1))
+	var ss := float(PoolCpu.SPEED_SIGMA.get(difficulty, 0.09))
+	var tries := [[0.8 * sig, 1.0], [-0.8 * sig, 1.0], [0.0, 1.0 + ss], [0.0, 1.0 - ss]]
+	# The 8 decides the game (self-play: the cue ball following it in lost most hard games
+	# that were lost on the 8), so those shots get a wider, denser check.
+	var eight_tries := tries.duplicate()
+	for t in [
+		[0.4, 1.0], [-0.4, 1.0], [1.5, 1.0], [-1.5, 1.0], [0.0, 1.0 + 2.0 * ss], [1.0, 1.0 - ss]
+	]:
+		eight_tries.append([float(t[0]) * sig, float(t[1])])
+	for i in count:
+		var pl: Dictionary = plans[i]
+		var ts: Array = eight_tries if int(pl.get("ball", -1)) == 8 else tries
+		var pots := 0
+		var fouls := 0
+		var losses := 0
+		for t in ts:
+			var dir: Vector2 = (pl.dir as Vector2).rotated(float(t[0]))
+			var r := _rollout(m, dir, float(pl.speed) * float(t[1]), float(pl.top), int(pl.pocket))
+			if r.lost:
+				losses += 1
+			elif r.foul:
+				fouls += 1
+			elif r.continues or r.won:
+				pots += 1
+		var k := float(ts.size())
+		pl.score = (
+			float(pl.score) * (0.4 + 0.6 * pots / k)
+			- FOUL_COST * fouls / k
+			- LOSE_COST * losses / k
+		)
+	# Only checked plans stay; one that now scores below zero is worse than a safe legal hit.
+	var head := plans.slice(0, count).filter(func(p: Dictionary) -> bool: return p.score >= 0.0)
+	head.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.score > b.score)
+	plans.assign(head)
 
 
 ## How good the next shots are from where the cue ball stopped (same shooter).
@@ -211,7 +277,7 @@ func _safety(m: PoolMatch, sigma_deg: float) -> Dictionary:
 	for b in PoolRules.legal_targets(m.state):
 		var dir := (Vector2(m.sim.px[b], m.sim.py[b]) - cue).normalized()
 		for speed in [1.1, 1.6]:
-			var r := _rollout(m, dir, speed, -0.2)
+			var r := _rollout(m, dir, speed, -0.2, -1)
 			if r.foul:
 				continue
 			var opp := r.state.copy()
