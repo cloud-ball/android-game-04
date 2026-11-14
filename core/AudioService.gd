@@ -30,6 +30,23 @@ func _ready() -> void:
 	_streams["lose"] = _tone([[440.0, 0.14], [349.0, 0.14], [262.0, 0.3]], 0.4)
 	_streams["count"] = _tone([[740.0, 0.08]], 0.35)
 	_streams["go"] = _tone([[1100.0, 0.18]], 0.4)
+	# Pool: short band-limited noise "knocks" with a faint body - real ball clicks are 2-4 ms of
+	# broadband noise, not ringing tones (the earlier tonal version sounded like glass).
+	# Event: [delay_s, centre_hz, q, decay_s, noise_amp, body_hz, body_decay_s, body_amp]
+	_streams["clack"] = _knocks([[0.0, 2400.0, 1.1, 0.0032, 1.0, 1250.0, 0.0022, 0.35]], 0.05, 0.8)
+	_streams["cushion"] = _knocks([[0.0, 320.0, 0.8, 0.028, 1.0, 150.0, 0.035, 0.6]], 0.16, 0.75)
+	_streams["cue"] = _knocks([[0.0, 1500.0, 0.9, 0.006, 1.0, 650.0, 0.005, 0.4]], 0.06, 0.7)
+	_streams["pocket"] = _knocks(
+		[
+			[0.0, 2100.0, 1.0, 0.003, 0.7, 1100.0, 0.002, 0.2],
+			[0.024, 1800.0, 1.0, 0.003, 0.5, 950.0, 0.002, 0.15],
+			[0.05, 240.0, 0.7, 0.06, 0.8, 105.0, 0.08, 1.0],
+		],
+		0.26,
+		0.62
+	)
+	# Foul: a soft, low two-note fall (pure sines, slow attack and release) - not a noise burst.
+	_streams["foul"] = _soft([[330.0, 0.0, 0.22], [262.0, 0.13, 0.34]], 0.42)
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = MUSIC_DB
 	add_child(_music)
@@ -92,13 +109,15 @@ func _music_ready(variant: String, bytes: PackedByteArray) -> void:
 	_apply_music()
 
 
-func play(name: String, pitch := 1.0) -> void:
+## volume_db: e.g. scaled from impact speed so soft touches are quiet.
+func play(name: String, pitch := 1.0, volume_db := 0.0) -> void:
 	if not SettingsService.sound_on() or not _streams.has(name):
 		return
 	var p := _players[_next]
 	_next = (_next + 1) % _players.size()
 	p.stream = _streams[name]
 	p.pitch_scale = pitch
+	p.volume_db = volume_db
 	p.play()
 
 
@@ -127,6 +146,32 @@ static func _tone(notes: Array, gain: float) -> AudioStreamWAV:
 	return _wav(bytes)
 
 
+## notes: [[frequency_hz, start_s, length_s], ...] as gentle sines (faint 2nd harmonic) with a
+## 25 ms attack and a raised-cosine release; notes may overlap.
+static func _soft(notes: Array, gain: float) -> AudioStreamWAV:
+	var total := 0.0
+	for n in notes:
+		total = maxf(total, float(n[1]) + float(n[2]))
+	var count := int(total * MIX_RATE) + 1
+	var out := PackedFloat32Array()
+	out.resize(count)
+	for n in notes:
+		var freq: float = n[0]
+		var start := int(float(n[1]) * MIX_RATE)
+		var length := int(float(n[2]) * MIX_RATE)
+		for s in length:
+			var t := float(s) / MIX_RATE
+			var u := float(s) / length
+			var env := minf(1.0, t / 0.025) * (0.5 + 0.5 * cos(PI * u))
+			var wave := sin(TAU * freq * t) + 0.12 * sin(TAU * freq * 2.0 * t)
+			out[mini(start + s, count - 1)] += wave * env
+	var bytes := PackedByteArray()
+	bytes.resize(count * 2)
+	for s in count:
+		bytes.encode_s16(s * 2, int(clampf(out[s] * gain, -1.0, 1.0) * 32000.0))
+	return _wav(bytes)
+
+
 static func _noise(seconds: float, gain: float) -> AudioStreamWAV:
 	var count := int(seconds * MIX_RATE)
 	var bytes := PackedByteArray()
@@ -139,6 +184,46 @@ static func _noise(seconds: float, gain: float) -> AudioStreamWAV:
 		low = lerpf(low, white, 0.25)
 		var env := pow(1.0 - float(s) / count, 2.0)
 		bytes.encode_s16(s * 2, int(clampf(low * env * gain * 2.0, -1.0, 1.0) * 32000.0))
+	return _wav(bytes)
+
+
+## Knocks: each event is white noise through a band-pass (biquad) with an exponential envelope,
+## plus a quickly damped sine "body". Deterministic noise seed.
+static func _knocks(events: Array, seconds: float, gain: float) -> AudioStreamWAV:
+	var count := int(seconds * MIX_RATE)
+	var out := PackedFloat32Array()
+	out.resize(count)
+	var state := 777
+	for e in events:
+		var start := int(float(e[0]) * MIX_RATE)
+		var w0: float = TAU * float(e[1]) / MIX_RATE
+		var alpha: float = sin(w0) / (2.0 * float(e[2]))
+		var a0 := 1.0 + alpha
+		var b0 := alpha / a0
+		var b2 := -alpha / a0
+		var a1 := -2.0 * cos(w0) / a0
+		var a2 := (1.0 - alpha) / a0
+		var x1 := 0.0
+		var x2 := 0.0
+		var y1 := 0.0
+		var y2 := 0.0
+		for n in range(start, count):
+			var t := float(n - start) / MIX_RATE
+			state = (state * 1103515245 + 12345) & 0x7fffffff
+			var x := float(state) / 0x7fffffff * 2.0 - 1.0
+			var y := b0 * x + b2 * x2 - a1 * y1 - a2 * y2
+			x2 = x1
+			x1 = x
+			y2 = y1
+			y1 = y
+			var noise: float = y * float(e[4]) * exp(-t / float(e[3])) * 3.0
+			var body: float = float(e[7]) * sin(TAU * float(e[5]) * t) * exp(-t / float(e[6]))
+			out[n] += (noise + body) * minf(1.0, t * MIX_RATE / 4.0)
+	var bytes := PackedByteArray()
+	bytes.resize(count * 2)
+	for n in count:
+		var fade := minf(1.0, (count - n) / 150.0)
+		bytes.encode_s16(n * 2, int(clampf(out[n] * gain * fade, -1.0, 1.0) * 32000.0))
 	return _wav(bytes)
 
 

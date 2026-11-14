@@ -14,6 +14,7 @@ extends Node
 ##   --time-scale=<x>     run game time x times faster (QA soak runs)
 ##   --howto=<card>       open the how-to cards at that card (--howto-ms=<t> freezes it there)
 ##   --practice           show first-match practice hints even for moves already learned
+##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
 
 var options: Dictionary = {}
 var bot := false
@@ -25,11 +26,15 @@ var _shots_taken := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	options = parse_args(OS.get_cmdline_user_args())
+	options.merge(_dev_args_file(), true)
 	bot = options.has("bot")
 	if options.has("time-scale"):
 		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
 	if options.has("seed"):
 		Rng.session_seed = int(options["seed"])
+	if str(options.get("bench", "")) == "cue":
+		_run_bench.call_deferred()
+		return
 	if options.has("game"):
 		var extra := {}
 		for key in ["difficulty", "mode"]:
@@ -39,6 +44,12 @@ func _ready() -> void:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra, true)
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
+
+
+func _run_bench() -> void:
+	await get_tree().create_timer(0.5).timeout  # let the first frame settle
+	CueBench.run()
+	get_tree().quit()
 
 
 func _process(_delta: float) -> void:
@@ -76,6 +87,19 @@ func _save_shot(pattern: String) -> void:
 	var err := img.save_png(abs_path)
 	print("[shot] %s -> %s" % [abs_path, error_string(err)])
 	_shots_taken += 1
+
+
+## Debug builds only: one-shot dev arguments from user://dev_args.txt (deleted after reading).
+## Android cannot pass command-line arguments to the game activity from adb, so the phone gets
+## them via: adb shell run-as <package> sh -c 'echo "--bench=cue" > files/dev_args.txt'
+func _dev_args_file() -> Dictionary:
+	const PATH := "user://dev_args.txt"
+	if not OS.is_debug_build() or not FileAccess.file_exists(PATH):
+		return {}
+	var text := FileAccess.get_file_as_string(PATH).strip_edges()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
+	print("[boot] dev args from file: ", text)
+	return parse_args(PackedStringArray(text.split(" ", false)))
 
 
 ## Accepts "--key=value", "--key value" and bare "--flag".
