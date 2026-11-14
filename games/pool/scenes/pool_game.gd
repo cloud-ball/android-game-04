@@ -30,6 +30,8 @@ var _view: PoolView
 var _hud: PoolHud
 var _save: Dictionary
 var _rng: RandomNumberGenerator
+## Cosmetic randomness (sound pitch), seeded so it never touches the global RNG (CLAUDE.md).
+var _fx_rng := Rng.make(0x51ed)
 var _side := 0.0
 var _top := 0.0
 var _power := 0.0
@@ -339,7 +341,7 @@ func _sounds() -> void:
 	while _log_seen + 2 < log.size() and plays < 3:
 		match log[_log_seen]:
 			CueSim.Ev.BALL_HIT:
-				AudioService.play("clack", randf_range(0.9, 1.15))
+				AudioService.play("clack", _fx_rng.randf_range(0.9, 1.15))
 			CueSim.Ev.POCKET:
 				AudioService.play("pocket")
 				AudioService.buzz(15)
