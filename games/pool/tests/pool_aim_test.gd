@@ -4,7 +4,8 @@ extends GdUnitTestSuite
 
 func test_power_curve_is_squared_and_breaks_go_harder() -> void:
 	assert_float(PoolAim.speed_for(1.0)).is_equal(8.0)
-	assert_float(PoolAim.speed_for(1.0, true)).is_equal(12.0)
+	assert_float(PoolAim.speed_for(1.0, true)).is_equal(13.0)
+	assert_float(PoolAim.speed_for(0.85, true)).is_between(10.5, 11.2)
 	assert_float(PoolAim.speed_for(0.433)).is_equal_approx(1.5, 0.01)  # medium shot ~43% of the bar
 	assert_float(PoolAim.speed_for(2.0)).is_equal(8.0)  # clamped
 
