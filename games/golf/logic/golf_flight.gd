@@ -178,6 +178,43 @@ func fly_to_ground(dt := SUBSTEP, ground_y := 0.0, max_time := 20.0) -> Dictiona
 	return {"pos": at, "vel": v, "time": lerpf(t_prev, time, f), "apex": apex, "spin": spin}
 
 
+## Flies over a hole's terrain until the ball first touches the ground (exact swept contact per
+## step, so no tunnelling at driver speed). The state is moved to the contact point.
+## Returns {hit: bool, pos, vel, normal, surface, time}; hit = false if max_time ran out or the
+## ball left the grid (OUT surface is reported then).
+func fly_over(hole: HoleData, dt := SUBSTEP, max_time := 20.0) -> Dictionary:
+	var r := p.radius
+	var prev := PackedFloat64Array(s)  # one copy per flight; refilled in place each step
+	while time < max_time:
+		for i in 6:
+			prev[i] = s[i]
+		var ta := time
+		step(dt, hole.height(s[0], s[2]))
+		var t := hole.sweep_d(prev[0], prev[1], prev[2], s[0], s[1], s[2], r)
+		if t >= 0.0:
+			for i in 6:
+				s[i] = prev[i] + (s[i] - prev[i]) * t
+			time = ta + (time - ta) * t
+			return {
+				"hit": true,
+				"pos": pos(),
+				"vel": vel(),
+				"normal": hole.normal(s[0], s[2]),
+				"surface": hole.surface_at(s[0], s[2]),
+				"time": time
+			}
+		if not hole.contains(s[0], s[2]):
+			break  # left the grid: out of bounds
+	return {
+		"hit": false,
+		"pos": pos(),
+		"vel": vel(),
+		"normal": Vector3.UP,
+		"surface": HoleData.Surface.OUT,
+		"time": time
+	}
+
+
 ## Fingerprint of the state for golden / determinism tests (exact doubles as hex).
 func fingerprint() -> String:
 	var b := s.to_byte_array()
