@@ -31,6 +31,7 @@ static func plan(
 		var from: Vector2 = out.place if out.place != null else _pos(sim, 0)
 		out.dir = (_pos(sim, 1) - from).normalized()
 		out.speed = {"easy": 9.5, "medium": 10.5, "hard": 11.5}.get(difficulty, 10.5)
+		out.top = PoolAim.BREAK_TOP
 		return _noisy(out, difficulty, rng, aim_sigma)
 	var targets := PoolRules.legal_targets(s)
 	if s.ball_in_hand == PoolState.Hand.ANYWHERE:

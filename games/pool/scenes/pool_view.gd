@@ -16,8 +16,13 @@ const FOV := 22.0
 const PITCH_DEG := 5.0
 const RAIL := 0.03  # cushion depth beyond the nose (drawn thin: more screen for the balls)
 const WOOD := 0.04
-const TABLE_FILL := 0.985  # outer table width / screen width (side controls overlay the wood)
+const TABLE_FILL := 1.0  # outer table width / screen width (side controls overlay the wood)
 const MAX_SPIN_STEP := 1.2  # rad of visual rotation per tick (fast balls strobe otherwise)
+## Drawn heights (m). Rails stay low so a ball resting in the jaws draws over the hole disc
+## (with tall rails only the ball's top cap - its number - showed through the hole).
+const RAIL_H := 0.012
+const WOOD_H := 0.014
+const HOLE_H := 0.0155
 const PHYS_DT := 1.0 / 60.0
 const DROP_TIME := 0.32  # seconds a potted ball takes to roll into the hole and sink
 
@@ -46,6 +51,7 @@ varying vec3 obj_n;
 varying float bid;
 varying float fade;
 varying float rest;
+varying float sink;
 varying vec3 vctr;
 varying vec3 vpos;
 
@@ -54,6 +60,7 @@ void vertex() {
 	bid = INSTANCE_CUSTOM.r * 255.0;
 	fade = INSTANCE_CUSTOM.g;
 	rest = INSTANCE_CUSTOM.b;
+	sink = INSTANCE_CUSTOM.a;
 	vctr = (MODELVIEW_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 	vpos = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
@@ -97,7 +104,9 @@ void fragment() {
 	vec3 h = normalize(l + v);
 	float spec = pow(max(dot(n, h), 0.0), 90.0);
 	float fres = 0.04 + 0.96 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
-	ALBEDO = col * lit + vec3(spec * 0.85) + vec3(0.6, 0.65, 0.7) * fres * 0.12;
+	// A potted ball darkens as it sinks into the hole.
+	vec3 lit_col = col * lit + vec3(spec * 0.85) + vec3(0.6, 0.65, 0.7) * fres * 0.12;
+	ALBEDO = lit_col * (1.0 - 0.85 * sink);
 }
 """
 
@@ -171,8 +180,8 @@ void fragment() {
 var camera: Camera3D
 var sim: CueSim
 var radius := 0.028575
-var hw := 0.4955
-var hl := 0.9905
+var hw := 0.419
+var hl := 0.838
 
 var _balls: MultiMeshInstance3D
 var _shadows: MultiMeshInstance3D
@@ -306,7 +315,7 @@ func render(frac: float) -> void:
 			mm.set_instance_transform(
 				i, Transform3D(Basis(_quat[i]).scaled(Vector3.ONE * (1.0 - 0.15 * k)), p)
 			)
-			mm.set_instance_custom_data(i, Color(i / 255.0, _fade[i], 0.0, 0))
+			mm.set_instance_custom_data(i, Color(i / 255.0, _fade[i], 0.0, minf(1.0, k * 1.6)))
 			sm.set_instance_transform(
 				i,
 				Transform3D(
@@ -515,55 +524,65 @@ func _make_table() -> void:
 		var d := Vector2(t.seg_dx[k], t.seg_dy[k])
 		var n := Vector2(t.seg_nx[k], t.seg_ny[k])
 		var c := a + d * t.seg_len[k] * 0.5 - n * RAIL * 0.5
-		_box(Vector3(t.seg_len[k], 0.04, RAIL), c, d, 0.02, cushion)
+		_box(Vector3(t.seg_len[k], RAIL_H, RAIL), c, d, RAIL_H * 0.5, cushion)
 	# Wood frame.
 	var ow := hw + RAIL + WOOD
 	var ol := hl + RAIL + WOOD
 	_box(
-		Vector3(ow * 2.0, 0.05, WOOD),
+		Vector3(ow * 2.0, WOOD_H, WOOD),
 		Vector2(0, hl + RAIL + WOOD * 0.5),
 		Vector2.RIGHT,
-		0.025,
+		WOOD_H * 0.5,
 		wood
 	)
 	_box(
-		Vector3(ow * 2.0, 0.05, WOOD),
+		Vector3(ow * 2.0, WOOD_H, WOOD),
 		Vector2(0, -hl - RAIL - WOOD * 0.5),
 		Vector2.RIGHT,
-		0.025,
+		WOOD_H * 0.5,
 		wood
 	)
-	_box(Vector3(ol * 2.0, 0.05, WOOD), Vector2(hw + RAIL + WOOD * 0.5, 0), Vector2.UP, 0.025, wood)
 	_box(
-		Vector3(ol * 2.0, 0.05, WOOD), Vector2(-hw - RAIL - WOOD * 0.5, 0), Vector2.UP, 0.025, wood
+		Vector3(ol * 2.0, WOOD_H, WOOD),
+		Vector2(hw + RAIL + WOOD * 0.5, 0),
+		Vector2.UP,
+		WOOD_H * 0.5,
+		wood
+	)
+	_box(
+		Vector3(ol * 2.0, WOOD_H, WOOD),
+		Vector2(-hw - RAIL - WOOD * 0.5, 0),
+		Vector2.UP,
+		WOOD_H * 0.5,
+		wood
 	)
 	# Cushion strips in the corners' wood gaps are covered by the pocket discs.
 	_box(
-		Vector3(RAIL, 0.04, RAIL),
+		Vector3(RAIL, RAIL_H, RAIL),
 		Vector2(hw + RAIL * 0.5, hl + RAIL * 0.5),
 		Vector2.RIGHT,
-		0.02,
+		RAIL_H * 0.5,
 		wood
 	)
 	_box(
-		Vector3(RAIL, 0.04, RAIL),
+		Vector3(RAIL, RAIL_H, RAIL),
 		Vector2(-hw - RAIL * 0.5, hl + RAIL * 0.5),
 		Vector2.RIGHT,
-		0.02,
+		RAIL_H * 0.5,
 		wood
 	)
 	_box(
-		Vector3(RAIL, 0.04, RAIL),
+		Vector3(RAIL, RAIL_H, RAIL),
 		Vector2(hw + RAIL * 0.5, -hl - RAIL * 0.5),
 		Vector2.RIGHT,
-		0.02,
+		RAIL_H * 0.5,
 		wood
 	)
 	_box(
-		Vector3(RAIL, 0.04, RAIL),
+		Vector3(RAIL, RAIL_H, RAIL),
 		Vector2(-hw - RAIL * 0.5, -hl - RAIL * 0.5),
 		Vector2.RIGHT,
-		0.02,
+		RAIL_H * 0.5,
 		wood
 	)
 	# Pockets: dark discs over the corners / sides, plus call rings.
@@ -584,7 +603,7 @@ func _make_table() -> void:
 			m
 			+ (Vector2(sign(m.x), sign(m.y)) * 0.008 if corner else Vector2(sign(m.x) * 0.016, 0.0))
 		)
-		disc.position = to_world(out, 0.052)
+		disc.position = to_world(out, HOLE_H)
 		if not corner:
 			disc.scale = Vector3(1.0, 1.0, 1.45)  # side holes are long along the rail (14 cm mouth)
 		add_child(disc)
@@ -594,7 +613,7 @@ func _make_table() -> void:
 		q.orientation = PlaneMesh.FACE_Y
 		ring.mesh = q
 		ring.material_override = _material(RING_SHADER)
-		ring.position = to_world(out, 0.06)
+		ring.position = to_world(out, HOLE_H + 0.001)
 		ring.visible = false
 		add_child(ring)
 		_pocket_rings.append(ring)
@@ -620,7 +639,7 @@ func _make_table() -> void:
 			spots.append(Vector2(-wx, sgn * f * hl))
 	dm.instance_count = spots.size()
 	for i in spots.size():
-		dm.set_instance_transform(i, Transform3D(Basis(), to_world(spots[i], 0.0505)))
+		dm.set_instance_transform(i, Transform3D(Basis(), to_world(spots[i], WOOD_H + 0.0005)))
 	dots.multimesh = dm
 	dots.material_override = _flat(Color(0.93, 0.9, 0.82), 0.0)
 	add_child(dots)

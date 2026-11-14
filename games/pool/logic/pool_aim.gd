@@ -12,6 +12,9 @@ const V_MAX := 8.0
 const V_BREAK := 13.0
 ## Break power is gentler than v ~ p^2: a firm pull (85%) breaks at ~11 m/s, not ~9.
 const BREAK_GAMMA := 1.2
+## Break spin preset: a touch of follow keeps the cue ball moving into the pack instead of parking
+## at the apex, where kisses sent it into a side pocket (6-ft table: scratches 29% -> 12% at 85%).
+const BREAK_TOP := 0.15
 const GAMMA := 2.0
 const MIN_POWER := 0.02  # below this the shot is cancelled
 const LIFT_MS := 60

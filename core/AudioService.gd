@@ -45,6 +45,8 @@ func _ready() -> void:
 		0.26,
 		0.62
 	)
+	# Foul: a soft, low two-note fall (pure sines, slow attack and release) - not a noise burst.
+	_streams["foul"] = _soft([[330.0, 0.0, 0.22], [262.0, 0.13, 0.34]], 0.42)
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = MUSIC_DB
 	add_child(_music)
@@ -141,6 +143,32 @@ static func _tone(notes: Array, gain: float) -> AudioStreamWAV:
 			var wave := sin(TAU * freq * t) + 0.3 * sin(TAU * freq * 2.0 * t)
 			bytes.encode_s16(i * 2, int(clampf(wave * env * gain, -1.0, 1.0) * 32000.0))
 			i += 1
+	return _wav(bytes)
+
+
+## notes: [[frequency_hz, start_s, length_s], ...] as gentle sines (faint 2nd harmonic) with a
+## 25 ms attack and a raised-cosine release; notes may overlap.
+static func _soft(notes: Array, gain: float) -> AudioStreamWAV:
+	var total := 0.0
+	for n in notes:
+		total = maxf(total, float(n[1]) + float(n[2]))
+	var count := int(total * MIX_RATE) + 1
+	var out := PackedFloat32Array()
+	out.resize(count)
+	for n in notes:
+		var freq: float = n[0]
+		var start := int(float(n[1]) * MIX_RATE)
+		var length := int(float(n[2]) * MIX_RATE)
+		for s in length:
+			var t := float(s) / MIX_RATE
+			var u := float(s) / length
+			var env := minf(1.0, t / 0.025) * (0.5 + 0.5 * cos(PI * u))
+			var wave := sin(TAU * freq * t) + 0.12 * sin(TAU * freq * 2.0 * t)
+			out[mini(start + s, count - 1)] += wave * env
+	var bytes := PackedByteArray()
+	bytes.resize(count * 2)
+	for s in count:
+		bytes.encode_s16(s * 2, int(clampf(out[s] * gain, -1.0, 1.0) * 32000.0))
 	return _wav(bytes)
 
 

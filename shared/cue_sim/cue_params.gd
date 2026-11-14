@@ -26,8 +26,10 @@ var mu_cushion := 0.2
 var cushion_sin := 0.27
 var cushion_cos := 0.9628603221651623
 ## Playfield between cushion noses; long axis is y (vertical on the phone).
-var table_w := 0.991
-var table_l := 1.981
+## 2026-11-14: 7-ft (0.991 x 1.981) -> 6-ft bar table (33 x 66 in): the phone fits the table to its
+## width, so a shorter table draws every ball ~16% bigger (phone feedback: balls too small).
+var table_w := 0.838
+var table_l := 1.676
 ## Pocket mouths (distance between jaw tips) and pocket depths.
 var corner_mouth := 0.127
 var side_mouth := 0.140

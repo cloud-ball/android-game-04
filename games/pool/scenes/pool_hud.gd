@@ -139,11 +139,11 @@ func set_breaking(on: bool) -> void:
 	power_bar.breaking = on
 
 
-func reset_spin() -> void:
+func reset_spin(top := 0.0) -> void:
 	spin_btn.side = 0.0
-	spin_btn.top = 0.0
+	spin_btn.top = top
 	spin_btn.queue_redraw()
-	spin_changed.emit(0.0, 0.0)
+	spin_changed.emit(0.0, top)
 
 
 func set_message(text: String) -> void:
