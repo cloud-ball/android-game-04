@@ -22,6 +22,15 @@ func _init(seed_value := 1, breaker := 0, options := {}) -> void:
 	PoolRack.setup(sim, rack_seed)
 
 
+## An independent copy (solver + rules state) for planning on another thread.
+func snapshot() -> PoolMatch:
+	var m := PoolMatch.new(rack_seed, state.breaker, opts)
+	m.sim.copy_from(sim)
+	m.state = state.copy()
+	m.shots = shots
+	return m
+
+
 func over() -> bool:
 	return state.phase == PoolState.Phase.GAME_OVER
 

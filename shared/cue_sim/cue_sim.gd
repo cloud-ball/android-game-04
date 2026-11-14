@@ -101,6 +101,22 @@ func clear() -> void:
 	time = 0.0
 
 
+## Copies another solver's ball state (for AI rollouts and guideline previews).
+func copy_from(o: CueSim) -> void:
+	px = o.px.duplicate()
+	py = o.py.duplicate()
+	vx = o.vx.duplicate()
+	vy = o.vy.duplicate()
+	wx = o.wx.duplicate()
+	wy = o.wy.duplicate()
+	wz = o.wz.duplicate()
+	phase = o.phase.duplicate()
+	pocket_of = o.pocket_of.duplicate()
+	log.clear()
+	log_speed.clear()
+	time = 0.0
+
+
 func place(i: int, x: float, y: float) -> void:
 	px[i] = x
 	py[i] = y
