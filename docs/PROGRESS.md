@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Pool renamed to Break & Bank; pre-release checks; merged to main
+- Rename: "Cue Club" is an existing commercial pool/snooker series (Bulldog Interactive; Cue Club 2 is
+  on Steam), so the game ships as **Break & Bank** (GDD fallback; web search found no game by that
+  name - not a formal trademark search). Display name, HUD title, scene node, code comments and
+  design docs updated; research files keep their original titles.
+- IP check: nothing else blocks. Follow-ups: decide the pooltool attribution (credits/NOTICE entry
+  or reword the cushion-model comment); register the hub icon PNGs in ASSETS.md; describe pool
+  generically in the store listing.
+- Physics review: no blockers. Fixed: integer-division warning in the sound loop, stale "7-ft"
+  comment, new test that breaks at 9 and 13 m/s never hit the 64-event fallback. Follow-ups:
+  planner rollouts stop at 9 s while slow balls still roll (raise the cap or penalise unfinished
+  rollouts); the creep branch nudges the lower-index ball rather than the approaching one; cache
+  spin_decel_still; allocation-free state copy for PoolAim.predict; fast-forward renders only the
+  last of 4 steps.
+- Try it: the hub card and start screen now read "Break & Bank".
+
 ## 2026-11-14 · Cue Club: ball trays, best of 3, end-of-match stats
 - Plan: docs/plans/2026-11-14-cue-club-tray-series.md (research priority 10 + race-to-2 frames).
 - Ball trays in the top bar: each player's 7 group balls + the 8; bright = still to pot, dimmed =

@@ -1,6 +1,6 @@
 class_name PoolView
 extends Node3D
-## Cue Club 3D table (renders only; never owns game state). docs/research/Cue Club pool game
+## Break & Bank 3D table (renders only; never owns game state). docs/research/Break & Bank pool game
 ## design.md "About twelve draw calls render the whole table":
 ## - Long perspective lens (22 deg, KEEP_WIDTH), pitched 12 deg towards the player; table long axis
 ##   vertical on screen; fixed while aiming.

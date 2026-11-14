@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_manifest")
 id = "pool"
-display_name = "Cue Club"
+display_name = "Break & Bank"
 subtitle = "Pool vs CPU"
 scene = "res://games/pool/scenes/pool_game.tscn"
 min_save_version = 1

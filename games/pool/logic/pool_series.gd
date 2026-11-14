@@ -1,6 +1,6 @@
 class_name PoolSeries
 extends RefCounted
-## A Cue Club match: one rack ("vs") or first to two frames ("bo3"), plus the per-player numbers
+## A Break & Bank match: one rack ("vs") or first to two frames ("bo3"), plus the per-player numbers
 ## for the end card. Pure; no nodes. Breaks alternate by frame, player 0 breaks the first.
 
 const TARGET := {"vs": 1, "bo3": 2}

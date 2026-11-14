@@ -1,6 +1,6 @@
 class_name PoolHud
 extends GameShell
-## Cue Club HUD on the shared GameShell: a top bar with both players (group by name AND number
+## Break & Bank HUD on the shared GameShell: a top bar with both players (group by name AND number
 ## chips, never colour alone) - each row is a ball tray: the group's 7 balls + the 8, bright while
 ## still to pot, dimmed once potted, the 8 ringed when it is the target; a potted ball's slot
 ## pulses as it dims (a fly-in from the pocket pulled the eye off the table) - frame pips for
@@ -44,7 +44,7 @@ var _turn := 0
 func _ready() -> void:
 	configure(
 		{
-			"title": "Cue Club",
+			"title": "Break & Bank",
 			"accent": ACCENT,
 			"modes": {"vs": "Single rack", "bo3": "Best of 3"},
 			"blurbs":

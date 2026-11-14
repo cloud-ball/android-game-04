@@ -1,5 +1,5 @@
 extends Node3D
-## Cue Club controller: Casual 8 vs the CPU. Owns the PoolMatch (solver + rules), feeds the
+## Break & Bank controller: Casual 8 vs the CPU. Owns the PoolMatch (solver + rules), feeds the
 ## view and HUD, turns touch into aim / ball in hand / pocket calls, steps the solver at a fixed
 ## 60 Hz (4 substeps of 1/240 s) and renders with interpolation (root interpolation OFF).
 
@@ -446,7 +446,7 @@ func _sounds() -> void:
 	var speeds := _match.sim.log_speed
 	var plays := 0
 	while _log_seen + 2 < log.size():
-		var v: float = speeds[_log_seen / 3]
+		var v: float = speeds[int(_log_seen / 3.0)]
 		var kind := log[_log_seen]
 		var ball := log[_log_seen + 1]
 		_log_seen += 3

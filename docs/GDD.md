@@ -10,7 +10,7 @@ Two taps from launch to a match; 60–180-second sessions; one soft currency and
 ## Games
 | Phase | Name | Folder | Genre | Build |
 |---|---|---|---|---|
-| 1 | Cue Club | games/pool | 8-ball pool vs CPU | 4–5 weeks |
+| 1 | Break & Bank | games/pool | 8-ball pool vs CPU | 4–5 weeks |
 | 1 | Stack Drop | games/blocks | Original falling-block puzzle vs CPU | 1.5–2 weeks |
 | 1 | Chess 3D | games/chess | Chess vs CPU | 2–3 weeks |
 | 1 | Serpent Grid | games/snake | Snake vs CPU | ~1 week |
@@ -32,7 +32,7 @@ App < 150 MB, each game's assets < 25 MB. Low-end Android: < 100 draw calls, < 1
 | Inspiration | Our name | Avoid |
 |---|---|---|
 | Tetris | Stack Drop (Block Cascade, Crystal Tower) | High: trademark + trade dress (brightly coloured blocks, tall rectangular playfield); Tetris Holding v. Xio (D.N.J. 2012) found infringement on look-and-feel |
-| 8 Ball Pool (Miniclip) | Cue Club (Corner Pocket 3D, Break & Bank) | Medium: '8 BALL POOL' is a registered EU/UK mark; the '8 POOL' flame logo is registered in the US |
+| 8 Ball Pool (Miniclip) | Break & Bank (was Cue Club - an existing pool series, renamed 2026-11-14; alt. Corner Pocket 3D) | Medium: '8 BALL POOL' is a registered EU/UK mark; the '8 POOL' flame logo is registered in the US |
 | Dr. Driving (SUD Inc.) | Park & Pass (City Driver Academy, Lane Master) | Medium: the 'Dr.' series is SUD's brand identity across many titles |
 | Carrom, chess, snake, golf, penalties | Carrom Corner, Chess 3D, Serpent Grid, Fairway Flick, Top Corner | Low: generic names |
 
@@ -44,7 +44,7 @@ App < 150 MB, each game's assets < 25 MB. Low-end Android: < 100 draw calls, < 1
 | 3 | Serpent Grid (logic, 3D render, CPU rival). |
 | 4–5 | Stack Drop (reducer, kicks, bag, 3D tower, DAS/ARR, CPU rival). |
 | 6–7 | Chess 3D (movegen + perft, engine, difficulty, 3D board). |
-| 8–10 | shared/cue_sim + tests → Cue Club table, rules, touch UI, CPU. Start the Play closed test at week 10 with a pool-less build so the 14-day clock overlaps development. |
+| 8–10 | shared/cue_sim + tests → Break & Bank table, rules, touch UI, CPU. Start the Play closed test at week 10 with a pool-less build so the 14-day clock overlaps development. |
 | 11 | Economy (coins, cosmetic skins), rewarded ads + interstitial cap, remove-ads IAP, achievements; perf pass on a low-end Android phone. |
 | 12 | Closed test continues; TestFlight beta; store assets; submit v1.0. |
 

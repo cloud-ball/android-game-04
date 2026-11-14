@@ -1,4 +1,4 @@
-# Cue Club — 8-ball pool vs CPU (Phase 1)
+# Break & Bank — 8-ball pool vs CPU (Phase 1)
 
 Folder: games/pool/ · rules: .claude/rules/cue-sim.md · build estimate: 4–5 weeks · risk: Medium–High (custom physics)
 Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 9-10. Visual target: docs/refs/pool/keyframe_1..3.png (+ clip.mp4).
