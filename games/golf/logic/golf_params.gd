@@ -5,19 +5,25 @@ extends RefCounted
 ## The coefficient curves are polynomial / piecewise-linear on purpose: no pow / exp in the solver
 ## hot path (cross-device determinism, the golf rules).
 
+## Drag-crisis table (see cd()): logistic blend at Re 50,000 + 5,000 * i.
+const CRISIS_RE0 := 50000.0
+const CRISIS_STEP := 5000.0
+const CRISIS := [
+	0.9975, 0.9933, 0.9820, 0.9526, 0.8808, 0.7311, 0.5, 0.2689, 0.1192, 0.0474, 0.0180, 0.0067, 0.0
+]
+
 var g := 9.81
 var air_density := 1.225  # kg/m^3
 var radius := 0.021335  # 42.67 mm ball
 var mass := 0.04593  # kg
 ## Reynolds number per m/s of airspeed for this ball at sea level (Re ~ 2,890 * V).
 var re_per_speed := 2890.0
-## Drag: Cd = CD_MIN + CD_CRISIS * ramp(Re) + CD_SPIN * spin_term(S).
-## ramp = 1 at Re <= RE_LOW, 0 at Re >= RE_HIGH, linear between (the drag crisis).
+## Drag: Cd = cd_min + cd_crisis * crisis(Re) + cd_spin * spin_term(S). crisis(Re) is the logistic
+## 1 / (1 + e^(0.0002 (Re - 80000))) the research validated against TrackMan, tabulated every
+## 5,000 from Re 50,000 (1) to 110,000 (0) and interpolated linearly (no exp at run time).
 var cd_min := 0.225
 var cd_crisis := 0.275
 var cd_spin := 0.18
-var re_low := 50000.0
-var re_high := 100000.0
 ## Lift: Cl = 1.99 S - 3.255 S^2 up to S = 0.25, then linear with slope 0.3625 (no clamp).
 var cl_a := 1.99
 var cl_b := 3.255
@@ -37,9 +43,18 @@ func inertia() -> float:
 
 ## Drag coefficient for airspeed v (m/s) and spin ratio s = omega * r / v.
 func cd(v: float, s: float) -> float:
-	var re := re_per_speed * v
-	var ramp := clampf((re_high - re) / (re_high - re_low), 0.0, 1.0)
-	return cd_min + cd_crisis * ramp + cd_spin * _spin_term(s)
+	return cd_min + cd_crisis * crisis(re_per_speed * v) + cd_spin * _spin_term(s)
+
+
+## Drag-crisis blend: ~1 below Re 50,000 (subcritical), 0 above 110,000.
+static func crisis(re: float) -> float:
+	var x := (re - CRISIS_RE0) / CRISIS_STEP
+	if x <= 0.0:
+		return 1.0 if x < -1.0 else lerpf(1.0, CRISIS[0], x + 1.0)
+	var i := int(x)
+	if i >= CRISIS.size() - 1:
+		return 0.0
+	return lerpf(CRISIS[i], CRISIS[i + 1], x - i)
 
 
 ## Lift coefficient for spin ratio s (continuous at the knee, never clamped).
