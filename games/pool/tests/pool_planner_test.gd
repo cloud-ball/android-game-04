@@ -61,3 +61,49 @@ func test_planner_never_returns_a_fouling_plan() -> void:
 			m.call_pocket(maxi(0, int(plan.pocket)))
 		var r := m.shoot(plan.dir.x, plan.dir.y, plan.speed, plan.side, plan.top)
 		assert_bool(r.foul()).override_failure_message("seed %d" % seed_value).is_false()
+
+
+## On the 8 the planner must judge shots with the pocket called (the rules reject an uncalled 8,
+## which once hid scratches and wrong-pocket 8s from the CPU).
+func test_rollout_on_the_eight_is_judged_as_a_win_or_a_loss() -> void:
+	var hw := 0.419
+	var hl := 0.838
+	var pocket := Vector2(hw, hl)
+	var dir := pocket.normalized()
+	var eight := pocket - dir * 0.35
+	var m := _table(eight - dir * 0.45, {8: eight, 12: Vector2(-0.25, -0.5)})
+	m.state.group[0] = PoolState.Group.SOLIDS
+	m.state.group[1] = PoolState.Group.STRIPES
+	assert_bool(PoolRules.requires_call(m.state)).is_true()
+	var planner := PoolPlanner.new()
+	var k := -1
+	for i in m.sim.table.pocket_count():
+		if Vector2(m.sim.table.pocket_x[i], m.sim.table.pocket_y[i]).distance_to(pocket) < 0.1:
+			k = i
+	var right := planner._rollout(m, dir, 2.0, -0.4, k)
+	assert_bool(right.won or right.lost).is_true()
+	var wrong := planner._rollout(m, dir, 2.0, -0.4, (k + 1) % 6)
+	if wrong.shot.potted(8):
+		assert_bool(wrong.lost).is_true()
+
+
+## Whatever the planner returns on the 8, played as planned it never loses the game.
+func test_planner_on_the_eight_never_returns_a_losing_plan() -> void:
+	var hw := 0.419
+	var hl := 0.838
+	for offset in [0.25, 0.4, 0.6]:
+		var pocket := Vector2(-hw, hl)
+		var dir := pocket.normalized()
+		var eight := pocket - dir * 0.3
+		var m := _table(eight - dir * offset, {8: eight, 12: Vector2(0.25, -0.5)})
+		m.state.group[0] = PoolState.Group.SOLIDS
+		m.state.group[1] = PoolState.Group.STRIPES
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 5
+		var plan := PoolPlanner.new().plan(m, "hard", 0.32, rng)
+		if plan.is_empty():
+			continue
+		m.call_pocket(maxi(0, int(plan.pocket)))
+		m.shoot(plan.dir.x, plan.dir.y, plan.speed, plan.side, plan.top)
+		if m.over():
+			assert_int(m.state.winner).override_failure_message("offset %.2f" % offset).is_equal(0)
