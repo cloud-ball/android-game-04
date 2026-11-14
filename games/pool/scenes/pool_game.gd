@@ -166,7 +166,7 @@ func _next_turn() -> void:
 
 func _update_message() -> void:
 	var s := _match.state
-	var text := "Drag to aim · pull the power bar to shoot"
+	var text := "Touch to aim · pull the power bar to shoot"
 	_view.show_kitchen(s.ball_in_hand == PoolState.Hand.KITCHEN)
 	if s.ball_in_hand == PoolState.Hand.KITCHEN:
 		text = "Your break: drag the white ball behind the line, then shoot"
