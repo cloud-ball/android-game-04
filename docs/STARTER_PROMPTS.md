@@ -95,7 +95,7 @@ Add difficulty knobs (depth/time/top-k margin) and a threaded search with a time
 /new-minigame chess — 3D board, lathe-turned pieces, tap/drag input, legal-move dots; /shot chess.
 ```
 
-### Weeks 8–10 · Cue Club (games/pool) — details in docs/games/pool.md
+### Weeks 8–10 · Break & Bank (games/pool) — details in docs/games/pool.md
 
 1.
 ```

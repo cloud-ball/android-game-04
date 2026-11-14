@@ -2,6 +2,151 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Pool renamed to Break & Bank; pre-release checks; merged to main
+- Rename: "Cue Club" is an existing commercial pool/snooker series (Bulldog Interactive; Cue Club 2 is
+  on Steam), so the game ships as **Break & Bank** (GDD fallback; web search found no game by that
+  name - not a formal trademark search). Display name, HUD title, scene node, code comments and
+  design docs updated; research files keep their original titles.
+- IP check: nothing else blocks. Follow-ups: decide the pooltool attribution (credits/NOTICE entry
+  or reword the cushion-model comment); register the hub icon PNGs in ASSETS.md; describe pool
+  generically in the store listing.
+- Physics review: no blockers. Fixed: integer-division warning in the sound loop, stale "7-ft"
+  comment, new test that breaks at 9 and 13 m/s never hit the 64-event fallback. Follow-ups:
+  planner rollouts stop at 9 s while slow balls still roll (raise the cap or penalise unfinished
+  rollouts); the creep branch nudges the lower-index ball rather than the approaching one; cache
+  spin_decel_still; allocation-free state copy for PoolAim.predict; fast-forward renders only the
+  last of 4 steps.
+- Try it: the hub card and start screen now read "Break & Bank".
+
+## 2026-11-14 · Cue Club: ball trays, best of 3, end-of-match stats
+- Plan: docs/plans/2026-11-14-cue-club-tray-series.md (research priority 10 + race-to-2 frames).
+- Ball trays in the top bar: each player's 7 group balls + the 8; bright = still to pot, dimmed =
+  potted, the 8 gets a gold ring once it is the target. A potted ball's slot pulses as it dims
+  (a fly-in from the pocket was tried first and dropped: it pulled the eye off the table).
+- Best of 3: second mode on the start screen ("Single rack" / "Best of 3"). Breaks alternate by
+  frame; a banner between frames shows the winner, score and who breaks next; frame pips by each
+  group. Coins and the daily challenge count once per match; a best-of-3 win pays double.
+- End card: potted, best run (consecutive potting shots), pot rate, CPU potted, wins (+ frame score).
+- New pure PoolSeries (games/pool/logic/pool_series.gd) with tests; save schema 1 -> 2 adds "mode"
+  (migrate keeps everything; tested). 188 tests green.
+- Try it: start screen -> Best of 3 -> PLAY; watch the trays fill as balls drop.
+
+## 2026-11-14 · Cue Club: bigger balls (6-ft table), cleaner pockets, softer foul, fuller how-to
+- Table: 7-ft -> 6-ft bar table (0.838 x 1.676 m). The phone fits the table to its width, so every
+  ball draws ~16% bigger; physics constants unchanged (golden break regenerated with justification).
+- Break: the shorter table made centre-ball breaks scratch into the side pockets (29% at 85% power).
+  The break now starts with a light follow preset (PoolAim.BREAK_TOP 0.15, visible on the spin
+  button, changeable); CPU breaks the same way. 200 breaks: 54% pot a ball, 12% scratch at 85%;
+  66% / 9% at full power (7-ft was 34% / 12% and 48% / 22%).
+- Pockets: rails and wood are drawn low, so a ball resting in the jaws draws over the hole instead of
+  only its numbered top showing through; a potted ball darkens as it sinks.
+- Foul: a soft low two-note tone (sines, slow attack/release) instead of the noise burst; lighter buzz.
+- How to play: clearer control text (fine-aim edge, power bar side, spin button) and three rule
+  cards: Solids or stripes, Call the 8, Fouls give ball in hand (try-it drag).
+- CPU self-play on the 6-ft table (20 games each): easy 20% / 35%, medium 40%, hard 65% / 70% -
+  ladder intact, easy and medium a little softer than on 7-ft.
+- Try it: install the debug APK; open How to play from the pause menu; break a few racks.
+
+## 2026-11-14 · Cue Club: wooden knock sounds, no more twirling balls
+- Sounds: ball, cushion, cue and pocket sounds are now filtered-noise knocks with a short low body
+  (core/AudioService.gd `_knocks`) instead of ringing sine partials, which sounded like glass. Gains
+  set below clipping (checked offline with a Python replica of the generator).
+- Physics: spin about the vertical axis now decays at 22 rad/s^2 (was 10.9) and twice that once the
+  ball has stopped, so a stopped ball no longer twirls in place for seconds after side spin or a cut
+  (~0.7 s at most, was ~2.8 s). Golden break regenerated with the justification in the file.
+- Try it: install the debug APK, play a few cuts with side spin and a break; listen to the clacks.
+
+## 2026-11-14 · Cue Club vs similar games: research + first fixes
+- Research: docs/research/Cue Club versus mobile pool games.md (+ notes): features, physics feel
+  (measured), polish, CPU fairness. Verdict: not shippable yet; blockers were dry breaks, unmeasured
+  CPU, the Easy/Medium snap blocking thin cuts, and silent cushions / flat sounds.
+- Physics retune (golden break regenerated with justification): mu_roll 0.012 -> 0.010, e_cushion
+  0.85 -> 0.95 (WPA rail test 3.4 -> 4.16 table lengths), casual pockets 12.7 / 14.0 cm. Break power
+  13 * p^1.2 (85% of the bar = 10.7 m/s, was ~9). Breaks that pot a ball: 3-25% -> 46% at 85% power,
+  58% at full; scratches 8-15%.
+- Aim snap (Easy/Medium) now locks onto pocket lines (ghost-ball aims), not ball centres.
+- Sound: the solver logs impact speed per event; clicks / cushion thuds / pocket drops scale with it
+  (quiet touches skipped). New synthesized impacts (damped partials + transient) replace the UI blips;
+  cushions finally make a sound. Seeded RNG for pitch variation.
+- Next: the simulation-based CPU with measured difficulty (blocker 2).
+
+## 2026-11-13 · Cue Club: point-to-aim
+- Turning the cue from the side was hard with the dial-style sweep (a sideways drag beside the ball
+  barely rotates it). Now the cue points from the white ball at the finger: touch a ball to aim at
+  it, drag to adjust; FINE strip for small corrections; finger within 7 cm of the white is ignored.
+  Easy / Medium lock onto a legal ball's centre when within 0.6 / 0.3 deg. How-to card updated.
+- Verified on the Vivo; test added (181).
+
+## 2026-11-13 · Cue Club feedback 2: weaker CPU, bigger balls, smooth lines, pocket drops
+- CPU weaker: Gaussian aim sigma 0.6/0.26/0.12 -> 1.4/0.7/0.32 deg, speed noise up; Easy / Medium pick
+  among their best 4 / 2 shots instead of always the best.
+- Bigger balls (+~9%): top bar 120 -> 108, bottom band 200 -> 150 (+ gesture inset), wood 5 -> 4 cm,
+  camera pitch 8 -> 5 deg, no extra height margin.
+- Smoother aim lines: 2x MSAA in Cue Club only, soft dash ends and edges, and the drawn aim eases
+  towards the finger (shots still use the exact aim).
+- Pocketing: a captured ball rolls on into the hole and sinks over 0.32 s with its shadow fading,
+  instead of vanishing.
+
+## 2026-11-13 · Cue Club feedback: bigger balls, natural rolling, pocket gaps
+- Bigger table/balls (~20 dp): thinner drawn rails, wood to the screen edges, shorter top bar, camera
+  fitted to the height left between the HUD bands too, pitch 12 -> 8 deg.
+- Rolling looked artificial: numbers were upright labels that never turned while stripes rolled.
+  Numbers are now printed on two opposite sides and roll with the ball; an upright label fades in
+  only once the ball has stopped (readability at rest). Pattern fade starts later at speed.
+- Black gaps beside pockets: the cloth now runs under the cushions to the wood; pocket holes sit in
+  the jaws and stay inside the table.
+
+## 2026-11-13 · Cue Club step 3: playable table (branch cue-club; enabled on this branch)
+- games/pool/scenes: PoolView (22 deg KEEP_WIDTH camera pitched 12 deg, table long axis vertical;
+  one MultiMesh + one unshaded shader for all 16 balls - stripes / cue markers roll in object space,
+  numbers are an upright camera-facing disc; painted cloth / cushions / wood / pockets / sights, no
+  real lights; blob shadows; visual-only spin with a per-tick clamp; aim line, ghost ball, object and
+  cue rays, cue stick), PoolControls (power bar v = 8 p^2 m/s, 12 on the break; fine-aim strip
+  0.03 deg/dp; spin button + big spin panel with presets), PoolHud (GameShell: players, groups by
+  name + number chips, pause, message line), PoolHowto (drag to aim, pull to shoot, spin), PoolGame.
+- games/pool/logic: PoolAim (angular sweep around the cue ball, 60 ms lift-off filter, guideline from
+  the real solver incl. throw; cue ray = direction after the spin takes hold), PoolCpu (basic: clear
+  straight-in shots with Gaussian aim noise 0.6 / 0.26 / 0.12 deg; ball in hand sets up a straight
+  shot; breaks at the apex) - the simulation-based CPU is step 4.
+- Ball in hand by dragging the white ball (kitchen line on the break); call the 8's pocket by tapping
+  a pocket; hold a finger down while balls roll to fast-forward. Sounds: clack, cue, pocket.
+- Daily challenges: "Win a game of pool", "Beat the CPU on Medium".
+- 180 tests. Desktop: bot vs CPU plays whole racks. Phone pass: pending (phone not connected).
+
+## 2026-11-13 · Cue Club step 2: Casual 8 rules engine (branch cue-club, not playable yet)
+- games/pool/logic: PoolState (plain data), PoolShot (built from the solver's event log), PoolRules
+  (one pure apply_shot in the researched order: fouls -> break -> 8-ball -> respots -> foul -> open
+  table -> assigned -> stalemate), PoolMatch (solver + rules in step: strike / settle, respots, ball in
+  hand, cue-ball return, re-rack), PoolRack.spot (foot spot, then along the long string).
+- Rules: only the 8's pocket is called; ball in hand anywhere after every foul (break too); 8 on the
+  break re-spotted; table open after the break; groups to the first legal pot (first-hit group wins a
+  mixed pot; "take what you make"); "group cleared" snapshotted at shot start (last ball + 8 = loss);
+  loss reasons: 8 off table > early 8 > 8 with a foul > wrong pocket; no-rail foul; 24 shots without a
+  pot re-rack; strict break and scratch-on-8-loses as Pro flags.
+- Solver: balls frozen to a cushion at the strike don't count as new rail contacts (WPA 2.7).
+- 41 new tests (the research's 40 fixtures + random full games through the solver). 174 total.
+
+## 2026-11-13 · Cue Club step 1: deterministic pool physics (branch cue-club, not playable yet)
+- Research: docs/research/Cue Club pool game design.md (+ notes): physics, portrait UX, Casual 8 rules,
+  CPU, rendering. pool.md and .claude/rules/cue-sim.md updated with its 15 corrections (rolling
+  deceleration is mu_roll*g, not 5/7 of it; 7-ft table; CPU budget 1-3 s, not 150 ms; ...).
+  Plan: docs/plans/2026-11-13-cue-club.md.
+- shared/cue_sim: CueParams, CueTable (7-ft, rails + angled pocket facings + jaw points + capture
+  circles), CueSim (closed-form sliding / rolling / spinning phases, 1/240 s substeps with swept
+  time-of-impact events in time order, ball-ball impulse with capped friction (throw), Han 2005
+  cushions from pooltool's corrected source, cue strike with tip offset; 64-bit packed state, no trig in
+  the hot path). Clusters: slow contacts are inelastic, creeping contacts stop, 64-event cap with an
+  energy-safe fallback; no overlaps in random breaks. games/pool/logic/pool_rack.gd (seeded jitter).
+- 15 new tests (stun 5/7, draw-back 2/7, mu_roll*g, 90/30-degree rules, throw + gearing english, energy,
+  overlaps, stop shot, pockets, rails + english, render-rate independence, golden break).
+- Benchmark (Boot --bench=cue) on the Vivo (Adreno 642L): golden break hash IDENTICAL to desktop
+  (433143a3...) -> bit-exact cross-platform, one golden file is enough. Live: 144 us/substep (worst
+  case ~0.6 ms per 60 Hz frame during a break). AI planning (1/120 s): ~122 ms per break, ~4 ms per
+  typical mid-game shot -> ~100 rollouts in ~0.4 s on one core; the research's 35-130 ms guess was
+  pessimistic. Desktop: 77 us/substep, 113 ms per break.
+- Debug builds read one-shot dev args from user://dev_args.txt (adb can't pass args to the game
+  activity): adb shell run-as com.cloud198.pocketarena8 sh -c 'echo --bench=cue > files/dev_args.txt'
+
 ## 2026-11-13 · Bigger Serpent Grid pause button
 - Serpent Grid's pause was a small 96 px "II" text button. Both games now share UiKit.pause_button():
   a 112 px dark disc with drawn bars in a 144 px touch area (Serpent Grid: top-right under the score
