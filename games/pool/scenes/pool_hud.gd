@@ -2,9 +2,10 @@ class_name PoolHud
 extends GameShell
 ## Cue Club HUD on the shared GameShell: a top bar with both players (group by name AND number
 ## chips, never colour alone) - each row is a ball tray: the group's 7 balls + the 8, bright while
-## still to pot, dimmed once potted, the 8 ringed when it is the target; potted balls fly in from
-## their pocket - frame pips for best of 3, the pause button, the power bar (right), the fine-aim
-## strip (left), the spin button + panel, and a one-line message. Holds no game state.
+## still to pot, dimmed once potted, the 8 ringed when it is the target; a potted ball's slot
+## pulses as it dims (a fly-in from the pocket pulled the eye off the table) - frame pips for
+## best of 3, the pause button, the power bar (right), the fine-aim strip (left), the spin button
+## + panel, and a one-line message. Holds no game state.
 
 signal shoot(power: float)
 signal nudge(dp: float)
@@ -13,7 +14,7 @@ signal spin_changed(side: float, top: float)
 const ACCENT := Color(0.3, 0.85, 0.8)
 const TOP_BAR_H := 108.0
 const SLOT := 50.0  # tray slot pitch
-const FLY_TIME := 0.45
+const PULSE_TIME := 0.5
 
 var power_bar: PoolControls.PowerBar
 var fine: PoolControls.FineStrip
@@ -33,10 +34,8 @@ var _on_eight := [false, false]
 var _on_table := PackedByteArray()
 var _frames := PackedInt32Array([0, 0])
 var _frame_target := 1
-## Balls flying from a pocket to the tray: [ball, from, to, t]; landed balls dim at once.
-var _flights: Array = []
-var _landed := {}
-var _fly_layer: Control
+## Potted balls whose tray slot is pulsing: ball -> [t 0..1, owner]. They count as gone at once.
+var _pulses := {}
 var _msg: Label
 var _pause_btn: Button
 var _turn := 0
@@ -64,11 +63,6 @@ func _ready() -> void:
 	_on_table.fill(1)
 	_build_bar(top)
 	_build_controls()
-	_fly_layer = Control.new()
-	_fly_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_fly_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fly_layer.draw.connect(_draw_flights)
-	add_child(_fly_layer)
 	set_process(false)
 	build_shell()
 	spin_panel = PoolControls.SpinPanel.new()
@@ -189,7 +183,6 @@ func set_message(text: String) -> void:
 func set_players(state: PoolState, series: PoolSeries = null) -> void:
 	_turn = state.shooter
 	_on_table = state.on_table.duplicate()
-	_landed.clear()
 	if series != null:
 		_frames = series.frames.duplicate()
 		_frame_target = series.target
@@ -220,7 +213,7 @@ static func slot_of(b: int) -> int:
 	return b - 1 if b < 8 else b - 9
 
 
-## Owner of a potted ball for the fly-in: its group's player, else the shooter.
+## Owner of a potted ball: its group's player, else the shooter.
 func _owner(b: int, state: PoolState) -> int:
 	var g := PoolState.group_of(b)
 	for p in 2:
@@ -229,47 +222,24 @@ func _owner(b: int, state: PoolState) -> int:
 	return state.shooter
 
 
-## Canvas position of a tray slot (or of the player's name on an open table).
-func _slot_pos(who: int, b: int) -> Vector2:
-	var base := _panel.position + _chips[who].position
-	if _tray_group[who] == PoolState.Group.NONE:
-		return _panel.position + _names[who].position + Vector2(40, 22)
-	return base + Vector2(24 + slot_of(b) * SLOT, 26)
-
-
-## A ball dropped into pocket screen position `from`: it flies to its tray slot.
-func fly_ball(b: int, from: Vector2, state: PoolState) -> void:
+## A ball dropped: its tray slot pulses and dims (nothing on an open table - no trays yet).
+func ball_potted(b: int, state: PoolState) -> void:
 	var who := _owner(b, state)
-	_flights.append([b, from, _slot_pos(who, b), 0.0, who])
+	if _tray_group[who] == PoolState.Group.NONE:
+		return
+	_pulses[b] = [0.0, who]
 	set_process(true)
 
 
 func _process(delta: float) -> void:
-	var i := 0
-	while i < _flights.size():
-		var f: Array = _flights[i]
-		f[3] += delta / FLY_TIME
-		if f[3] >= 1.0:
-			_landed[f[0]] = true
-			_chips[f[4]].queue_redraw()
-			_flights.remove_at(i)
-			continue
-		i += 1
-	_fly_layer.queue_redraw()
-	if _flights.is_empty():
+	for b in _pulses.keys():
+		var pulse: Array = _pulses[b]
+		pulse[0] += delta / PULSE_TIME
+		_chips[pulse[1]].queue_redraw()
+		if pulse[0] >= 1.0:
+			_pulses.erase(b)
+	if _pulses.is_empty():
 		set_process(false)
-
-
-func _draw_flights() -> void:
-	for f in _flights:
-		var k: float = f[3]
-		var e := 1.0 - pow(1.0 - k, 3.0)
-		var from: Vector2 = f[1]
-		var to: Vector2 = f[2]
-		var pos := from.lerp(to, e) + Vector2(0, -120.0 * sin(PI * e))
-		var r := lerpf(30.0, 21.0, e)
-		var open: bool = _tray_group[f[4]] == PoolState.Group.NONE
-		draw_ball_chip(_fly_layer, pos, f[0], r, 1.0 - (0.8 * k if open else 0.0))
 
 
 func _draw_chips(c: Control, who: int) -> void:
@@ -280,8 +250,15 @@ func _draw_chips(c: Control, who: int) -> void:
 	balls.append(8)
 	for b in balls:
 		var ctr := Vector2(24 + slot_of(b) * SLOT, 26)
-		var gone: bool = _on_table[b] == 0 or _landed.has(b)
-		if b == 8:
+		var gone: bool = _on_table[b] == 0 or _pulses.has(b)
+		if _pulses.has(b):
+			var k: float = _pulses[b][0]
+			var e := 1.0 - pow(1.0 - k, 3.0)
+			c.draw_arc(
+				ctr, lerpf(22.0, 36.0, e), 0.0, TAU, 32, Color(1, 1, 1, 0.9 * (1.0 - k)), 4.0
+			)
+			draw_ball_chip(c, ctr, b, lerpf(21.0, 15.0, e), lerpf(1.0, 0.3, e))
+		elif b == 8:
 			var target: bool = _on_eight[who] and not gone
 			if target:
 				c.draw_arc(ctr, 25, 0.0, TAU, 32, UiKit.GOLD, 4.0)
