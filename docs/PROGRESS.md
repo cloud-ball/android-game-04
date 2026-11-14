@@ -2,6 +2,23 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Break & Bank: smarter CPU (shot checking, 8-ball bug fixed)
+- Bug: on the 8 the planner simulated shots without calling a pocket, and the rules reject an
+  uncalled 8 - so the CPU could not see a scratch on the 8 or the 8 in the wrong pocket. Rollouts
+  now call the plan's pocket, as the game does. Hard's games lost on its own 8 mistakes: 9 -> 4
+  of 30.
+- Robustness: medium / hard replay their best 3 / 4 plans with their own typical error (aim
+  +-0.8 sigma, speed +-1 sigma; shots at the 8 get 10 variations) and drop shots that only work
+  when struck perfectly. Medium scratches: 17% -> 9.5% of shots; hard 8.5% -> 6.6%.
+- When nothing can be potted, medium and hard play the safest legal hit instead of a blind one.
+- Easy deliberately keeps the old careless play (no shot check, blind fallback) so it stays
+  beatable.
+- Ladder (self-play): easy 32% / 40% (40 games), medium 40%, hard 60% / 80% (20 games).
+  Thinking time on desktop: easy ~25 ms, medium ~280 ms, hard ~480 ms (x3-4 on the phone).
+- The 9 s rollout cap is fine: 159 sampled planner shots all stopped within 7.9 s.
+- Tests: 2 new planner tests on the 8 (191 green).
+- Try it: play Medium or Hard; the CPU should give away far fewer ball-in-hand scratches.
+
 ## 2026-11-14 · Pool renamed to Break & Bank; pre-release checks; merged to main
 - Rename: "Cue Club" is an existing commercial pool/snooker series (Bulldog Interactive; Cue Club 2 is
   on Steam), so the game ships as **Break & Bank** (GDD fallback; web search found no game by that
