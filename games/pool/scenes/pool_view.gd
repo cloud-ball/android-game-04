@@ -364,6 +364,24 @@ func hide_aim() -> void:
 		n.visible = false
 
 
+## The stroke: guide lines go, the cue drives forward to the cue ball in `stroke` seconds (the shot
+## starts when it arrives), follows through a little and fades. Returns the tween.
+func strike_cue(cue_pos: Vector2, d: Vector2, stroke: float) -> Tween:
+	for n in [_aim_line, _obj_ray, _cue_ray, _ghost]:
+		n.visible = false
+	_cue.visible = true
+	var contact := to_world(cue_pos - d * (radius + 0.002 + 0.5), radius + 0.035)
+	var through := contact + Vector3(d.x, 0.0, -d.y) * 0.05
+	var tw := create_tween()
+	tw.tween_property(_cue, "position", contact, stroke).set_trans(Tween.TRANS_QUAD).set_ease(
+		Tween.EASE_IN
+	)
+	tw.tween_property(_cue, "position", through, 0.12).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.12)
+	tw.tween_callback(func() -> void: _cue.visible = false)
+	return tw
+
+
 ## cue_pos: cue ball; aim: PoolAim after predict(); pull: power 0..1 (cue draws back);
 ## obj_len / cue_len: guideline lengths (difficulty assist).
 func show_aim(cue_pos: Vector2, aim: PoolAim, pull: float, obj_len: float, cue_len: float) -> void:

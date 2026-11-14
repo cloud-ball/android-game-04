@@ -3,7 +3,7 @@ extends Node3D
 ## view and HUD, turns touch into aim / ball in hand / pocket calls, steps the solver at a fixed
 ## 60 Hz (4 substeps of 1/240 s) and renders with interpolation (root interpolation OFF).
 
-enum State { READY, AIM, CPU_THINK, CPU_AIM, ROLLING, PAUSED, OVER }
+enum State { READY, AIM, CPU_THINK, CPU_AIM, STROKE, ROLLING, PAUSED, OVER }
 
 const STEP := 1.0 / 60.0
 const SAVE_SCHEMA := 1
@@ -192,19 +192,30 @@ func _on_power_release(power: float) -> void:
 	_shoot(d, PoolAim.speed_for(power, breaking), _side, _top)
 
 
+## A shot: the cue strokes forward (70 ms, faster for harder shots), then the ball is struck.
 func _shoot(d: Vector2, speed: float, side: float, top: float) -> void:
-	if not _match.strike(d.x, d.y, speed, side, top):
+	if PoolRules.requires_call(_match.state) and _match.state.called_pocket < 0:
 		return
-	AudioService.play("cue", 0.8 + speed * 0.04)
-	AudioService.buzz(int(8 + speed * 1.5))
-	_log_seen = 0
-	state = State.ROLLING
+	state = State.STROKE
 	_hud.set_controls(false)
 	_hud.set_message("")
-	_view.hide_aim()
 	_view.show_pockets(false)
 	_view.show_kitchen(false)
-	_hud.reset_spin()
+	var stroke := clampf(0.11 - speed * 0.006, 0.05, 0.1)
+	var tw := _view.strike_cue(_cue_pos(), d, stroke)
+	get_tree().create_timer(stroke).timeout.connect(
+		func() -> void:
+			if state != State.STROKE or not _match.strike(d.x, d.y, speed, side, top):
+				return
+			AudioService.play(
+				"cue", 0.8 + speed * 0.04, clampf(linear_to_db(speed / 6.0), -14.0, 0.0)
+			)
+			AudioService.buzz(int(8 + speed * 1.5))
+			_log_seen = 0
+			state = State.ROLLING
+			_hud.reset_spin()
+	)
+	tw.play()
 
 
 func _settle() -> void:
