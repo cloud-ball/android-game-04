@@ -2,6 +2,23 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick step 4: bounce, roll, cup, water, out of bounds (branch fairway-flick)
+- GolfBall (games/golf/logic/golf_ball.gd): one shot from strike to rest - flight, Penner bounces with
+  a per-surface tilt (GolfSurfaces), a skid phase where friction turns backspin into roll (so wedges
+  check or spin back), rolling with per-surface deceleration and (5/7) g down slopes, rest with a
+  green-speed-derived static hold, cup capture by speed and sideways offset (1.31 m/s centred, 1.63
+  with the rim; lip-outs deflect and slow), water and out of bounds with a last safe point.
+- CoursePreset (green speed, firm/soft greens and fairways, altitude, wind range) and GolfSurfaces
+  (bounce / roll per surface); GolfParams.apply_preset scales air density and Reynolds together.
+- Checked against the research: Stimpmeter roll within 0.2%; Haake's green bounce 4.2 m/s out with
+  topspin (Penner's model 4.3, measured 5.1); tour driver 274 yd carry + 17 yd roll; on a firm green a
+  9-iron holds at 809 rad/s and pulls back 0.6 / 2.1 m at 1000 / 1200 (Penner: 1.1 / 4.7 - about half,
+  tune by feel); balls rest on greens below 10.8% / 8.6% / 7.9% at Stimp 8 / 10 / 11.
+- Corrections found on the way: the notes' 11 deg firm-green tilt never spun the ball back (now 15,
+  Penner's); their cup example "5 cm off at 0.5 m/s drops" contradicts their own formula (limit ~0.37).
+- 9 new tests incl. a golden full shot (games/golf/data/golden_ball.json). 220 tests green.
+- Try it: logic only.
+
 ## 2026-11-14 · Fairway Flick: full-game scope - courses, holes, progression (branch fairway-flick)
 - Feedback: the preview is "just a flick"; the game must be real golf with holes and different maps.
 - Research: docs/research/Fairway Flick courses and maps.md (+ notes): course structure and unlocks in

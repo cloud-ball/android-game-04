@@ -33,6 +33,13 @@ var cl_slope := 0.3625
 var spin_decay_per_m := 0.001
 
 
+## Course conditions: thinner air (altitude) lowers density and, with it, the Reynolds number
+## per m/s, so the drag crisis moves with the air (both must scale together).
+func apply_preset(preset: CoursePreset) -> void:
+	air_density = 1.225 * preset.air_factor
+	re_per_speed = 2890.0 * preset.air_factor
+
+
 func area() -> float:
 	return PI * radius * radius
 

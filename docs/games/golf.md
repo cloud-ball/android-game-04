@@ -17,7 +17,7 @@ the course is short by design. Plan: docs/plans/2026-11-14-fairway-flick.md.
 | Lift | Cl = 1.99S - 3.255S^2 to S = 0.25, then linear (slope 0.3625), no clamp (the old 0.25 clamp flattened irons) |
 | Spin decay | ~0.001 per metre travelled (~4%/s), applied as a per-step factor |
 | Clubs | Driver ~175 m carry, hybrid ~150, 7-iron ~130, wedge ~95 (partial to 10 m), putter |
-| Bounce | soft green e = Penner e(v), mu 0.40, tilt 15 deg; fairway e 0.22, mu 0.5, 16 deg; rough / sand / path tuned by feel |
+| Bounce | Penner bounce with a fixed tilt: soft green mu 0.40, firm green mu 0.25 (both e = Penner e(v), tilt 15 deg - an 11 deg firm tilt never spun back); fairway e 0.22, mu 0.5, 16 deg; rough / sand / path tuned by feel (GolfSurfaces) |
 | Green | a = v0^2 / (2 x Stimp), v0 1.83 m/s (Stimp 10 -> ~0.6 m/s^2) + (5/7) g sin(slope) along the fall line |
 | Cup | capture speed falls with offset: 1.31 m/s centred (free fall), up to 1.63 m/s with rim help; lip-out keeps 50-70% |
 | Wind | 0-10 m/s per hole (seeded), power-law height profile, zero on a rolling ball |
