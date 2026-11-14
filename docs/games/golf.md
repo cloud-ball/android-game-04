@@ -13,7 +13,7 @@ the course is short by design. Plan: docs/plans/2026-11-14-fairway-flick.md.
 | Parameter | Value |
 |---|---|
 | Ball | 42.67 mm, 45.93 g, rho 1.225 kg/m^3 |
-| Drag | Cd = 0.225 + 0.275 x ramp(Re 5e4 -> 1e5) + 0.18 x (1 - e^-3S^2) (was a 0.27 -> 0.32 step: drives ~12% short) |
+| Drag | Cd = 0.225 + 0.275 x crisis(Re) (logistic around Re 8e4, tabulated) + 0.18 x (1 - e^-3S^2) (was a 0.27 -> 0.32 step: drives ~12% short) |
 | Lift | Cl = 1.99S - 3.255S^2 to S = 0.25, then linear (slope 0.3625), no clamp (the old 0.25 clamp flattened irons) |
 | Spin decay | ~0.001 per metre travelled (~4%/s), applied as a per-step factor |
 | Clubs | Driver ~175 m carry, hybrid ~150, 7-iron ~130, wedge ~95 (partial to 10 m), putter |

@@ -6,7 +6,8 @@ paths:
   games/golf/logic/. No Jolt bodies for gameplay (no determinism guarantee; CPU rollouts must clone state cheaply).
   Research: docs/research/Fairway Flick golf game design.md (2026-11-14; replaces the old Cd-step / Cl-clamp /
   Jolt hand-off plan).
-- Ball 42.67 mm / 45.93 g, rho 1.225. Cd = 0.225 + 0.275 * linear ramp(Re 5e4 -> 1e5) + 0.18 * (1 - e^-3S^2);
+- Ball 42.67 mm / 45.93 g, rho 1.225. Cd = 0.225 + 0.275 * crisis(Re) + 0.18 * (1 - e^-3S^2), crisis = the research logistic (centre Re 8e4)
+  tabulated every 5e3;
   Cl = 1.99S - 3.255S^2 to S 0.25 then linear slope 0.3625, no clamp (GolfParams). Spin decay ~0.001 per metre.
 - Flight RK4: live 4 x 1/240 s substeps per 60 Hz tick; CPU planner may use 1/60 s flight, 1/120 s roll.
 - No pow / exp / sin / cos in the solver hot path: polynomials, tables or precomputed per-step factors

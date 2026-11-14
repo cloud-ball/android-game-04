@@ -2,6 +2,17 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-14 · Fairway Flick step 2: ball flight (branch fairway-flick)
+- games/golf/logic/golf_flight.gd: RK4 flight with Re-dependent drag (tabulated drag-crisis
+  logistic), unclamped lift, Magnus via a fixed spin axis (tilt = curve), spin decay per metre and a
+  height-profiled wind (tabulated power law, 10 m reference). Hot path is + - * / sqrt only.
+- Validated against launch-monitor data (9 tests): tour carries driver 274 / 3W 260 / 5i 206 /
+  7i 175 / PW 134 yd vs 282 / 249 / 199 / 176 / 142 (within 5%, PW within 8%); LPGA carry, apex and
+  landing angle within 5% / 3 yd / 4 deg; 10 mph wind on a tour 7-iron -22.8 / +14.6 yd (published
+  -19 / +14.6 - wind grows with height here); 10 deg tilt curves a 5-iron 21 yd; 1/60 s planning
+  step within 1 cm of the 1/240 s live step; golden shot (games/golf/data/golden_shot.json).
+- Try it: nothing to see yet (logic only). 204 tests green.
+
 ## 2026-11-14 · Fairway Flick step 1: research, plan, scaffold (branch fairway-flick)
 - Research: docs/research/Fairway Flick golf game design.md (+ notes): ball physics, phone controls and
   camera, 9-hole design, CPU golfer, Godot/Android implementation.
