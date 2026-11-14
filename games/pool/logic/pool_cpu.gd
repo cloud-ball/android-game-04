@@ -1,10 +1,12 @@
 class_name PoolCpu
 extends RefCounted
-## Basic Cue Club CPU (step 3; the simulation-based planner comes in step 4). Pure: reads a
-## PoolMatch, returns a plan {dir: Vector2, speed, side, top, pocket, place: Vector2 or null}.
+## Cue Club CPU. Pure: reads a PoolMatch, returns a plan
+## {dir: Vector2, speed, side, top, pocket, place: Vector2 or null}.
 ##   break: hard at the apex ball; ball in hand: sets up a straight-in shot;
-##   otherwise: the clear (ball, pocket) pair with the best cut and distance, ghost-ball aim.
-## Difficulty lives in execution noise (research: Gaussian aim sigma 0.6 / 0.26 / 0.12 deg).
+##   otherwise PoolPlanner (simulated shots, position play, Hard safeties); if it finds nothing,
+##   the basic choice: the clear (ball, pocket) pair with the best cut and distance.
+## Execution noise (Gaussian aim / speed) is applied last, so luck is separate from planning.
+## planner = false gives the basic "greedy" player (used as a reference in self-play).
 
 ## Made weaker after phone play (2026-11-13): roughly double the research's starting sigmas.
 const AIM_SIGMA := {"easy": 1.4, "medium": 0.7, "hard": 0.32}
@@ -14,7 +16,10 @@ const PICK_FROM := {"easy": 4, "medium": 2, "hard": 1}
 const MAX_CUT_DEG := 72.0
 
 
-static func plan(m: PoolMatch, difficulty: String, rng: RandomNumberGenerator) -> Dictionary:
+static func plan(
+	m: PoolMatch, difficulty: String, rng: RandomNumberGenerator, planner := true, sigma := -1.0
+) -> Dictionary:
+	var aim_sigma: float = sigma if sigma >= 0.0 else float(AIM_SIGMA.get(difficulty, 0.7))
 	var sim := m.sim
 	var s := m.state
 	var out := {
@@ -25,14 +30,24 @@ static func plan(m: PoolMatch, difficulty: String, rng: RandomNumberGenerator) -
 			out.place = Vector2(0.0, -sim.table.hl * 0.5)
 		var from: Vector2 = out.place if out.place != null else _pos(sim, 0)
 		out.dir = (_pos(sim, 1) - from).normalized()
-		out.speed = 11.0
-		return _noisy(out, difficulty, rng)
+		out.speed = {"easy": 9.5, "medium": 10.5, "hard": 11.5}.get(difficulty, 10.5)
+		return _noisy(out, difficulty, rng, aim_sigma)
 	var targets := PoolRules.legal_targets(s)
 	if s.ball_in_hand == PoolState.Hand.ANYWHERE:
 		var spot := _ball_in_hand(m, targets)
 		if spot != Vector2.INF:
 			out.place = spot
 	var cue: Vector2 = out.place if out.place != null else _pos(sim, 0)
+	if planner:
+		var work := m
+		if out.place != null:
+			work = m.snapshot()
+			work.sim.place(0, cue.x, cue.y)
+		var pl := PoolPlanner.new().plan(work, difficulty, aim_sigma, rng)
+		if not pl.is_empty():
+			for key in ["dir", "speed", "side", "top", "pocket"]:
+				out[key] = pl[key]
+			return _noisy(out, difficulty, rng, aim_sigma)
 	var options: Array = []
 	for b in targets:
 		for k in sim.table.pocket_count():
@@ -58,7 +73,7 @@ static func plan(m: PoolMatch, difficulty: String, rng: RandomNumberGenerator) -
 		out.dir = (_pos(sim, nearest) - cue).normalized()
 		out.speed = 3.0
 		out.pocket = 0
-	return _noisy(out, difficulty, rng)
+	return _noisy(out, difficulty, rng, aim_sigma)
 
 
 ## One (ball, pocket) option: ghost-ball aim, cut angle, clear paths. Empty if unplayable.
@@ -125,8 +140,9 @@ static func _ball_in_hand(m: PoolMatch, targets: PackedInt32Array) -> Vector2:
 	return best
 
 
-static func _noisy(out: Dictionary, difficulty: String, rng: RandomNumberGenerator) -> Dictionary:
-	var sigma: float = AIM_SIGMA.get(difficulty, 0.26)
+static func _noisy(
+	out: Dictionary, difficulty: String, rng: RandomNumberGenerator, sigma: float
+) -> Dictionary:
 	var err := clampf(rng.randfn(0.0, sigma), -3.0 * sigma, 3.0 * sigma)
 	out.dir = (out.dir as Vector2).rotated(deg_to_rad(err))
 	var ss: float = SPEED_SIGMA.get(difficulty, 0.05)

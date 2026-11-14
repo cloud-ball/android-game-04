@@ -41,6 +41,7 @@ var _drag_last := Vector2.ZERO
 var _finger_down := false
 var _timer := 0.0
 var _cpu_plan := {}
+var _cpu_task := -1
 var _paused_from: int = State.AIM
 var _log_seen := 0
 var _bot := false
@@ -156,6 +157,7 @@ func _next_turn() -> void:
 	else:
 		state = State.CPU_THINK
 		_timer = 0.9
+		_start_cpu_plan()
 		_hud.set_controls(false)
 		_view.hide_aim()
 		_view.show_pockets(false)
@@ -291,8 +293,8 @@ func _physics_process(_delta: float) -> void:
 		State.CPU_THINK:
 			_view.physics_tick(STEP)
 			_timer -= STEP
-			if _timer <= 0.0:
-				_cpu_plan = PoolCpu.plan(_match, difficulty, _rng)
+			if _timer <= 0.0 and WorkerThreadPool.is_task_completed(_cpu_task):
+				_finish_cpu_task()
 				if _cpu_plan.place != null:
 					var p: Vector2 = _cpu_plan.place
 					_match.place_cue(p.x, p.y)
@@ -328,6 +330,28 @@ func _process(_delta: float) -> void:
 		var guide: Array = GUIDE[difficulty]
 		_view.show_aim(_cue_pos(), _shown, _power, guide[0], guide[1])
 	_view.render(Engine.get_physics_interpolation_fraction())
+
+
+## The CPU plans on a worker thread with its own copy of the match (simulated rollouts take
+## tens to hundreds of ms on a phone); the main thread keeps rendering.
+func _start_cpu_plan() -> void:
+	_finish_cpu_task()
+	var snap := _match.snapshot()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _rng.randi()
+	var diff := difficulty
+	_cpu_plan = {}
+	_cpu_task = WorkerThreadPool.add_task(func() -> void: _cpu_plan = PoolCpu.plan(snap, diff, rng))
+
+
+func _finish_cpu_task() -> void:
+	if _cpu_task != -1:
+		WorkerThreadPool.wait_for_task_completion(_cpu_task)
+		_cpu_task = -1
+
+
+func _exit_tree() -> void:
+	_finish_cpu_task()
 
 
 func _cue_pos() -> Vector2:
