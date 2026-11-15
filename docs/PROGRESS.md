@@ -2,6 +2,31 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf: visual upgrade steps 0-3 (research-led)
+- Research: docs/research/Fairway Flick mini golf visuals.md (+ notes): art direction, Godot Mobile
+  rendering, CC0 kits, juice and UI. Key finding: order (a value ladder, a sense of place, polish),
+  not more assets.
+- Step 0: `--gfx=noshadow,noglow` dev switches (GolfScenery.gfx_flags). Phone (Adreno 642L, all
+  views at 60 fps): baseline GPU 10.9 ms / 53 draws; noglow 12.5; noshadow 12.2 / 29 draws; both off
+  14.2. GPU ms rises when work is removed - the phone drops its GPU clock at lower load - so per-
+  feature cost cannot be isolated this way; the full look holds 60 fps.
+- Step 1: GolfTheme (pure data) with a tested value ladder - lawn < carpet < rails < ball; flowers
+  saturated and never white; yellow flag; dark cup with a white rim and an emissive glow ring; the
+  ball is shaded (wrap diffuse, toon highlight, rim, slight emission) with a thin dark outline.
+- Step 2: one merged bevelled rail mesh per hole (light wood sides, cream top and bevels, smooth
+  beside ramps - no more stair-steps; one draw call), wrap lighting and a fibre sheen on the carpet,
+  shadow range 45 -> 28 m, Filmic with a little exposure and saturation, glow only above 1.0 on two
+  mid levels.
+- Step 3: eased power (speed = max x pull^1.3, finer putts), a light haptic tick each 10% of pull,
+  camera kick on release, sparks + ball squash + pitch/volume-varied clacks on hard rail hits (none
+  under 0.3 m/s), a speed trail (20-point ring buffer), the HUD fades to 35% while aiming, a timed
+  hole-out (cup sound and haptic, flag wiggle, confetti only for birdie or better, the score word
+  pops in, stars one by one), shake only on a hole-in-one, everything off with reduce_motion.
+  Slow motion around great hole-outs via PresentationClock: it only changes how many fixed substeps
+  run per tick; a test proves the shot ends bit-identical.
+- golf_game.gd split: course dressing moved to scenes/mini_dressing.gd (file-length limit).
+- 243 tests green. Try it: the test phone opens straight into golf.
+
 ## 2026-11-15 · Fairway Flick mini-golf: fixed the par-3 freeze and the bad bouncing
 - Phone feedback: on the par 3s the screen got stuck and the bouncing looked bad.
 - Cause 1: going over the top of the Step Up ramp, a hop started from the ground height before the

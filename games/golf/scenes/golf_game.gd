@@ -24,6 +24,8 @@ const HOLES := [
 	"res://games/golf/data/mini/meadow_03.json",
 ]
 const MAX_SPEED := 13.0  # m/s at a full pull
+const POWER_CURVE := 1.3  # speed = MAX x pull^1.3: the first third of the pull gives fine putts
+const SLOWMO := 0.3  # presentation rate around a great hole-out (physics unchanged)
 const PULL_FULL := 420.0  # canvas px of drag for full power
 const DEAD := 30.0  # px: shorter drags cancel
 const GUIDE_TIME := 1.2  # seconds of path shown by the guide (shrinks later with difficulty)
@@ -78,6 +80,24 @@ var _map_btn: Button
 var _ring: MeshInstance3D
 var _cup_glow: MeshInstance3D
 var _confetti: CPUParticles3D
+var _sparks: CPUParticles3D
+var _theme := GolfTheme.meadow()
+var _fx_rng := Rng.make(0x6f1f)
+var _clock := PresentationClock.new()
+var _hole_at := -1.0  # solver time the predicted cup drop happens (-1: this shot misses)
+var _slowmo := false
+var _kick := Vector3.ZERO  # camera kick on release, springs back
+var _trauma := 0.0  # screen shake 0..1 (hole-in-one), decays
+var _squash := 0.0  # seconds of ball squash left after a rail hit
+var _last_tick := 0  # power tick haptics: last 10% band and time
+var _last_tick_ms := 0
+var _trail_pts := PackedVector3Array()
+var _trail_speed := PackedFloat32Array()
+var _trail_head := 0
+var _trail_n := 0
+var _trail: ImmediateMesh
+var _flag_cloth: MeshInstance3D
+var _stars: Label
 var _hud_top: Label
 var _hud_info: Label
 var _banner: Label
@@ -121,14 +141,13 @@ func _load_hole(i: int) -> void:
 	add_child(_world)
 	var scenery := GolfScenery.new()
 	_world.add_child(scenery)
-	scenery.build(_hole, _spec, 5 + _index)
+	scenery.build(_hole, _spec, 5 + _index, _theme)
 	var terrain := GolfTerrain.new()
 	_world.add_child(terrain)
-	terrain.build(_hole)
-	_walls()
-	_decor()
-	_ball_mesh = _mesh(_sphere(_ball.p.radius), Color(1, 1, 1), true)
-	_ball_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	terrain.build(_hole, _theme)
+	MiniDressing.rails(_world, _hole, _theme)
+	MiniDressing.decor(_world, _hole, _theme, _index)
+	_ball_mesh = MiniDressing.ball(_world, _ball.p.radius, _theme)
 	_shadow = _mesh(_disc(0.6), Color(0, 0, 0, 0.3), true)
 	_ring = _mesh(_disc(0.16), Color(1, 1, 1, 0.35), true)
 	_flag = Node3D.new()
@@ -140,10 +159,15 @@ func _load_hole(i: int) -> void:
 	_mesh(pole, Color(0.96, 0.96, 0.96), false, _flag).position.y = 0.8
 	var cloth := BoxMesh.new()
 	cloth.size = Vector3(0.6, 0.38, 0.02)
-	_mesh(cloth, Color(0.98, 0.3, 0.22), true, _flag).position = Vector3(0.3, 1.4, 0)
-	_cup_glow = _mesh(_disc(_hole.cup_r * 3.2), Color(1.0, 0.9, 0.35, 0.35), true, _flag)
+	_flag_cloth = _mesh(cloth, _theme.flag, false, _flag)
+	_flag_cloth.position = Vector3(0.3, 1.4, 0)
+	_cup_glow = _mesh(_disc(_hole.cup_r * 3.0), Color(1.0, 0.85, 0.3, 0.4), true, _flag)
+	var gm2 := _cup_glow.material_override as StandardMaterial3D
+	gm2.emission_enabled = true
+	gm2.emission = Color(1.0, 0.8, 0.3)
+	gm2.emission_energy_multiplier = 1.6
 	_cup_glow.position.y = 0.006
-	_mesh(_disc(_hole.cup_r * 1.6), Color(0.97, 0.97, 0.97), true, _flag).position.y = 0.008
+	_mesh(_disc(_hole.cup_r * 1.6), _theme.cup_rim, true, _flag).position.y = 0.008
 	_mesh(_disc(_hole.cup_r * 1.05), Color(0.03, 0.03, 0.03), true, _flag).position.y = 0.012
 	_flag.position = _hole.pin
 	var guide := MeshInstance3D.new()
@@ -174,146 +198,19 @@ func _load_hole(i: int) -> void:
 		]
 	)
 	_confetti.color_initial_ramp = ramp
+	_sparks = _particles(10, 0.28, Vector2(1.5, 3.0), 0.02)
+	_sparks.spread = 70.0
+	_sparks.color = Color(1.0, 0.92, 0.6)
+	var tr := MeshInstance3D.new()
+	_trail = ImmediateMesh.new()
+	tr.mesh = _trail
+	tr.material_override = gm
+	tr.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_world.add_child(tr)
+	_trail_pts.resize(20)
+	_trail_speed.resize(20)
+	_trail_n = 0
 	_start_hole()
-
-
-## Rails along every wall (stepped tops follow ramps) and striped bumpers.
-func _walls() -> void:
-	var spots: Array[Transform3D] = []
-	var w := _hole.walls
-	var piece := 0.5
-	var thick := maxf(_hole.wall_half * 2.0, 0.08)
-	for o in range(0, w.size(), 4):
-		var a := Vector2(w[o], w[o + 1])
-		var b := Vector2(w[o + 2], w[o + 3])
-		var length := a.distance_to(b)
-		var dir := (b - a) / length
-		# One solid rail where the ground is level along it; short steps beside ramps.
-		var flat := absf(_hole.height(a.x, a.y) - _hole.height(b.x, b.y)) < 0.01
-		var n := 1 if flat else maxi(1, int(ceilf(length / piece)))
-		var turn := Basis(Vector3.UP, -atan2(dir.y, dir.x))
-		for k in n:
-			var m := a + dir * (length * (k + 0.5) / n)
-			var top := _hole.height(m.x, m.y) + _hole.wall_height
-			var h := top - MiniBaker.PIT
-			var size := Vector3(length / n + (thick if k == 0 or k == n - 1 else 0.0), h, thick)
-			spots.append(
-				Transform3D(
-					turn * Basis.from_scale(size), Vector3(m.x, MiniBaker.PIT + h * 0.5, m.y)
-				)
-			)
-	_multi(BoxMesh.new(), spots, Color(0.55, 0.34, 0.18))
-	# A light cap along the top of every rail: a two-tone wooden edge.
-	var caps: Array[Transform3D] = []
-	for t in spots:
-		var sx := t.basis.get_scale()
-		var cap_top := t.origin.y + sx.y * 0.5
-		var turn := t.basis.orthonormalized()
-		caps.append(
-			Transform3D(
-				turn * Basis.from_scale(Vector3(sx.x + 0.02, 0.05, sx.z + 0.04)),
-				Vector3(t.origin.x, cap_top + 0.02, t.origin.z)
-			)
-		)
-	_multi(BoxMesh.new(), caps, Color(0.95, 0.9, 0.8))
-	var bp := _hole.bumpers
-	for o in range(0, bp.size(), 3):
-		var cyl := CylinderMesh.new()
-		cyl.top_radius = bp[o + 2]
-		cyl.bottom_radius = bp[o + 2]
-		cyl.height = 0.5
-		cyl.radial_segments = 20
-		var at := Vector3(bp[o], _hole.height(bp[o], bp[o + 1]) + 0.25, bp[o + 1])
-		_mesh(cyl, Color(0.92, 0.25, 0.22), false).position = at
-		var ring := CylinderMesh.new()
-		ring.top_radius = bp[o + 2] + 0.01
-		ring.bottom_radius = bp[o + 2] + 0.01
-		ring.height = 0.12
-		ring.radial_segments = 20
-		_mesh(ring, Color(0.98, 0.96, 0.92), false).position = at
-
-
-func _multi(
-	mesh: Mesh, spots: Array[Transform3D], col: Color, colors := PackedColorArray()
-) -> void:
-	if spots.is_empty():
-		return
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = not colors.is_empty()
-	mm.mesh = mesh
-	mm.instance_count = spots.size()
-	for i in spots.size():
-		mm.set_instance_transform(i, spots[i])
-		if not colors.is_empty():
-			mm.set_instance_color(i, colors[i])
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.roughness = 0.85
-	mat.vertex_color_use_as_albedo = not colors.is_empty()
-	mat.vertex_color_is_srgb = true
-	mmi.material_override = mat
-	_world.add_child(mmi)
-
-
-## Flower beds and bushes on the lawn just outside the rails (seeded per hole).
-func _decor() -> void:
-	var rng := Rng.make(4242 + _index)
-	var bushes: Array[Transform3D] = []
-	var flowers: Array[Transform3D] = []
-	var flower_cols := PackedColorArray()
-	var palette := [
-		Color(1.0, 0.45, 0.6), Color(1.0, 0.85, 0.3), Color(0.98, 0.97, 0.95), Color(0.7, 0.5, 1.0)
-	]
-	var w := _hole.walls
-	for o in range(0, w.size(), 4):
-		var a := Vector2(w[o], w[o + 1])
-		var b := Vector2(w[o + 2], w[o + 3])
-		var length := a.distance_to(b)
-		var dir := (b - a) / length
-		var nrm := Vector2(-dir.y, dir.x)
-		var t := 0.4
-		while t < length - 0.4:
-			for side in [-1.0, 1.0]:
-				var off: float = side * rng.randf_range(0.55, 1.4)
-				var q: Vector2 = a + dir * t + nrm * off
-				if _hole.surface_at(q.x, q.y) != HoleData.Surface.OUT:
-					continue
-				var y := _hole.height(q.x, q.y)
-				if y < MiniBaker.LAWN - 0.05:
-					continue  # not in the gaps
-				if rng.randf() < 0.45:
-					var sz := rng.randf_range(0.45, 0.8)
-					bushes.append(
-						Transform3D(
-							Basis.from_scale(Vector3(sz, sz * 0.8, sz)),
-							Vector3(q.x, y + sz * 0.5, q.y)
-						)
-					)
-				else:
-					var col: Color = palette[rng.randi_range(0, palette.size() - 1)]
-					for k in 6:
-						var fq := (
-							q + Vector2(rng.randf_range(-0.35, 0.35), rng.randf_range(-0.35, 0.35))
-						)
-						var fs := rng.randf_range(0.11, 0.17)
-						flowers.append(
-							Transform3D(
-								Basis.from_scale(Vector3(fs, fs, fs)), Vector3(fq.x, y + 0.14, fq.y)
-							)
-						)
-						flower_cols.append(col)
-			t += rng.randf_range(0.7, 1.2)
-	var leaf := SphereMesh.new()
-	leaf.radial_segments = 8
-	leaf.rings = 4
-	_multi(leaf, bushes, Color(0.18, 0.42, 0.18))
-	var petal := SphereMesh.new()
-	petal.radial_segments = 6
-	petal.rings = 3
-	_multi(petal, flowers, Color.WHITE, flower_cols)
 
 
 static func _sphere(r: float) -> SphereMesh:
@@ -402,6 +299,10 @@ func _build_ui() -> void:
 	_banner.position = Vector2(0, 560)
 	_banner.size = Vector2(1080, 260)
 	layer.add_child(_banner)
+	_stars = _outlined("", 96, UiKit.GOLD, 900, 16)
+	_stars.position = Vector2(0, 830)
+	_stars.size = Vector2(1080, 140)
+	layer.add_child(_stars)
 	_card = _outlined("", 76, Color.WHITE, 900, 18)
 	_card.position = Vector2(0, 480)
 	_card.size = Vector2(1080, 420)
@@ -469,6 +370,8 @@ func _start_hole() -> void:
 func _new_shot() -> void:
 	mode = Mode.AIM
 	_banner.text = ""
+	_banner.scale = Vector2.ONE
+	_stars.text = ""
 	_card.text = ""
 	_cur = _ball_at
 	_prev = _ball_at
@@ -525,14 +428,34 @@ func _refresh() -> void:
 		_hint.text = ""
 
 
+## Ball speed for a pull fraction: eased so short pulls give fine putts.
+static func _speed(p: float) -> float:
+	return MAX_SPEED * pow(clampf(p, 0.0, 1.0), POWER_CURVE)
+
+
+func _reduce_motion() -> bool:
+	return bool(SettingsService.get_value("reduce_motion"))
+
+
 func _shoot() -> void:
 	_strokes += 1
 	_events_seen = 0
 	_ball = GolfBall.new(_hole, _preset, _ball.p)
-	var v := _shot_dir * (_power * MAX_SPEED)
+	var v := _shot_dir * _speed(_power)
 	_ball.putt(_ball_at.x, _ball_at.z, v.x, v.z)
+	# Will it drop, and when? (Same solver, same steps: exact.) Great hole-outs get slow motion.
+	var probe := GolfBall.new(_hole, _preset, _ball.p)
+	probe.putt(_ball_at.x, _ball_at.z, v.x, v.z)
+	probe.run_to_rest()
+	_hole_at = probe.time if probe.phase == GolfBall.Phase.HOLED else -1.0
+	var dist := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
+	_slowmo = _hole_at > 0.0 and (_strokes == 1 or _strokes < _hole.par or dist > 6.0)
+	_clock.reset()
+	_trail_n = 0
 	AudioService.play("clack", 0.65 + 0.3 * _power, -6.0 + 6.0 * _power)
-	AudioService.buzz(int(8 + 14 * _power))
+	AudioService.buzz(int(8 + 10 * _power))
+	if not _reduce_motion():
+		_kick = -_shot_dir * (0.05 + 0.1 * _power)
 	mode = Mode.MOVING
 	_guide.clear_surfaces()
 	_refresh()
@@ -547,12 +470,8 @@ func _shot_over() -> void:
 			var name: String = NAMES.get(diff, "+%d" % diff)
 			if _strokes == 1:
 				name = "HOLE IN ONE!"
-			_banner.text = "%s\n%d strokes" % [name, _strokes]
 			_total += diff
-			AudioService.play("pocket")
-			AudioService.play("win" if diff <= 0 else "count")
-			_confetti.position = _hole.pin + Vector3(0, 0.1, 0)
-			_confetti.restart()
+			_hole_out(name, diff)
 			_hole_over = true
 			_save["played"] = int(_save["played"]) + 1
 			SaveService.save()
@@ -572,6 +491,47 @@ func _shot_over() -> void:
 		_total += _strokes + 1 - _hole.par
 		_hole_over = true
 	_banner.modulate.a = 1.0
+
+
+## Hole-out: cup sound and haptic, flag wiggle, confetti (birdie or better), the score word
+## popping in, then the stars one by one. Scaled to the result: par is calm, an ace is loud.
+func _hole_out(word: String, diff: int) -> void:
+	AudioService.play("pocket")
+	AudioService.buzz(30)
+	var wig := create_tween()
+	wig.tween_property(_flag_cloth, "rotation:y", 0.6, 0.12)
+	wig.tween_property(_flag_cloth, "rotation:y", 0.0, 0.6).set_trans(Tween.TRANS_ELASTIC).set_ease(
+		Tween.EASE_OUT
+	)
+	if diff < 0 or _strokes == 1:
+		get_tree().create_timer(0.1).timeout.connect(
+			func() -> void:
+				_confetti.amount = 140 if _strokes == 1 else 70
+				_confetti.position = _hole.pin + Vector3(0, 0.1, 0)
+				_confetti.restart()
+		)
+	if _strokes == 1 and not _reduce_motion():
+		_trauma = 0.6
+	_banner.text = word
+	_banner.pivot_offset = _banner.size * 0.5
+	_banner.scale = Vector2(0.4, 0.4)
+	var pop := create_tween()
+	pop.tween_interval(0.25)
+	pop.tween_property(_banner, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(
+		Tween.EASE_OUT
+	)
+	pop.tween_callback(func() -> void: AudioService.play("win" if diff <= 0 else "count"))
+	var stars := 3 if diff < 0 else (2 if diff == 0 else (1 if diff == 1 else 0))
+	_stars.text = ""
+	for k in 3:
+		var star := k
+		get_tree().create_timer(0.8 + 0.22 * k).timeout.connect(
+			func() -> void:
+				var earned := star < stars
+				_stars.text += "★" if earned else "☆"
+				if earned:
+					AudioService.play("tap", 1.0 + 0.2 * star)
+		)
 
 
 func _safe_spot(p: Vector3) -> Vector3:
@@ -595,11 +555,16 @@ func _physics_process(delta: float) -> void:
 					_bot_shot()
 		Mode.MOVING:
 			_prev = _cur
-			for i in 4:
+			# Slow motion only changes how many fixed substeps run per tick (PresentationClock):
+			# the shot itself is bit-identical.
+			var slow := _slowmo and _ball.time > _hole_at - 0.6 and _ball.time < _hole_at + 0.15
+			_clock.rate = SLOWMO if slow else 1.0
+			for i in _clock.take():
 				_ball.substep()
 				if _ball.done():
 					break
 			_cur = _ball.pos()
+			_trail_push(_cur, _ball.roll_speed())
 			_effects()
 			if _ball.done():
 				_shot_over()
@@ -625,7 +590,7 @@ func _bot_shot() -> void:
 		for pi in 10:
 			var p := 0.03 + pi * 0.09 * pi / 9.0  # finer at the soft end (tap-ins)
 			var b := GolfBall.new(_hole, _preset, _ball.p)
-			b.putt(_ball_at.x, _ball_at.z, dir.x * p * MAX_SPEED, dir.z * p * MAX_SPEED)
+			b.putt(_ball_at.x, _ball_at.z, dir.x * _speed(p), dir.z * _speed(p))
 			b.run_to_rest(1.0 / 60.0)
 			var score := 1e6
 			if b.phase == GolfBall.Phase.HOLED:
@@ -666,9 +631,18 @@ func _effects() -> void:
 		var at := _ball.pos()
 		match kind:
 			GolfBall.Ev.WALL:
+				if v < 0.3:
+					continue  # a rolling ball nudging a rail: no machine-gun clacks
+				var semis := _fx_rng.randf_range(-2.0, 2.0)
+				var vol := clampf(linear_to_db(clampf(v / 8.0, 0.1, 1.0)), -18.0, -3.0)
 				AudioService.play(
-					"clack", 0.9, clampf(linear_to_db(clampf(v / 8.0, 0.1, 1.0)), -18.0, -3.0)
+					"clack", pow(2.0, semis / 12.0), vol + _fx_rng.randf_range(-1.5, 1.5)
 				)
+				if v > 2.0:
+					_sparks.amount = clampi(int(v * 1.5), 6, 12)
+					_sparks.position = at
+					_sparks.restart()
+					_squash = 0.08
 			GolfBall.Ev.BOUNCE:
 				_puff.color = Color(0.45, 0.75, 0.35)
 				_puff.position = at
@@ -688,7 +662,9 @@ func _process(delta: float) -> void:
 	_place_camera(delta, p)
 	var r := _ball.p.radius
 	var s := clampf(p.distance_to(_cam.position) * 0.006 / r, 2.0, 12.0)
-	_ball_mesh.scale = Vector3(s, s, s)
+	_squash = maxf(0.0, _squash - delta)
+	var sq := 0.12 * _squash / 0.08
+	_ball_mesh.scale = Vector3(s * (1.0 + sq), s * (1.0 - sq), s * (1.0 + sq))
 	_ball_mesh.position = p + Vector3(0, r * (s - 1.0), 0)
 	var gone := _ball.phase == GolfBall.Phase.HOLED or _ball.phase == GolfBall.Phase.WATER
 	_ball_mesh.visible = not (gone and mode == Mode.RESULT)
@@ -702,8 +678,47 @@ func _process(delta: float) -> void:
 	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.004)
 	(_cup_glow.material_override as StandardMaterial3D).albedo_color.a = 0.2 + 0.25 * pulse
 	_map_btn.visible = mode == Mode.AIM
+	# The HUD steps back while you aim, so only the power ring and the guide remain.
+	var panel := _hud_top.get_parent() as Control
+	var hud_a := 0.35 if mode == Mode.DRAG else 1.0
+	panel.modulate.a = lerpf(panel.modulate.a, hud_a, 1.0 - exp(-12.0 * delta))
+	_draw_trail()
 	if mode == Mode.DRAG:
 		_power_ui.queue_redraw()
+
+
+## Speed trail: a 20-point ring buffer (preallocated), pushed while the ball moves fast.
+func _trail_push(p: Vector3, speed: float) -> void:
+	if speed < 1.0:
+		_trail_n = maxi(0, _trail_n - 1)
+		return
+	_trail_head = (_trail_head + 1) % _trail_pts.size()
+	_trail_pts[_trail_head] = p + Vector3(0, 0.03, 0)
+	_trail_speed[_trail_head] = speed
+	_trail_n = mini(_trail_n + 1, _trail_pts.size())
+
+
+func _draw_trail() -> void:
+	_trail.clear_surfaces()
+	if _trail_n < 2 or mode != Mode.MOVING:
+		return
+	_trail.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	var size := _trail_pts.size()
+	for k in _trail_n:
+		var idx := (_trail_head - k + size) % size
+		var nxt := (_trail_head - mini(k + 1, _trail_n - 1) + size) % size
+		var q := _trail_pts[idx]
+		var d := q - _trail_pts[nxt]
+		if d.length() < 1e-4:
+			d = _shot_dir
+		var side := Vector3(-d.z, 0.0, d.x).normalized()
+		var w := clampf(_trail_speed[idx] * 0.006, 0.01, 0.05) * (1.0 - float(k) / _trail_n)
+		var a := 0.55 * (1.0 - float(k) / _trail_n)
+		_trail.surface_set_color(Color(1, 1, 1, a))
+		_trail.surface_add_vertex(q - side * w)
+		_trail.surface_set_color(Color(1, 1, 1, a))
+		_trail.surface_add_vertex(q + side * w)
+	_trail.surface_end()
 
 
 ## Dotted guide: the ball's real path for the first GUIDE_TIME seconds (same solver).
@@ -712,7 +727,7 @@ func _draw_guide() -> void:
 	if mode != Mode.DRAG or _power <= 0.0:
 		return
 	var b := GolfBall.new(_hole, _preset, _ball.p)
-	var v := _shot_dir * (_power * MAX_SPEED)
+	var v := _shot_dir * _speed(_power)
 	b.putt(_ball_at.x, _ball_at.z, v.x, v.z)
 	var pts := PackedVector3Array()
 	var t := 0.0
@@ -778,6 +793,13 @@ func _place_camera(delta: float, ball: Vector3) -> void:
 	_cam_ready = true
 	_cam.position = _cam.position.lerp(want, k)
 	_cam.look_at(look)
+	# Release kick (springs back over ~200 ms) and hole-in-one shake (trauma^2, smooth wobble).
+	_kick = _kick.lerp(Vector3.ZERO, 1.0 - exp(-15.0 * delta))
+	_trauma = maxf(0.0, _trauma - delta * 0.9)
+	var tm := Time.get_ticks_msec() * 0.001
+	var shake := _trauma * _trauma * 0.12
+	var wob := Vector3(sin(tm * 37.0), sin(tm * 29.0 + 1.3), sin(tm * 41.0 + 2.1)) * shake
+	_cam.position += _kick + wob
 
 
 func _hole_centre() -> Vector3:
@@ -836,6 +858,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mm != null and mode == Mode.DRAG:
 		var d := mm.position - _drag_from
 		_power = clampf(d.length() / PULL_FULL, 0.0, 1.0)
+		# A light tick each 10% of power (throttled), so the pull can be felt.
+		var band := int(_power * 10.0)
+		var now := Time.get_ticks_msec()
+		if band != _last_tick and now - _last_tick_ms > 70:
+			_last_tick = band
+			_last_tick_ms = now
+			AudioService.buzz(5)
 		if d.length() > 4.0:
 			# Slingshot: the ball goes opposite to the pull (screen down = towards the camera).
 			var pull := _cam_right * d.x - _cam_fwd * d.y

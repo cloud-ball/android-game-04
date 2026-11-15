@@ -11,7 +11,7 @@ const CHUNK := 48  # render cells per chunk side
 
 const SHADER := """
 shader_type spatial;
-render_mode diffuse_lambert, specular_schlick_ggx;
+render_mode diffuse_lambert_wrap, specular_schlick_ggx;
 uniform sampler2D surf : filter_nearest;
 uniform vec2 origin;
 uniform vec2 extent;
@@ -36,7 +36,9 @@ void fragment() {
 	int s = int(texture(surf, uv).r * 255.0 + 0.5);
 	vec3 c = cols[clamp(s, 0, 8)].rgb;
 	float rough = 1.0;
+	float rim = 0.0;
 	if (s == 5) {
+		rim = 0.25;  // fibre sheen at grazing angles
 		// Carpet: fine fibre noise, soft brushed bands.
 		c *= 0.9 + 0.12 * vnoise(wpos.xz * 22.0) + 0.05 * step(0.5, fract((wpos.x + wpos.z) / 1.6));
 		rough = 0.85;
@@ -50,6 +52,8 @@ void fragment() {
 	}
 	ALBEDO = c * ao;
 	ROUGHNESS = rough;
+	RIM = rim;
+	RIM_TINT = 0.5;
 }
 """
 
@@ -70,7 +74,8 @@ const COLS := [
 var hole: HoleData
 
 
-func build(h: HoleData) -> void:
+## theme: optional GolfTheme; its lawn / carpet / sand / water replace the default colours.
+func build(h: HoleData, theme: GolfTheme = null) -> void:
 	hole = h
 	var mat := ShaderMaterial.new()
 	var sh := Shader.new()
@@ -83,9 +88,16 @@ func build(h: HoleData) -> void:
 	mat.set_shader_parameter("surf", ImageTexture.create_from_image(img))
 	mat.set_shader_parameter("origin", Vector2(h.x0, h.z0))
 	mat.set_shader_parameter("extent", Vector2(h.nx * h.cell, h.nz * h.cell))
+	var palette: Array = COLS.duplicate()
+	if theme != null:
+		palette[HoleData.Surface.OUT] = theme.lawn
+		palette[HoleData.Surface.ROUGH] = theme.lawn
+		palette[HoleData.Surface.GREEN] = theme.carpet
+		palette[HoleData.Surface.SAND] = theme.sand
+		palette[HoleData.Surface.WATER] = theme.water
 	var cols := PackedColorArray()
-	for c in COLS:
-		cols.append(c.srgb_to_linear())
+	for c in palette:
+		cols.append((c as Color).srgb_to_linear())
 	mat.set_shader_parameter("cols", cols)
 	var rx := h.nx / STEP
 	var rz := h.nz / STEP

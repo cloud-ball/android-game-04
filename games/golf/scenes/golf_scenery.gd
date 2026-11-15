@@ -27,9 +27,20 @@ void fragment() {
 """
 
 var _blades: Node3D
+var _theme: GolfTheme
 
 
-func build(hole: HoleData, spec: Dictionary, seed_value := 1) -> void:
+## Dev switches for measuring on the phone: --gfx=noshadow,noglow,scale=0.75,aa=fxaa|smaa|msaa2
+static func gfx_flags() -> Dictionary:
+	var out := {}
+	for part in str(Boot.options.get("gfx", "")).split(",", false):
+		var kv := part.split("=")
+		out[kv[0]] = kv[1] if kv.size() > 1 else true
+	return out
+
+
+func build(hole: HoleData, spec: Dictionary, seed_value := 1, theme: GolfTheme = null) -> void:
+	_theme = theme if theme != null else GolfTheme.meadow()
 	_environment()
 	var mid := Vector3(
 		hole.x0 + hole.nx * hole.cell * 0.5, 0.0, hole.z0 + hole.nz * hole.cell * 0.5
@@ -52,8 +63,8 @@ func _process(delta: float) -> void:
 
 func _environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.32, 0.56, 0.86)
-	sky_mat.sky_horizon_color = Color(0.74, 0.86, 0.95)
+	sky_mat.sky_top_color = _theme.sky_top
+	sky_mat.sky_horizon_color = _theme.sky_horizon
 	sky_mat.ground_bottom_color = Color(0.2, 0.32, 0.18)
 	sky_mat.ground_horizon_color = Color(0.62, 0.74, 0.7)
 	sky_mat.sun_angle_max = 20.0
@@ -65,25 +76,37 @@ func _environment() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.ambient_light_energy = 0.75
+	# Filmic with a little extra exposure and saturation: a bright, sunny toy-diorama look (AgX
+	# came out dull and dark on the carpet in screenshots).
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 1.18
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 1.15
+	env.adjustment_contrast = 1.04
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.7, 0.82, 0.92)
 	env.fog_density = 0.0009
 	env.fog_sky_affect = 0.0
-	env.glow_enabled = true
-	env.glow_intensity = 0.4
-	env.glow_bloom = 0.05
+	# Glow only for real accents (emissive, above 1.0), on two mid levels (research: level 1
+	# aliases since 4.6; a wide faint bloom cost GPU time and showed little).
+	var flags := gfx_flags()
+	env.glow_enabled = not flags.has("noglow")
+	env.glow_intensity = 0.8
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 1.0
+	for lv in 7:
+		env.set_glow_level(lv, 1.0 if lv == 2 or lv == 3 else 0.0)
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-48, -35, 0)
+	sun.rotation_degrees = Vector3(_theme.sun_pitch, _theme.sun_yaw, 0)
 	sun.light_energy = 1.05
 	sun.light_color = Color(1.0, 0.97, 0.9)
 	# Real shadows near the camera (walls, trees, the ball): the biggest single step in richness.
-	sun.shadow_enabled = true
+	sun.shadow_enabled = not flags.has("noshadow")
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.directional_shadow_max_distance = 45.0
+	sun.directional_shadow_max_distance = 28.0  # the play view sees ~15-25 m
 	sun.shadow_blur = 1.5
 	add_child(sun)
 
