@@ -18,6 +18,12 @@ var cup_rim := Color(1.0, 1.0, 1.0)
 var ball := Color(1.0, 1.0, 1.0)
 var ball_outline := Color(0.05, 0.08, 0.1)
 var bush := Color(0.17, 0.4, 0.2)
+var stone := Color(0.62, 0.6, 0.55)  # Ring 1 stones beside the rails
+## Landmark (backdrop: lower contrast than the playfield, framed in the top third).
+var landmark_wall := Color(0.92, 0.87, 0.77)
+var landmark_roof := Color(0.62, 0.27, 0.22)
+var landmark_wood := Color(0.38, 0.25, 0.16)
+var sail := Color(0.95, 0.92, 0.84)
 ## Saturated, never white or near-white (white is the ball's).
 var flowers := [
 	Color(1.0, 0.4, 0.55), Color(1.0, 0.78, 0.2), Color(0.66, 0.42, 0.96), Color(1.0, 0.55, 0.25)

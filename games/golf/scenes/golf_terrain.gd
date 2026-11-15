@@ -8,11 +8,12 @@ extends Node3D
 
 const STEP := 2  # render every 2nd physics vertex (0.5 m grid -> 1 m mesh)
 const CHUNK := 48  # render cells per chunk side
+const APRON := 750.0  # lawn strips out to the horizon around the grid
 
 const SHADER := """
 shader_type spatial;
 render_mode diffuse_lambert_wrap, specular_schlick_ggx;
-uniform sampler2D surf : filter_nearest;
+uniform sampler2D surf : filter_nearest, repeat_disable;
 uniform vec2 origin;
 uniform vec2 extent;
 uniform vec4 cols[9];
@@ -107,6 +108,59 @@ func build(h: HoleData, theme: GolfTheme = null) -> void:
 			mi.mesh = _chunk(ci, cj, mini(CHUNK, rx - ci), mini(CHUNK, rz - cj))
 			mi.material_override = mat
 			add_child(mi)
+	_apron(mat)
+
+
+## Lawn to the horizon: four flat strips around the baked grid at its edge height, with the same
+## material (the surface texture clamps to its lawn border), so there is no seam and nothing
+## ever covers the course or its pits.
+func _apron(mat: Material) -> void:
+	var x0 := hole.x0
+	var z0 := hole.z0
+	var x1 := hole.x0 + hole.nx * hole.cell
+	var z1 := hole.z0 + hole.nz * hole.cell
+	var far := APRON
+	var y := hole._h(0, 0)
+	var rects := [
+		Rect2(x0 - far, z0 - far, x1 - x0 + 2.0 * far, far),
+		Rect2(x0 - far, z1, x1 - x0 + 2.0 * far, far),
+		Rect2(x0 - far, z0, far, z1 - z0),
+		Rect2(x1, z0, far, z1 - z0),
+	]
+	var verts := PackedVector3Array()
+	var idx := PackedInt32Array()
+	for r: Rect2 in rects:
+		var k := verts.size()
+		(
+			verts
+			. append_array(
+				[
+					Vector3(r.position.x, y, r.position.y),
+					Vector3(r.end.x, y, r.position.y),
+					Vector3(r.position.x, y, r.end.y),
+					Vector3(r.end.x, y, r.end.y),
+				]
+			)
+		)
+		idx.append_array([k, k + 1, k + 3, k, k + 3, k + 2])
+	var norms := PackedVector3Array()
+	var cols := PackedColorArray()
+	for v in verts:
+		norms.append(Vector3.UP)
+		cols.append(Color.WHITE)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = norms
+	arrays[Mesh.ARRAY_COLOR] = cols
+	arrays[Mesh.ARRAY_INDEX] = idx
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mi := MeshInstance3D.new()
+	mi.mesh = m
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 
 func _vertex(i: int, j: int) -> Vector3:

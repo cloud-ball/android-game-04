@@ -106,6 +106,40 @@ static func flow_field(spec: Dictionary) -> PackedFloat64Array:
 	return out
 
 
+## Direction to aim from a point: toward the neighbouring tile closest to the cup on the flow
+## field (round corners), or straight at the cup when already on its tile or off the map.
+static func flow_dir(spec: Dictionary, pin: Vector3, from: Vector3) -> Vector3:
+	var straight := Vector3(pin.x - from.x, 0.0, pin.z - from.z)
+	var f := flow_field(spec)
+	var tile := float(spec.get("tile", 3.0))
+	var rows: int = spec.map.size()
+	var cols := 0
+	for r in spec.map:
+		cols = maxi(cols, str(r).length())
+	var c := int(floorf((from.x + cols * tile * 0.5) / tile))
+	var r := int(floorf((from.z + rows * tile) / tile))
+	if c < 0 or r < 0 or c >= cols or r >= rows or f[r * cols + c] <= tile * 0.5:
+		return straight.normalized() if straight.length() > 0.01 else Vector3(0, 0, -1)
+	var best := Vector2i(c, r)
+	var best_v := f[r * cols + c]
+	for dz in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			var n := Vector2i(c + dx, r + dz)
+			if n.x < 0 or n.y < 0 or n.x >= cols or n.y >= rows:
+				continue
+			var v := f[n.y * cols + n.x]
+			if v >= 0.0 and v < best_v:
+				best_v = v
+				best = n
+	var tc := Vector3(
+		-cols * tile * 0.5 + (best.x + 0.5) * tile, 0.0, -rows * tile + (best.y + 0.5) * tile
+	)
+	var d := Vector3(tc.x - from.x, 0.0, tc.z - from.z)
+	if best == Vector2i(c, r) or d.length() < 0.01:
+		return straight.normalized()
+	return d.normalized()
+
+
 ## Grid helper over the tile map (pure).
 class _Map:
 	extends RefCounted

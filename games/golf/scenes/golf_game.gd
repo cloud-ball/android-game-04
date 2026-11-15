@@ -30,6 +30,7 @@ const PULL_FULL := 420.0  # canvas px of drag for full power
 const DEAD := 30.0  # px: shorter drags cancel
 const GUIDE_TIME := 1.2  # seconds of path shown by the guide (shrinks later with difficulty)
 const INTRO_TIME := 3.0
+const INTRO_HOLD := 0.8  # seconds on the establishing shot before the glide
 ## Camera (phone feedback: the low chase camera swung on every bounce and hid the ball behind
 ## walls): an angled view from behind and above (~50 degrees down). It turns only while aiming;
 ## while the ball rolls it glides along without rotating.
@@ -60,6 +61,7 @@ var _cam_right := Vector3.RIGHT
 var _cam_fwd := Vector3.FORWARD
 var _result_t := 0.0
 var _intro_t := 0.0
+var _landmark := Vector3.ZERO  # the intro opens on it
 var _hole_over := false
 var _prev := Vector3.ZERO
 var _cur := Vector3.ZERO
@@ -122,7 +124,7 @@ func _ready() -> void:
 	add_child(_cam)
 	_cam.make_current()
 	_build_ui()
-	_load_hole(0)
+	_load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
 
 
 # --- world ---------------------------------------------------------------------------------------
@@ -142,6 +144,7 @@ func _load_hole(i: int) -> void:
 	var scenery := GolfScenery.new()
 	_world.add_child(scenery)
 	scenery.build(_hole, _spec, 5 + _index, _theme)
+	_landmark = scenery.landmark
 	var terrain := GolfTerrain.new()
 	_world.add_child(terrain)
 	terrain.build(_hole, _theme)
@@ -382,35 +385,7 @@ func _new_shot() -> void:
 
 ## Direction towards the cup along the course (next tile on the flow field, else straight).
 func _flow_dir(from: Vector3) -> Vector3:
-	var straight := Vector3(_hole.pin.x - from.x, 0.0, _hole.pin.z - from.z)
-	var f := MiniBaker.flow_field(_spec)
-	var tile := float(_spec.get("tile", 3.0))
-	var rows: int = _spec.map.size()
-	var cols := 0
-	for r in _spec.map:
-		cols = maxi(cols, str(r).length())
-	var c := int(floorf((from.x + cols * tile * 0.5) / tile))
-	var r := int(floorf((from.z + rows * tile) / tile))
-	if c < 0 or r < 0 or c >= cols or r >= rows or f[r * cols + c] <= tile * 0.5:
-		return straight.normalized() if straight.length() > 0.01 else Vector3(0, 0, -1)
-	var best := Vector2i(c, r)
-	var best_v := f[r * cols + c]
-	for dz in [-1, 0, 1]:
-		for dx in [-1, 0, 1]:
-			var n := Vector2i(c + dx, r + dz)
-			if n.x < 0 or n.y < 0 or n.x >= cols or n.y >= rows:
-				continue
-			var v := f[n.y * cols + n.x]
-			if v >= 0.0 and v < best_v:
-				best_v = v
-				best = n
-	var tc := Vector3(
-		-cols * tile * 0.5 + (best.x + 0.5) * tile, 0.0, -rows * tile + (best.y + 0.5) * tile
-	)
-	var d := Vector3(tc.x - from.x, 0.0, tc.z - from.z)
-	if best == Vector2i(c, r) or d.length() < 0.01:
-		return straight.normalized()
-	return d.normalized()
+	return MiniBaker.flow_dir(_spec, _hole.pin, from)
 
 
 func _refresh() -> void:
@@ -765,9 +740,10 @@ func _draw_guide() -> void:
 	_guide.surface_end()
 
 
-## Intro: fly from high above the cup down to the aiming view. Aim: behind and above the ball,
-## turning smoothly to the aim. Drag: frozen. Moving: same facing, gliding after the ball (no
-## rotation, so bounces never swing the view). Map: top-down over the whole hole.
+## Intro: open on the landmark over the course, then glide down to the aiming view.
+## Aim: behind and above the ball, turning smoothly to the aim. Drag: frozen. Moving: same
+## facing, gliding after the ball (no rotation, so bounces never swing the view). Map: top-down
+## over the whole hole.
 func _place_camera(delta: float, ball: Vector3) -> void:
 	if mode == Mode.DRAG:
 		return
@@ -779,11 +755,15 @@ func _place_camera(delta: float, ball: Vector3) -> void:
 	var look := ball + _cam_dir * CAM_AHEAD
 	var rate := 7.0 if mode != Mode.MOVING else 4.0
 	if mode == Mode.INTRO:
-		var t := GestureTimeline.decel(clampf(_intro_t / INTRO_TIME, 0.0, 1.0))
-		var c := _hole_centre()
-		var high := c + Vector3(0, _hole_span() * 1.1, _hole_span() * 0.3)
+		# Establishing shot: high behind the tee, the whole course below and the landmark beyond;
+		# hold it a moment, then glide down to the aiming view.
+		var t := GestureTimeline.decel(
+			clampf((_intro_t - INTRO_HOLD) / (INTRO_TIME - INTRO_HOLD), 0.0, 1.0)
+		)
+		var back := Vector3(_hole.tee.x - _landmark.x, 0.0, _hole.tee.z - _landmark.z).normalized()
+		var high := _hole.tee + back * 9.0 + Vector3(0, 13.0, 0)
 		want = high.lerp(want, t)
-		look = c.lerp(look, t)
+		look = _landmark.lerp(look, t)
 		rate = 60.0
 	elif _overview and mode == Mode.AIM:
 		var c := _hole_centre()

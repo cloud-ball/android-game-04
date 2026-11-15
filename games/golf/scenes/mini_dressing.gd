@@ -177,6 +177,7 @@ static func multi(
 static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -> void:
 	var rng := Rng.make(4242 + index)
 	var bushes: Array[Transform3D] = []
+	var stones: Array[Transform3D] = []
 	var flowers: Array[Transform3D] = []
 	var flower_cols := PackedColorArray()
 	var palette: Array = theme.flowers
@@ -197,7 +198,17 @@ static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -
 				var y := hole.height(q.x, q.y)
 				if y < MiniBaker.LAWN - 0.05:
 					continue  # not in the gaps
-				if rng.randf() < 0.45:
+				var roll := rng.randf()
+				if roll < 0.14:  # low stones, well under rail height
+					var st := rng.randf_range(0.16, 0.32)
+					var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU))
+					stones.append(
+						Transform3D(
+							turn * Basis.from_scale(Vector3(st, st * 0.55, st * 0.8)),
+							Vector3(q.x, y + st * 0.12, q.y)
+						)
+					)
+				elif roll < 0.5:
 					var sz := rng.randf_range(0.45, 0.8)
 					bushes.append(
 						Transform3D(
@@ -223,6 +234,10 @@ static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -
 	leaf.radial_segments = 8
 	leaf.rings = 4
 	multi(world, leaf, bushes, theme.bush)
+	var rock := SphereMesh.new()
+	rock.radial_segments = 6
+	rock.rings = 3
+	multi(world, rock, stones, theme.stone)
 	var petal := SphereMesh.new()
 	petal.radial_segments = 6
 	petal.rings = 3

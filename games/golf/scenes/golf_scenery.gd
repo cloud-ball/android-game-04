@@ -1,8 +1,10 @@
 class_name GolfScenery
 extends Node3D
-## Course dressing (render only): gradient sky, a ring of distant hills, a landmark (Meadow Run: a
-## windmill-style tower), water surfaces over the spec's water stamps, and two tree species near
-## the edges of play. Original low-poly look; everything procedural and seeded (no asset files).
+## Course dressing (render only): gradient sky, a mid skyline of wooded
+## hills, a ring of distant hills, the world's landmark (meadow: a stone windmill-tower on a knoll),
+## water surfaces over the spec's water stamps, and two tree species kept clear of play. The
+## landmark stands straight ahead of the tee view (MiniFraming) so the portrait camera sees it.
+## Original low-poly look; everything procedural and seeded (no asset files).
 ## Research: docs/research/Fairway Flick courses and maps.md ("Themes are physics presets plus a
 ## fifteen-mesh visual kit").
 
@@ -26,8 +28,15 @@ void fragment() {
 }
 """
 
+const LANDMARK_SCALE := 0.8  # ~14 m tall: fills the top third of the play view, not more
+const GROUND_Y := MiniBaker.LAWN  # the terrain's apron level outside the baked grid
+
+## Where the landmark's top half is, for the intro's establishing shot.
+var landmark := Vector3.ZERO
+
 var _blades: Node3D
 var _theme: GolfTheme
+var _hole: HoleData
 
 
 ## Dev switches for measuring on the phone: --gfx=noshadow,noglow,scale=0.75,aa=fxaa|smaa|msaa2
@@ -41,19 +50,24 @@ static func gfx_flags() -> Dictionary:
 
 func build(hole: HoleData, spec: Dictionary, seed_value := 1, theme: GolfTheme = null) -> void:
 	_theme = theme if theme != null else GolfTheme.meadow()
+	_hole = hole
 	_environment()
 	var mid := Vector3(
 		hole.x0 + hole.nx * hole.cell * 0.5, 0.0, hole.z0 + hole.nz * hole.cell * 0.5
 	)
+	var view := MiniFraming.tee_view(spec, hole) if spec.has("map") else Vector2(0, -1)
+	var spot := MiniFraming.landmark_spot(hole, view)
+	_skyline(mid, seed_value)
 	_hills(mid, seed_value)
 	_water(hole, spec)
-	_trees(hole, seed_value)
-	var far := hole.pin
-	if spec.has("green"):
-		var g: Dictionary = spec.green
-		far = Vector3(float(g.x), 0.0, float(g.z))
-	var away := (far - Vector3(hole.tee.x, 0.0, hole.tee.z)).normalized()
-	_windmill(far + away * 70.0 + Vector3(-away.z, 0.0, away.x) * 35.0, hole)
+	_trees(hole, seed_value, spot)
+	_windmill(Vector3(spot.x, GROUND_Y, spot.y), view)
+	landmark = Vector3(spot.x, GROUND_Y + 11.0 * LANDMARK_SCALE, spot.y)
+
+
+## Ground height for dressing: the baked lawn inside the grid, the ground disc outside it.
+func _ground_y(x: float, z: float) -> float:
+	return _hole.height(x, z) if _hole.contains(x, z) else GROUND_Y
 
 
 func _process(delta: float) -> void:
@@ -85,7 +99,8 @@ func _environment() -> void:
 	env.adjustment_contrast = 1.04
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.7, 0.82, 0.92)
-	env.fog_density = 0.0009
+	# ~6% at the course, ~25% on the mid skyline, most of the far ring: backdrop recedes.
+	env.fog_density = 0.0028
 	env.fog_sky_affect = 0.0
 	# Glow only for real accents (emissive, above 1.0), on two mid levels (research: level 1
 	# aliases since 4.6; a wide faint bloom cost GPU time and showed little).
@@ -184,23 +199,105 @@ func _water(hole: HoleData, spec: Dictionary) -> void:
 		add_child(mi)
 
 
-## Two species on out-of-bounds ground near play: tall conifers and round broadleaf trees.
-func _trees(hole: HoleData, seed_value: int) -> void:
+## Mid skyline: a ring of rolling wooded hills 90-160 m out (one hill mesh plus one MultiMesh of
+## crowns), hazed toward the sky by fog. It fills the top band of the portrait play view.
+func _skyline(centre: Vector3, seed_value: int) -> void:
+	var rng := Rng.make(seed_value * 17 + 3)
+	var n := 72
+	var r0 := 92.0
+	var r1 := 128.0
+	var r2 := 165.0
+	var tops := PackedFloat32Array()
+	for k in n:
+		tops.append(6.0 + 4.0 * sin(k * 0.52) + 3.0 * sin(k * 1.37 + 0.7) + rng.randf_range(0, 3))
+	var verts := PackedVector3Array()
+	var cols := PackedColorArray()
+	var low := _theme.lawn.darkened(0.08)
+	var high := _theme.lawn.lerp(_theme.bush, 0.35)
+	for k in n:
+		var a0 := TAU * k / n
+		var a1 := TAU * (k + 1) / n
+		var d0 := Vector3(cos(a0), 0.0, sin(a0))
+		var d1 := Vector3(cos(a1), 0.0, sin(a1))
+		var h0 := tops[k]
+		var h1 := tops[(k + 1) % n]
+		var i0 := centre + d0 * r0 + Vector3(0, GROUND_Y - 0.5, 0)
+		var i1 := centre + d1 * r0 + Vector3(0, GROUND_Y - 0.5, 0)
+		var c0 := centre + d0 * r1 + Vector3(0, GROUND_Y + h0, 0)
+		var c1 := centre + d1 * r1 + Vector3(0, GROUND_Y + h1, 0)
+		var o0 := centre + d0 * r2 + Vector3(0, GROUND_Y + h0 * 0.4, 0)
+		var o1 := centre + d1 * r2 + Vector3(0, GROUND_Y + h1 * 0.4, 0)
+		verts.append_array([i0, c0, c1, i0, c1, i1, c0, o0, o1, c0, o1, c1])
+		cols.append_array([low, high, high, low, high, low, high, high, high, high, high, high])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_COLOR] = cols
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mi := MeshInstance3D.new()
+	mi.mesh = m
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.roughness = 1.0
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	# Tree line along the inner slope and crest, sunk a little into the hill.
+	var crowns: Array[Transform3D] = []
+	for k in 220:
+		var a := rng.randf_range(0.0, TAU)
+		var f := rng.randf_range(0.35, 1.0)  # 0 = foot of the hill, 1 = crest
+		var kk := int(a / TAU * n) % n
+		var top := lerpf(tops[kk], tops[(kk + 1) % n], fmod(a / TAU * n, 1.0))
+		var r := lerpf(r0, r1, f)
+		var y := GROUND_Y - 0.5 + (top + 0.5) * f
+		var s := rng.randf_range(3.0, 5.5)
+		var p := centre + Vector3(cos(a) * r, y + s * 0.5, sin(a) * r)
+		crowns.append(Transform3D(Basis.from_scale(Vector3(s, s * 1.1, s)), p))
+	var crown := SphereMesh.new()
+	crown.radius = 0.5
+	crown.height = 1.0
+	crown.radial_segments = 7
+	crown.rings = 3
+	_multi(crown, _theme.bush.lerp(_theme.lawn, 0.2), crowns, Vector3.ZERO, false)
+
+
+## Two species on open lawn around play: tall conifers and round broadleaf trees. They keep
+## MiniFraming.TREE_CLEAR from the course (never between the camera and the ball), off the
+## landmark's knoll and out of the tee's line of sight to it.
+func _trees(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 	var rng := Rng.make(seed_value)
 	var cones: Array[Transform3D] = []
 	var rounds: Array[Transform3D] = []
-	var step_m := 6.5
-	var z := hole.z0 + 3.0
-	while z < hole.z0 + hole.nz * hole.cell - 3.0:
-		var x := hole.x0 + 3.0
-		while x < hole.x0 + hole.nx * hole.cell - 3.0:
+	var step_m := 6.0
+	var reach := 24.0
+	var tee := Vector2(hole.tee.x, hole.tee.z)
+	var z := hole.z0 - reach
+	while z < hole.z0 + hole.nz * hole.cell + reach:
+		var x := hole.x0 - reach
+		while x < hole.x0 + hole.nx * hole.cell + reach:
 			var px := x + rng.randf_range(-2.5, 2.5)
 			var pz := z + rng.randf_range(-2.5, 2.5)
-			if hole.surface_at(px, pz) == HoleData.Surface.OUT and _edge(hole, px, pz):
-				var s := rng.randf_range(0.75, 1.3)
-				var b := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(Vector3(s, s, s))
-				var t := Transform3D(b, Vector3(px, hole.height(px, pz), pz))
-				if rng.randf() < 0.55:
+			var s := rng.randf_range(0.75, 1.3)
+			var yaw := rng.randf_range(0.0, TAU)
+			var cone := rng.randf() < 0.5
+			var q := Vector2(px, pz)
+			# Clear of play, near enough to frame it, off the knoll, out of the tee's view of the
+			# landmark, and not down in a pit.
+			var ok := (
+				MiniFraming.clear_of_course(hole, px, pz, MiniFraming.TREE_CLEAR)
+				and not MiniFraming.clear_of_course(hole, px, pz, reach)
+				and q.distance_to(spot) > 13.0
+				and Geometry2D.get_closest_point_to_segment(q, tee, spot).distance_to(q) > 7.0
+				and _shade_clear(hole, px, pz, s)
+				and _ground_y(px, pz) > MiniBaker.LAWN - 0.1
+			)
+			if ok:
+				var b := Basis(Vector3.UP, yaw).scaled(Vector3(s, s, s))
+				var t := Transform3D(b, Vector3(px, _ground_y(px, pz), pz))
+				if cone:
 					cones.append(t)
 				else:
 					rounds.append(t)
@@ -231,15 +328,15 @@ func _trees(hole: HoleData, seed_value: int) -> void:
 	_multi(trunk, Color(0.36, 0.25, 0.15), all, Vector3(0, 1.2, 0))
 
 
-func _edge(hole: HoleData, x: float, z: float) -> bool:
-	for k in 8:
-		var a := TAU * k / 8.0
-		if hole.surface_at(x + cos(a) * 16.0, z + sin(a) * 16.0) != HoleData.Surface.OUT:
-			return true
-	return false
+## The tree's shadow (crown about 5 m up at scale 1) stays off the course.
+func _shade_clear(hole: HoleData, x: float, z: float, s: float) -> bool:
+	var sp := MiniFraming.shadow_spot(x, z, 5.0 * s, _theme.sun_pitch, _theme.sun_yaw)
+	return MiniFraming.clear_of_course(hole, sp.x, sp.y, 3.2 * s)
 
 
-func _multi(mesh: Mesh, col: Color, spots: Array[Transform3D], offset: Vector3) -> void:
+func _multi(
+	mesh: Mesh, col: Color, spots: Array[Transform3D], offset: Vector3, shadow := true
+) -> void:
 	if spots.is_empty():
 		return
 	var mm := MultiMesh.new()
@@ -255,44 +352,113 @@ func _multi(mesh: Mesh, col: Color, spots: Array[Transform3D], offset: Vector3) 
 	m.albedo_color = col
 	m.roughness = 1.0
 	mmi.material_override = m
+	if not shadow:
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mmi)
 
 
-## Meadow Run's landmark: a white tower with a dark cap and four turning sails.
-func _windmill(at: Vector3, hole: HoleData) -> void:
+## Meadow landmark (original design): a tapered stone windmill-tower on a grassy knoll, with a
+## wooden balcony, door and window, a pointed roof and four lattice sails facing the tee. Parts
+## that share a colour are merged, so the whole landmark is five draw calls.
+func _windmill(at: Vector3, view: Vector2) -> void:
 	var base := Node3D.new()
-	base.position = Vector3(at.x, hole.height(at.x, at.z) - 0.5, at.z)
+	base.position = at
+	base.rotation.y = atan2(-view.x, -view.y)  # local +z faces the tee
+	base.scale = Vector3.ONE * LANDMARK_SCALE
 	add_child(base)
-	var body := CylinderMesh.new()
-	body.top_radius = 2.4
-	body.bottom_radius = 3.6
-	body.height = 15.0
-	body.radial_segments = 10
-	_part(base, body, Color(0.93, 0.9, 0.84), Vector3(0, 7.5, 0))
-	var cap := CylinderMesh.new()
-	cap.top_radius = 0.0
-	cap.bottom_radius = 3.0
-	cap.height = 4.0
-	cap.radial_segments = 10
-	_part(base, cap, Color(0.35, 0.2, 0.16), Vector3(0, 17.0, 0))
+	var knoll := SphereMesh.new()
+	knoll.radial_segments = 12
+	knoll.rings = 6
+	var k := MeshInstance3D.new()
+	k.mesh = knoll
+	k.scale = Vector3(26.0, 6.0, 26.0)
+	k.position.y = -1.6
+	k.material_override = _mat(_theme.lawn.lightened(0.04))
+	base.add_child(k)
+	var foot := 1.35  # knoll height at the tower
+	var tower := CylinderMesh.new()
+	tower.top_radius = 2.0
+	tower.bottom_radius = 3.0
+	tower.height = 12.0
+	tower.radial_segments = 8
+	tower.rings = 1
+	_part(base, tower, _theme.landmark_wall, Vector3(0, foot + 6.0, 0))
+	var roof := CylinderMesh.new()
+	roof.top_radius = 0.0
+	roof.bottom_radius = 2.7
+	roof.height = 3.8
+	roof.radial_segments = 8
+	roof.rings = 1
+	_part(base, roof, _theme.landmark_roof, Vector3(0, foot + 13.9, 0))
+	# Dark wood: balcony ring, door, window, sail hub, and the lattice spars of the sails.
+	var deck := CylinderMesh.new()
+	deck.top_radius = 2.9
+	deck.bottom_radius = 2.9
+	deck.height = 0.3
+	deck.radial_segments = 8
+	deck.rings = 1
+	var door := BoxMesh.new()
+	door.size = Vector3(1.3, 2.2, 0.4)
+	var window := BoxMesh.new()
+	window.size = Vector3(0.9, 1.1, 0.4)
+	var hub := SphereMesh.new()
+	hub.radius = 0.55
+	hub.height = 1.1
+	hub.radial_segments = 8
+	hub.rings = 4
+	var wood := SurfaceTool.new()
+	wood.begin(Mesh.PRIMITIVE_TRIANGLES)
+	wood.append_from(deck, 0, Transform3D(Basis(), Vector3(0, foot + 8.6, 0)))
+	wood.append_from(door, 0, Transform3D(Basis(), Vector3(0, foot + 1.1, 2.85)))
+	wood.append_from(window, 0, Transform3D(Basis(), Vector3(0, foot + 5.2, 2.5)))
+	wood.append_from(hub, 0, Transform3D(Basis(), Vector3(0, foot + 11.0, 2.75)))
+	var wood_mi := MeshInstance3D.new()
+	wood_mi.mesh = wood.commit()
+	wood_mi.material_override = _mat(_theme.landmark_wood)
+	base.add_child(wood_mi)
 	_blades = Node3D.new()
-	_blades.position = Vector3(0, 14.5, 2.9)
+	_blades.position = Vector3(0, foot + 11.0, 2.95)
 	base.add_child(_blades)
-	for k in 4:
-		var arm := Node3D.new()
-		arm.rotation.z = k * PI * 0.5
-		_blades.add_child(arm)
-		var sail := BoxMesh.new()
-		sail.size = Vector3(1.6, 8.5, 0.15)
-		_part(arm, sail, Color(0.88, 0.84, 0.76), Vector3(0.6, 4.6, 0))
+	var spar := BoxMesh.new()
+	spar.size = Vector3(0.22, 7.6, 0.2)
+	var rail := BoxMesh.new()
+	rail.size = Vector3(0.09, 5.6, 0.12)
+	var slat := BoxMesh.new()
+	slat.size = Vector3(1.5, 0.09, 0.12)
+	var cloth := BoxMesh.new()
+	cloth.size = Vector3(1.4, 5.4, 0.05)
+	var frame := SurfaceTool.new()
+	frame.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var sails := SurfaceTool.new()
+	sails.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for blade in 4:
+		var turn := Basis(Vector3.FORWARD, blade * PI * 0.5)
+		frame.append_from(spar, 0, Transform3D(turn, turn * Vector3(0, 3.8, 0.1)))
+		frame.append_from(rail, 0, Transform3D(turn, turn * Vector3(1.55, 4.7, 0.12)))
+		for s in 6:
+			var y := 2.1 + s * 1.04
+			frame.append_from(slat, 0, Transform3D(turn, turn * Vector3(0.85, y, 0.12)))
+		sails.append_from(cloth, 0, Transform3D(turn, turn * Vector3(0.85, 4.7, 0.04)))
+	var frame_mi := MeshInstance3D.new()
+	frame_mi.mesh = frame.commit()
+	frame_mi.material_override = _mat(_theme.landmark_wood)
+	_blades.add_child(frame_mi)
+	var sails_mi := MeshInstance3D.new()
+	sails_mi.mesh = sails.commit()
+	sails_mi.material_override = _mat(_theme.sail)
+	_blades.add_child(sails_mi)
+
+
+func _mat(col: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	m.roughness = 0.9
+	return m
 
 
 func _part(parent: Node3D, mesh: Mesh, col: Color, at: Vector3) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
-	var m := StandardMaterial3D.new()
-	m.albedo_color = col
-	m.roughness = 0.9
-	mi.material_override = m
+	mi.material_override = _mat(col)
 	mi.position = at
 	parent.add_child(mi)
