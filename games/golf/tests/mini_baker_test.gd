@@ -136,3 +136,49 @@ func test_every_hole_is_solvable() -> void:
 					break
 			at = best_at
 		assert_bool(holed).override_failure_message("%s not holed in %d" % [p, strokes]).is_true()
+
+
+## Regression (phone feedback "stuck / bad bouncing" on the par 3s): every shot from every tee comes
+## to rest quickly without chattering.
+func test_every_shot_finishes_without_chatter() -> void:
+	for p in HOLES:
+		var d := MiniBaker.bake(spec(p))
+		for ai in 24:
+			var a := TAU * ai / 24.0
+			for vi in 6:
+				var v := 1.0 + vi * 2.4
+				var b := GolfBall.new(d, preset())
+				b.putt(d.tee.x, d.tee.z, cos(a) * v, sin(a) * v)
+				b.run_to_rest(1.0 / 120.0)
+				var msg := "%s a %d v %.1f" % [p.get_file(), ai * 15, v]
+				assert_bool(b.done()).override_failure_message(msg).is_true()
+				assert_float(b.time).override_failure_message(msg).is_less(20.0)
+				(
+					assert_int(b.events.count(GolfBall.Ev.BOUNCE))
+					. override_failure_message(msg)
+					. is_less(15)
+				)
+
+
+## Regression: over the top of the Step Up ramp at speed the ball hops once and lands (it used to
+## start the hop inside the higher floor and bounce ~70 times in place).
+func test_ramp_crest_hop_lands_cleanly() -> void:
+	var d := MiniBaker.bake(spec(HOLES[1]))
+	var b := GolfBall.new(d, preset())
+	var a := deg_to_rad(70.0)
+	b.putt(d.tee.x, d.tee.z, cos(a) * 11.4, sin(a) * 11.4)
+	b.run_to_rest()
+	assert_int(b.events.count(GolfBall.Ev.BOUNCE)).is_less(10)
+
+
+## Regression: a ball that stops just inside the cup's pull zone rests (it used to wait forever).
+func test_ball_stopping_near_the_cup_rests_or_drops() -> void:
+	var d := MiniBaker.bake(spec(HOLES[0]))
+	for r in [0.12, 0.2, 0.3, 0.34]:
+		var b := GolfBall.new(d, preset())
+		b.putt(d.pin.x - r, d.pin.z, 0.0, 0.0)
+		b.run_to_rest()
+		assert_bool(b.done()).is_true()
+		assert_float(b.time).override_failure_message("r %.2f" % r).is_less(5.0)
+		if r <= 0.12:
+			assert_int(b.phase).is_equal(GolfBall.Phase.HOLED)

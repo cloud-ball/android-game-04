@@ -27,7 +27,7 @@ const MARGIN := 7.0  # lawn around the course (room for scenery)
 const BUMPER_R := 0.45
 ## Arcade cup: 75 mm radius (regulation 54) and a gentle pull for slow balls close by.
 const CUP_R := 0.075
-const CUP_PULL := 0.9
+const CUP_PULL := 1.6  # beats the carpet's grip within ~18 cm of the cup
 const FLOOR := "GTHBSW^v<>"
 ## Direction each ramp rises towards (its high edge).
 const RAMP_UP := {
