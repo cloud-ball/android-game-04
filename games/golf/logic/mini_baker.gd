@@ -17,12 +17,13 @@ extends RefCounted
 ## pieces are merged.
 
 const LEVEL_H := 0.4
-const PIT := -1.5
+const PIT := -1.5  # gaps inside the map (jumps you fall short of)
+const LAWN := -0.3  # the ground around the course
 const CELL := 0.1
 ## Walls are rails this thick (half-width), so the ball's centre never reaches the one-cell strip
 ## where the ground changes height at a tile edge.
 const WALL_HALF := 0.1
-const MARGIN := 1.0
+const MARGIN := 7.0  # lawn around the course (room for scenery)
 const BUMPER_R := 0.45
 const FLOOR := "GTHBSW^v<>"
 ## Direction each ramp rises towards (its high edge).
@@ -183,7 +184,10 @@ class _Map:
 			var t := tile_at(x + o.x, z + o.y)
 			if solid(t.x, t.y):
 				h = maxf(h, tile_height(t.x, t.y, x, z))
-		return h if h > -INF else PIT
+		if h > -INF:
+			return h
+		var t := tile_at(x, z)
+		return PIT if inside(t.x, t.y) else LAWN
 
 	func surface(x: float, z: float) -> int:
 		var t := tile_at(x, z)

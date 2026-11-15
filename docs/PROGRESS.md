@@ -2,6 +2,18 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf step D: playable on the phone (branch fairway-flick)
+- golf_game.gd is now the mini-golf screen: World 1's three holes in a row, solo. Slingshot shot:
+  press anywhere, drag back, release - opposite direction, power = drag length, % ring at the finger,
+  a dotted guide of the real path (same solver, up to two wall bounces); drag back under 30 px to
+  cancel. The camera stays frozen while dragging (stable aim), sits low behind the ball, follows it
+  after the shot; hole fly-over with a hole card. Default aim follows the flow field around corners.
+- Course look: solid rails along every wall (stepped beside ramps), red-and-white bumpers, flag with
+  a white cup rim, lawn, trees and the windmill around the course. Penalties: water +1 (drop), out /
+  fallen into a gap +1 (replay); out of strokes at par + 4.
+- Phone: 60 fps, 23 draw calls, no errors. 237 tests green.
+- Try it: the test phone opens straight into golf (dev_args `--game=golf`).
+
 ## 2026-11-15 · Fairway Flick mini-golf step C: holes from tile maps (branch fairway-flick)
 - MiniBaker (games/golf/logic/mini_baker.gd): a hole is a small text map of 3 m tiles (G green, T tee,
   H cup, B bumper, S sand, W water, ^ v < > ramps, . nothing) plus an optional level map. It bakes a

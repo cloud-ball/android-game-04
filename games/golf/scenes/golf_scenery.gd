@@ -37,8 +37,10 @@ func build(hole: HoleData, spec: Dictionary, seed_value := 1) -> void:
 	_hills(mid, seed_value)
 	_water(hole, spec)
 	_trees(hole, seed_value)
-	var g: Dictionary = spec.green
-	var far := Vector3(float(g.x), 0.0, float(g.z))
+	var far := hole.pin
+	if spec.has("green"):
+		var g: Dictionary = spec.green
+		far = Vector3(float(g.x), 0.0, float(g.z))
 	var away := (far - Vector3(hole.tee.x, 0.0, hole.tee.z)).normalized()
 	_windmill(far + away * 70.0 + Vector3(-away.z, 0.0, away.x) * 35.0, hole)
 
