@@ -28,6 +28,12 @@ const PULL_FULL := 420.0  # canvas px of drag for full power
 const DEAD := 30.0  # px: shorter drags cancel
 const GUIDE_TIME := 1.2  # seconds of path shown by the guide (shrinks later with difficulty)
 const INTRO_TIME := 3.0
+## Camera (phone feedback: the low chase camera swung on every bounce and hid the ball behind
+## walls): an angled view from behind and above (~50 degrees down). It turns only while aiming;
+## while the ball rolls it glides along without rotating.
+const CAM_BACK := 4.2
+const CAM_UP := 5.0
+const CAM_AHEAD := 2.2
 const NAMES := {
 	-3: "Albatross!", -2: "Eagle!", -1: "Birdie!", 0: "Par", 1: "Bogey", 2: "Double bogey"
 }
@@ -66,6 +72,12 @@ var _puff: CPUParticles3D
 var _splash: CPUParticles3D
 var _cam: Camera3D
 var _cam_ready := false
+var _cam_dir := Vector3(0, 0, -1)  # horizontal facing, smoothed; fixed while the ball moves
+var _overview := false
+var _map_btn: Button
+var _ring: MeshInstance3D
+var _cup_glow: MeshInstance3D
+var _confetti: CPUParticles3D
 var _hud_top: Label
 var _hud_info: Label
 var _banner: Label
@@ -114,8 +126,11 @@ func _load_hole(i: int) -> void:
 	_world.add_child(terrain)
 	terrain.build(_hole)
 	_walls()
+	_decor()
 	_ball_mesh = _mesh(_sphere(_ball.p.radius), Color(1, 1, 1), true)
-	_shadow = _mesh(_disc(0.6), Color(0, 0, 0, 0.35), true)
+	_ball_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_shadow = _mesh(_disc(0.6), Color(0, 0, 0, 0.3), true)
+	_ring = _mesh(_disc(0.16), Color(1, 1, 1, 0.35), true)
 	_flag = Node3D.new()
 	_world.add_child(_flag)
 	var pole := CylinderMesh.new()
@@ -126,8 +141,10 @@ func _load_hole(i: int) -> void:
 	var cloth := BoxMesh.new()
 	cloth.size = Vector3(0.6, 0.38, 0.02)
 	_mesh(cloth, Color(0.98, 0.3, 0.22), true, _flag).position = Vector3(0.3, 1.4, 0)
-	_mesh(_disc(GolfBall.CUP_R * 1.7), Color(0.97, 0.97, 0.97), true, _flag).position.y = 0.008
-	_mesh(_disc(GolfBall.CUP_R * 1.15), Color(0.03, 0.03, 0.03), true, _flag).position.y = 0.012
+	_cup_glow = _mesh(_disc(_hole.cup_r * 3.2), Color(1.0, 0.9, 0.35, 0.35), true, _flag)
+	_cup_glow.position.y = 0.006
+	_mesh(_disc(_hole.cup_r * 1.6), Color(0.97, 0.97, 0.97), true, _flag).position.y = 0.008
+	_mesh(_disc(_hole.cup_r * 1.05), Color(0.03, 0.03, 0.03), true, _flag).position.y = 0.012
 	_flag.position = _hole.pin
 	var guide := MeshInstance3D.new()
 	_guide = ImmediateMesh.new()
@@ -142,6 +159,21 @@ func _load_hole(i: int) -> void:
 	_puff = _particles(14, 0.6, Vector2(1.0, 2.5), 0.05)
 	_splash = _particles(30, 0.9, Vector2(2.5, 5.0), 0.07)
 	_splash.color = Color(0.85, 0.93, 1.0)
+	_confetti = _particles(70, 1.6, Vector2(3.0, 6.0), 0.045)
+	_confetti.spread = 35.0
+	_confetti.gravity = Vector3(0, -5.0, 0)
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.25, 0.5, 0.75, 1.0])
+	ramp.colors = PackedColorArray(
+		[
+			Color(1.0, 0.85, 0.2),
+			Color(0.3, 0.8, 1.0),
+			Color(1.0, 0.35, 0.45),
+			Color(0.5, 1.0, 0.5),
+			Color(1.0, 1.0, 1.0)
+		]
+	)
+	_confetti.color_initial_ramp = ramp
 	_start_hole()
 
 
@@ -170,19 +202,20 @@ func _walls() -> void:
 					turn * Basis.from_scale(size), Vector3(m.x, MiniBaker.PIT + h * 0.5, m.y)
 				)
 			)
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = BoxMesh.new()
-	mm.instance_count = spots.size()
-	for i in spots.size():
-		mm.set_instance_transform(i, spots[i])
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.93, 0.88, 0.78)
-	mat.roughness = 0.8
-	mmi.material_override = mat
-	_world.add_child(mmi)
+	_multi(BoxMesh.new(), spots, Color(0.55, 0.34, 0.18))
+	# A light cap along the top of every rail: a two-tone wooden edge.
+	var caps: Array[Transform3D] = []
+	for t in spots:
+		var sx := t.basis.get_scale()
+		var cap_top := t.origin.y + sx.y * 0.5
+		var turn := t.basis.orthonormalized()
+		caps.append(
+			Transform3D(
+				turn * Basis.from_scale(Vector3(sx.x + 0.02, 0.05, sx.z + 0.04)),
+				Vector3(t.origin.x, cap_top + 0.02, t.origin.z)
+			)
+		)
+	_multi(BoxMesh.new(), caps, Color(0.95, 0.9, 0.8))
 	var bp := _hole.bumpers
 	for o in range(0, bp.size(), 3):
 		var cyl := CylinderMesh.new()
@@ -198,6 +231,89 @@ func _walls() -> void:
 		ring.height = 0.12
 		ring.radial_segments = 20
 		_mesh(ring, Color(0.98, 0.96, 0.92), false).position = at
+
+
+func _multi(
+	mesh: Mesh, spots: Array[Transform3D], col: Color, colors := PackedColorArray()
+) -> void:
+	if spots.is_empty():
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = not colors.is_empty()
+	mm.mesh = mesh
+	mm.instance_count = spots.size()
+	for i in spots.size():
+		mm.set_instance_transform(i, spots[i])
+		if not colors.is_empty():
+			mm.set_instance_color(i, colors[i])
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.roughness = 0.85
+	mat.vertex_color_use_as_albedo = not colors.is_empty()
+	mat.vertex_color_is_srgb = true
+	mmi.material_override = mat
+	_world.add_child(mmi)
+
+
+## Flower beds and bushes on the lawn just outside the rails (seeded per hole).
+func _decor() -> void:
+	var rng := Rng.make(4242 + _index)
+	var bushes: Array[Transform3D] = []
+	var flowers: Array[Transform3D] = []
+	var flower_cols := PackedColorArray()
+	var palette := [
+		Color(1.0, 0.45, 0.6), Color(1.0, 0.85, 0.3), Color(0.98, 0.97, 0.95), Color(0.7, 0.5, 1.0)
+	]
+	var w := _hole.walls
+	for o in range(0, w.size(), 4):
+		var a := Vector2(w[o], w[o + 1])
+		var b := Vector2(w[o + 2], w[o + 3])
+		var length := a.distance_to(b)
+		var dir := (b - a) / length
+		var nrm := Vector2(-dir.y, dir.x)
+		var t := 0.4
+		while t < length - 0.4:
+			for side in [-1.0, 1.0]:
+				var off: float = side * rng.randf_range(0.55, 1.4)
+				var q: Vector2 = a + dir * t + nrm * off
+				if _hole.surface_at(q.x, q.y) != HoleData.Surface.OUT:
+					continue
+				var y := _hole.height(q.x, q.y)
+				if y < MiniBaker.LAWN - 0.05:
+					continue  # not in the gaps
+				if rng.randf() < 0.45:
+					var sz := rng.randf_range(0.45, 0.8)
+					bushes.append(
+						Transform3D(
+							Basis.from_scale(Vector3(sz, sz * 0.8, sz)),
+							Vector3(q.x, y + sz * 0.5, q.y)
+						)
+					)
+				else:
+					var col: Color = palette[rng.randi_range(0, palette.size() - 1)]
+					for k in 6:
+						var fq := (
+							q + Vector2(rng.randf_range(-0.35, 0.35), rng.randf_range(-0.35, 0.35))
+						)
+						var fs := rng.randf_range(0.11, 0.17)
+						flowers.append(
+							Transform3D(
+								Basis.from_scale(Vector3(fs, fs, fs)), Vector3(fq.x, y + 0.14, fq.y)
+							)
+						)
+						flower_cols.append(col)
+			t += rng.randf_range(0.7, 1.2)
+	var leaf := SphereMesh.new()
+	leaf.radial_segments = 8
+	leaf.rings = 4
+	_multi(leaf, bushes, Color(0.18, 0.42, 0.18))
+	var petal := SphereMesh.new()
+	petal.radial_segments = 6
+	petal.rings = 3
+	_multi(petal, flowers, Color.WHITE, flower_cols)
 
 
 static func _sphere(r: float) -> SphereMesh:
@@ -295,6 +411,17 @@ func _build_ui() -> void:
 	_hint.position = Vector2(40, h - 230)
 	_hint.size = Vector2(1000, 100)
 	layer.add_child(_hint)
+	_map_btn = UiKit.button("MAP", Color(0, 0, 0, 0.5), Color.WHITE, 30, 90)
+	_map_btn.position = Vector2(1080 - 24 - 150, top + 166)
+	_map_btn.size = Vector2(150, 90)
+	_map_btn.pressed.connect(
+		func() -> void:
+			if mode == Mode.AIM:
+				_overview = not _overview
+				_map_btn.text = "BACK" if _overview else "MAP"
+				AudioService.play("tap")
+	)
+	layer.add_child(_map_btn)
 	_power_ui = Control.new()
 	_power_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_power_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -424,6 +551,8 @@ func _shot_over() -> void:
 			_total += diff
 			AudioService.play("pocket")
 			AudioService.play("win" if diff <= 0 else "count")
+			_confetti.position = _hole.pin + Vector3(0, 0.1, 0)
+			_confetti.restart()
 			_hole_over = true
 			_save["played"] = int(_save["played"]) + 1
 			SaveService.save()
@@ -568,6 +697,11 @@ func _process(delta: float) -> void:
 	_shadow.scale = Vector3(ss, 1.0, ss)
 	_shadow.position = Vector3(p.x, gy + 0.015, p.z)
 	_shadow.visible = _ball_mesh.visible
+	_ring.visible = mode == Mode.AIM or mode == Mode.DRAG
+	_ring.position = Vector3(p.x, gy + 0.012, p.z)
+	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.004)
+	(_cup_glow.material_override as StandardMaterial3D).albedo_color.a = 0.2 + 0.25 * pulse
+	_map_btn.visible = mode == Mode.AIM
 	if mode == Mode.DRAG:
 		_power_ui.queue_redraw()
 
@@ -616,34 +750,55 @@ func _draw_guide() -> void:
 	_guide.surface_end()
 
 
-## Intro: fly from above the cup to behind the tee. Aim / drag: low behind the ball along the aim
-## (frozen while dragging). Moving: follow the ball from behind and above.
+## Intro: fly from high above the cup down to the aiming view. Aim: behind and above the ball,
+## turning smoothly to the aim. Drag: frozen. Moving: same facing, gliding after the ball (no
+## rotation, so bounces never swing the view). Map: top-down over the whole hole.
 func _place_camera(delta: float, ball: Vector3) -> void:
-	var want: Vector3
-	var look: Vector3
-	var rate := 6.0
+	if mode == Mode.DRAG:
+		return
+	if mode == Mode.AIM or mode == Mode.INTRO:
+		_cam_dir = _cam_dir.lerp(_aim, 1.0 - exp(-5.0 * delta)).normalized()
+		if not _cam_ready:
+			_cam_dir = _aim
+	var want := ball - _cam_dir * CAM_BACK + Vector3(0, CAM_UP, 0)
+	var look := ball + _cam_dir * CAM_AHEAD
+	var rate := 7.0 if mode != Mode.MOVING else 4.0
 	if mode == Mode.INTRO:
 		var t := GestureTimeline.decel(clampf(_intro_t / INTRO_TIME, 0.0, 1.0))
-		var from := _hole.pin + Vector3(0, 16, 6)
-		var to := _ball_at - _aim * 4.0 + Vector3(0, 2.4, 0)
-		want = from.lerp(to, t)
-		look = _hole.pin.lerp(_ball_at + _aim * 6.0, t)
-		rate = 50.0
-	elif mode == Mode.MOVING:
-		var v := Vector3(_cur.x - _prev.x, 0.0, _cur.z - _prev.z)
-		var dir := v.normalized() if v.length() > 0.002 else _shot_dir
-		want = ball - dir * 4.5 + Vector3(0, 3.0, 0)
-		look = ball + dir * 3.0
-		rate = 3.0
-	else:
-		want = _ball_at - _aim * 4.0 + Vector3(0, 2.4, 0)
-		look = _ball_at + _aim * 6.0
-	if mode == Mode.DRAG:
-		return  # frozen while aiming
+		var c := _hole_centre()
+		var high := c + Vector3(0, _hole_span() * 1.1, _hole_span() * 0.3)
+		want = high.lerp(want, t)
+		look = c.lerp(look, t)
+		rate = 60.0
+	elif _overview and mode == Mode.AIM:
+		var c := _hole_centre()
+		want = c + Vector3(0, _hole_span() * 1.15, _hole_span() * 0.25)
+		look = c
 	var k := 1.0 if not _cam_ready else 1.0 - exp(-rate * delta)
 	_cam_ready = true
 	_cam.position = _cam.position.lerp(want, k)
 	_cam.look_at(look)
+
+
+func _hole_centre() -> Vector3:
+	var w := _hole.walls
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for o in range(0, w.size(), 2):
+		lo = Vector2(minf(lo.x, w[o]), minf(lo.y, w[o + 1]))
+		hi = Vector2(maxf(hi.x, w[o]), maxf(hi.y, w[o + 1]))
+	var c := (lo + hi) * 0.5
+	return Vector3(c.x, 0.0, c.y)
+
+
+func _hole_span() -> float:
+	var w := _hole.walls
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for o in range(0, w.size(), 2):
+		lo = Vector2(minf(lo.x, w[o]), minf(lo.y, w[o + 1]))
+		hi = Vector2(maxf(hi.x, w[o]), maxf(hi.y, w[o + 1]))
+	return maxf(hi.x - lo.x, hi.y - lo.y)
 
 
 # --- input ---------------------------------------------------------------------------------------
@@ -656,6 +811,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if mode == Mode.INTRO:
 				_new_shot()
 			elif mode == Mode.AIM:
+				if _overview:
+					_overview = false
+					_map_btn.text = "MAP"
+					return
 				mode = Mode.DRAG
 				_drag_from = mb.position
 				_power = 0.0

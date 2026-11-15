@@ -70,6 +70,9 @@ func _environment() -> void:
 	env.fog_light_color = Color(0.7, 0.82, 0.92)
 	env.fog_density = 0.0009
 	env.fog_sky_affect = 0.0
+	env.glow_enabled = true
+	env.glow_intensity = 0.4
+	env.glow_bloom = 0.05
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -77,6 +80,11 @@ func _environment() -> void:
 	sun.rotation_degrees = Vector3(-48, -35, 0)
 	sun.light_energy = 1.05
 	sun.light_color = Color(1.0, 0.97, 0.9)
+	# Real shadows near the camera (walls, trees, the ball): the biggest single step in richness.
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	sun.directional_shadow_max_distance = 45.0
+	sun.shadow_blur = 1.5
 	add_child(sun)
 
 
