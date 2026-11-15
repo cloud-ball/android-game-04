@@ -2,6 +2,18 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf: fixed the par-3 freeze and the bad bouncing
+- Phone feedback: on the par 3s the screen got stuck and the bouncing looked bad.
+- Cause 1: going over the top of the Step Up ramp, a hop started from the ground height before the
+  step; the flat top is higher, so the ball began inside the floor, "landed" at once and bounced ~70
+  times in place. Now a hop starts above the ground where the ball is, and a contact with a ball
+  already moving away from the surface is not a landing.
+- Cause 2: a ball stopping just inside the cup's pull zone was kept awake forever (the game waited
+  up to 40 s). The pull now acts like a shallow dip added to the slope, under the same static hold:
+  too weak to move the ball means it rests; within ~18 cm it rolls in (pull 1.6 m/s^2).
+- Sweep of 864 shots per hole: every shot rests within ~12 s, at most 10 bounces.
+- 3 regression tests (shot sweep on every hole, ramp crest, near-cup rest). 240 tests green.
+
 ## 2026-11-15 · Fairway Flick mini-golf: richer look, steady camera, easier cup (branch fairway-flick)
 - Phone feedback: graphics too basic; the camera swung around; near a wall the ball was hidden and
   hard to hole.

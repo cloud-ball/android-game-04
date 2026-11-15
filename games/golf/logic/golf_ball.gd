@@ -201,6 +201,10 @@ func _land() -> void:
 	var ny := il
 	var nz := -_g[1] * il
 	var vn := vx * nx + vy * ny + vz * nz  # < 0 inbound
+	if vn >= -1e-6:
+		# Touching but already moving away from the surface: no impact - lift clear and fly on.
+		s[1] = hole.height(x, z) + p.radius + 1e-4
+		return
 	var tx := vx - vn * nx
 	var ty := vy - vn * ny
 	var tz := vz - vn * nz
@@ -313,6 +317,10 @@ func _roll(dt: float) -> void:
 		var a := surf.roll[surface]
 		ax *= 5.0 / 7.0
 		az *= 5.0 / 7.0
+		if hole.cup_pull > 0.0:
+			_add_cup_pull()
+			ax += _g[0]
+			az += _g[1]
 		var pull := sqrt(ax * ax + az * az)
 		var hold := pull < GolfSurfaces.STATIC_FACTOR * a
 		var sp := sqrt(_vx * _vx + _vz * _vz)
@@ -327,8 +335,6 @@ func _roll(dt: float) -> void:
 				var k := maxf(0.0, sp - a * dt) / sp
 				_vx *= k
 				_vz *= k
-		if hole.cup_pull > 0.0:
-			_pull_to_cup(dt)
 		_wx = _vx
 		_wz = _vz
 		sp = sqrt(_vx * _vx + _vz * _vz)
@@ -362,8 +368,13 @@ func _roll(dt: float) -> void:
 			_finish(Phase.HOLED, Ev.HOLED, 0.0)
 
 
-## Arcade assist: a slow ball near the cup is drawn towards it (stronger closer in).
-func _pull_to_cup(dt: float) -> void:
+## Arcade assist: the cup acts like a shallow dip - a slow ball within CUP_PULL_R feels a pull
+## towards it (stronger closer in), added to the slope pull so the same static hold applies: if it
+## cannot beat the carpet's grip the ball rests (a stopped ball must never wait forever). Writes
+## the pull into _g (the slope scratch is free by now).
+func _add_cup_pull() -> void:
+	_g[0] = 0.0
+	_g[1] = 0.0
 	var dx := hole.pin.x - _x
 	var dz := hole.pin.z - _z
 	var d2 := dx * dx + dz * dz
@@ -373,9 +384,8 @@ func _pull_to_cup(dt: float) -> void:
 		return
 	var d := sqrt(d2)
 	var a := hole.cup_pull * (1.0 - d / CUP_PULL_R)
-	_vx += dx / d * a * dt
-	_vz += dz / d * a * dt
-	_sleep = 0.0
+	_g[0] = dx / d * a
+	_g[1] = dz / d * a
 
 
 ## Moves the rolling ball by its velocity for dt, bouncing off walls and bumpers in time order
@@ -517,7 +527,9 @@ func _toi_circle(
 func _hop(h0: float, vy: float) -> void:
 	var fs := flight.s
 	fs[0] = _x
-	fs[1] = h0 + p.radius + 1e-4
+	# Start clear of the ground where the ball is now (over a crest that is higher than h0: starting
+	# inside the floor made it "land" at once and chatter in place - phone feedback).
+	fs[1] = maxf(h0, hole.height(_x, _z)) + p.radius + 1e-4
 	fs[2] = _z
 	fs[3] = _vx
 	fs[4] = vy
