@@ -2,6 +2,23 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick step 6: first playable hole (branch fairway-flick)
+- Holes are data: games/golf/data/holes/meadow_03.json ("The Bend", par 4, ~290 m dogleg right with a
+  corner bunker, pond, two greenside bunkers, mounds, a back-to-front green, 3 pins). HoleBaker turns a
+  spec into HoleData (deterministic: + - * / sqrt only; packed shapes with bounding boxes; rounded
+  fairway ends; 1.25 s on desktop - a bake cache comes later).
+- GolfTerrain draws it: chunked 1 m meshes with the physics triangle split, one terrain shader fed by
+  an R8 surface texture (mowing stripes on fairway and green), seeded low-poly trees out of bounds.
+- GolfClubs: Driver 192 / Hybrid 150 / 7-iron 115 / Wedge 87 / Sand W 56 m full carry (measured on
+  the solver), lie penalties (rough, sand), power-for-distance, putt speed helper.
+- golf_game.gd plays the hole: drag on the course to place the landing marker (club auto-picked,
+  clubbing up from bad lies), press below and pull down to swing (gold tick = power for the marker,
+  sideways drift = hook / slice, overpower doubles it), putter on the green, stroke count, water drop
+  +1, out of bounds +1 (replay), pick-up at triple bogey, par / birdie banner, next pin.
+- Structural checks per hole (tee flat, pins on restable green with fringe around, landing width) and
+  club-ladder tests. 223 tests green.
+- Try it: hidden from the hub; on the test phone use dev_args `--game=golf`.
+
 ## 2026-11-14 · Fairway Flick step 5: phone benchmark (branch fairway-flick)
 - `--bench=golf` (GolfBench; Boot passes the name). Golden fixtures moved into GolfBench so the phone
   prints the same hashes the tests check.
