@@ -33,6 +33,12 @@ const PUTT_ERR := 0.12  # putt speed error at the bar's end
 const INTRO_TIME := 4.0
 const NAMES := {-3: "Albatross", -2: "Eagle", -1: "Birdie", 0: "Par", 1: "Bogey", 2: "Double bogey"}
 const LIES := ["", "Tee", "Fairway", "Rough", "Fringe", "Green", "Bunker", "", "Path"]
+## Aiming (phone feedback: placing the marker under the finger was unusable because the camera
+## turns with the aim): drag left / right to turn the aim around the ball, up / down to change the
+## distance; a tap without dragging still drops the marker on the tapped spot.
+const TURN_PER_PX := 0.07  # degrees of aim per canvas px of sideways drag
+const DIST_PER_PX := 0.25  # metres per px of vertical drag (putts: 0.02)
+const TAP_SLOP := 18.0  # px of movement that still counts as a tap
 const PUFF_COLS := {
 	HoleData.Surface.SAND: Color(0.93, 0.85, 0.62),
 	HoleData.Surface.ROUGH: Color(0.3, 0.5, 0.22),
@@ -59,6 +65,10 @@ var _wind := Vector3.ZERO
 var _needle := 0.0
 var _needle_t := 0.0
 var _dragging := false
+var _drag_from := Vector2.ZERO
+var _drag_moved := false
+var _drag_angle := 0.0  # aim heading (deg) when the drag started
+var _drag_dist := 0.0  # aim distance when the drag started
 var _result_t := 0.0
 var _intro_t := 0.0
 var _hole_over := false
@@ -473,7 +483,7 @@ func _refresh() -> void:
 	for i in _club_buttons.size():
 		_club_buttons[i].modulate = UiKit.GOLD if i == _club else Color.WHITE
 	if mode == Mode.AIM:
-		_hint.text = "Drag on the course to aim · the dot shows where it lands"
+		_hint.text = "Drag ← → to turn · ↑ ↓ for distance · tap a spot to aim there"
 	elif mode != Mode.INTRO:
 		_hint.text = ""
 	_bar.queue_redraw()
@@ -789,11 +799,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			_press(mb.position)
 		elif _dragging:
 			_dragging = false
+			if not _drag_moved:
+				_aim_at(mb.position, false)  # a tap: put the marker where the finger was
 			_set_target(_target)  # pick the club and solve the power where the finger let go
 		return
 	var mm := event as InputEventMouseMotion
-	if mm != null and _dragging and mode == Mode.AIM:
-		_aim_at(mm.position, false)
+	if mm == null or not _dragging or mode != Mode.AIM:
+		return
+	var d := mm.position - _drag_from
+	if not _drag_moved and d.length() < TAP_SLOP:
+		return
+	_drag_moved = true
+	var putt := _club == GolfClubs.PUTTER
+	var heading := deg_to_rad(_drag_angle + d.x * TURN_PER_PX * (0.35 if putt else 1.0))
+	var reach := _clubs.carry_at(0, GolfClubs.MAX_POWER)
+	var dist := clampf(
+		_drag_dist - d.y * (0.02 if putt else DIST_PER_PX), 1.0, 40.0 if putt else reach
+	)
+	var p := _ball_at + Vector3(sin(heading), 0.0, -cos(heading)) * dist
+	_target = Vector3(p.x, _hole.height(p.x, p.z), p.z)
+	_draw_aim()
 
 
 func _press(at: Vector2) -> void:
@@ -807,7 +832,10 @@ func _press(at: Vector2) -> void:
 		_swing()  # the lower screen is the swing button
 	else:
 		_dragging = true
-		_aim_at(at, false)
+		_drag_moved = false
+		_drag_from = at
+		_drag_angle = _heading_to(_target)
+		_drag_dist = _flat(_target - _ball_at).length()
 
 
 ## Moves the landing marker to the course point under the finger. While dragging only the marker

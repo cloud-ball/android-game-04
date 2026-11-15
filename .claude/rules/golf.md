@@ -2,7 +2,9 @@
 paths:
   - "games/golf/**"
 ---
-- One custom deterministic solver from strike to rest (flight, bounce, roll, cup, trees) in pure GDScript under
+- Fairway Flick is ARCADE MINI-GOLF (re-based 2026-11-15, docs/plans/2026-11-15-fairway-flick-minigolf.md):
+  walled 20-60 m holes, slingshot shot, Rush races vs CPU. Original name / art / courses only.
+- One custom deterministic solver from strike to rest (roll, bounce, walls, bumpers, hops, cup) in pure GDScript under
   games/golf/logic/. No Jolt bodies for gameplay (no determinism guarantee; CPU rollouts must clone state cheaply).
   Research: docs/research/Fairway Flick golf game design.md (2026-11-14; replaces the old Cd-step / Cl-clamp /
   Jolt hand-off plan).

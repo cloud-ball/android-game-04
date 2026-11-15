@@ -1,13 +1,24 @@
-# Fairway Flick — Golf vs CPU (Phase 3)
+# Fairway Flick — arcade mini-golf vs CPU rivals (Phase 3)
 
-Folder: games/golf/ · rules: .claude/rules/golf.md · build estimate: 4–5 weeks · risk: High (flight + terrain)
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 21-22. Visual target: docs/refs/golf/keyframe_1..3.png (+ clip.mp4).
+> Re-based 2026-11-15 (user feedback after the first long hole): the game is arcade MINI-golf, not
+> full-course golf. Plan: docs/plans/2026-11-15-fairway-flick-minigolf.md. The long-course notes
+> below are kept for the physics they still use; clubs and swings are dropped.
 
-## Physics approach
-Updated 2026-11-14 from docs/research/Fairway Flick golf game design.md: one custom deterministic solver from strike
-to rest - RK4 flight (live 4 x 1/240 s substeps), Penner-style bounce with a per-surface tilt, Stimp-calibrated roll,
-analytic cup. No Jolt hand-off (no determinism guarantee; the CPU needs cheap cloned rollouts). Real-metre physics;
-the course is short by design. Plan: docs/plans/2026-11-14-fairway-flick.md.
+Folder: games/golf/ · rules: .claude/rules/golf.md · risk: Medium (walls + race AI)
+Research: docs/research/Fairway Flick golf game design.md (physics, CPU), Fairway Flick courses and
+maps.md (themes, progression, pipeline).
+
+## The game
+Short walled holes (20-60 m, par 2-4) built from tiles: straights, bends, ramps, humps, bumpers, sand,
+water, gaps. Slingshot shot: press the ball, drag back, a dotted guide shows the simulated path,
+release. Rush mode: you and 2-3 CPU rivals play at once (ghost balls), first in the cup wins the hole,
+3 holes per match. Worlds = the four researched themes; win matches to unlock the next world.
+
+## Physics
+Custom deterministic solver (GolfBall + GolfFlight on HoleData): rolling with per-surface
+deceleration and (5/7) g slope pull, Penner bounces, offset-dependent cup capture, walls and bumpers
+(swept circle vs segment / circle, time-ordered), airborne hops off ramps via the flight model with
+zero lift. 4 x 1/240 s substeps per tick; + - * / sqrt only in the hot path.
 
 ## Tuning starting points
 | Parameter | Value |

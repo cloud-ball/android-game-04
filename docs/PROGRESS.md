@@ -2,6 +2,22 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick re-based as arcade mini-golf; walls, bumpers, hops (branch fairway-flick)
+- User decision after the first long hole: the game is arcade MINI-golf (genre like the popular
+  mobile mini-golf battlers - short walled holes, slingshot shot, Rush race where every ball plays at
+  once), with an original name, art and courses. Plan: docs/plans/2026-11-15-fairway-flick-minigolf.md
+  (supersedes the long-course plan); design doc and golf rules re-scoped.
+- Physics (step B): HoleData walls (segments) and bumpers (circles); GolfBall rolls into them with a
+  swept circle-vs-segment / circle test, up to four contacts per substep in time order (normal x0.8,
+  sideways x0.9); flying balls bounce off walls below wall height; a rolling ball hops off ledges and
+  ramp lips (ground drops away by > 0.5 m/s in a step) into the flight model and lands with the
+  existing bounce. Golden mini-golf shot (walls, bumper, ledge).
+- Tests (7 new): wall bounce angle and speed, 14 m/s never passes a wall (live and planner steps),
+  many bounces stay in the box, bumper head-on / glancing, ledge hop, gentle ramp stays grounded,
+  a bank shot off a wall can drop. 231 tests green.
+- Uncommitted before this: the relative-drag aiming for the long hole (superseded by the slingshot).
+- Try it: logic only; the phone still has the long-hole build.
+
 ## 2026-11-15 · Fairway Flick: one-tap swing, landing camera, scenery (branch fairway-flick)
 - Phone feedback on the first hole: pulling down was uncomfortable, the swing too, never reached the
   green, the game looked generic, the ball's landing / water / out of bounds read badly.

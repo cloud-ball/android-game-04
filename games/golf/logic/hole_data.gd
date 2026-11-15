@@ -21,6 +21,11 @@ var surface := PackedByteArray()
 var tee := Vector3.ZERO
 var pin := Vector3.ZERO
 var par := 3
+## Mini-golf walls: 4 floats per segment (x0, z0, x1, z1); all walls are `wall_height` tall.
+var walls := PackedFloat64Array()
+var wall_height := 0.4
+## Round bumpers: 3 floats each (x, z, radius).
+var bumpers := PackedFloat64Array()
 
 
 func setup(origin_x: float, origin_z: float, cell_size: float, cells_x: int, cells_z: int) -> void:
@@ -44,6 +49,22 @@ func fill(height_fn: Callable, surface_fn := Callable()) -> void:
 		for j in nz:
 			for i in nx:
 				surface[j * nx + i] = surface_fn.call(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell)
+
+
+func add_wall(x0: float, z0: float, x1: float, z1: float) -> void:
+	walls.append_array(PackedFloat64Array([x0, z0, x1, z1]))
+
+
+## A closed chain of walls through the given [x, z] points.
+func add_wall_loop(points: Array) -> void:
+	for k in points.size():
+		var a: Array = points[k]
+		var b: Array = points[(k + 1) % points.size()]
+		add_wall(a[0], a[1], b[0], b[1])
+
+
+func add_bumper(x: float, z: float, r: float) -> void:
+	bumpers.append_array(PackedFloat64Array([x, z, r]))
 
 
 func contains(x: float, z: float) -> bool:
