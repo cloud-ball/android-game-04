@@ -25,6 +25,9 @@ const CELL := 0.1
 const WALL_HALF := 0.1
 const MARGIN := 7.0  # lawn around the course (room for scenery)
 const BUMPER_R := 0.45
+## Arcade cup: 75 mm radius (regulation 54) and a gentle pull for slow balls close by.
+const CUP_R := 0.075
+const CUP_PULL := 0.9
 const FLOOR := "GTHBSW^v<>"
 ## Direction each ramp rises towards (its high edge).
 const RAMP_UP := {
@@ -47,6 +50,8 @@ static func bake(spec: Dictionary) -> HoleData:
 	d.setup(x0, z0, CELL, int(ceilf(w / CELL)), int(ceilf(l / CELL)))
 	d.par = int(spec.get("par", 2))
 	d.wall_half = WALL_HALF
+	d.cup_r = CUP_R
+	d.cup_pull = CUP_PULL
 	for j in d.nz + 1:
 		for i in d.nx + 1:
 			d.heights[j * (d.nx + 1) + i] = m.height(x0 + i * CELL, z0 + j * CELL)

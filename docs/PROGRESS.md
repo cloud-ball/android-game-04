@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf: richer look, steady camera, easier cup (branch fairway-flick)
+- Phone feedback: graphics too basic; the camera swung around; near a wall the ball was hidden and
+  hard to hole.
+- Camera: an angled view from behind and above (~50 deg down) that turns only while aiming and glides
+  after the rolling ball without rotating; a MAP button gives a top-down view of the whole hole.
+- Cup: arcade size (75 mm radius vs regulation 54) and a gentle pull on slow balls within 35 cm
+  (HoleData.cup_r / cup_pull; real-golf holes keep 54 mm and no pull), glowing ring, white rim.
+- Look: sun shadows (45 m), glow, carpet fibre noise and brushed bands, rail shading on the carpet
+  (baked into vertex colour), grass tones on the lawn, grain in sand, two-tone wooden rails with a
+  light cap, flower beds and bushes along the rails, a ring under the ball while aiming, confetti on
+  a hole-out.
+- Phone: 60 fps, 56 draw calls, GPU 10.6 ms, no errors. 237 tests green.
+
 ## 2026-11-15 · Fairway Flick mini-golf step D: playable on the phone (branch fairway-flick)
 - golf_game.gd is now the mini-golf screen: World 1's three holes in a row, solo. Slingshot shot:
   press anywhere, drag back, release - opposite direction, power = drag length, % ring at the finger,

@@ -26,6 +26,10 @@ var walls := PackedFloat64Array()
 var wall_height := 0.4
 ## Half the thickness of a wall rail (the ball keeps radius + this from the wall's centre line).
 var wall_half := 0.0
+## Cup radius (regulation 54 mm; arcade holes use a larger cup) and an arcade "pull": a slow ball
+## within CUP_PULL_R of the cup is drawn in at up to this many m/s^2 (0 = real golf).
+var cup_r := 0.054
+var cup_pull := 0.0
 ## Round bumpers: 3 floats each (x, z, radius).
 var bumpers := PackedFloat64Array()
 

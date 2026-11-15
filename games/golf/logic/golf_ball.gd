@@ -16,7 +16,10 @@ extends RefCounted
 enum Phase { READY, FLY, ROLL, REST, HOLED, WATER, OUT }
 enum Ev { BOUNCE, ROLL, LIP, HOLED, WATER, OUT, WALL, HOP }
 
-const CUP_R := 0.054
+const CUP_R := 0.054  # regulation; the hole in play uses hole.cup_r
+## Arcade cup pull: radius of influence and the speed below which it acts.
+const CUP_PULL_R := 0.35
+const CUP_PULL_V := 1.6
 ## Bounce -> roll once the rebound is lower than ~5 mm (Penner): v_n < sqrt(2 g h).
 const ROLL_VN := 0.313
 const SLEEP_V := 0.03
@@ -185,7 +188,7 @@ func _land() -> void:
 	# Straight into the cup.
 	var cx := x - hole.pin.x
 	var cz := z - hole.pin.z
-	if cx * cx + cz * cz < (CUP_R - 0.5 * p.radius) * (CUP_R - 0.5 * p.radius):
+	if cx * cx + cz * cz < (hole.cup_r - 0.5 * p.radius) * (hole.cup_r - 0.5 * p.radius):
 		_x = hole.pin.x
 		_z = hole.pin.z
 		_finish(Phase.HOLED, Ev.HOLED, speed)
@@ -324,6 +327,8 @@ func _roll(dt: float) -> void:
 				var k := maxf(0.0, sp - a * dt) / sp
 				_vx *= k
 				_vz *= k
+		if hole.cup_pull > 0.0:
+			_pull_to_cup(dt)
 		_wx = _vx
 		_wz = _vz
 		sp = sqrt(_vx * _vx + _vz * _vz)
@@ -351,10 +356,26 @@ func _roll(dt: float) -> void:
 		# Died with its centre over the hole: it drops.
 		var hx := _x - hole.pin.x
 		var hz := _z - hole.pin.z
-		if hx * hx + hz * hz < CUP_R * CUP_R:
+		if hx * hx + hz * hz < hole.cup_r * hole.cup_r:
 			_x = hole.pin.x
 			_z = hole.pin.z
 			_finish(Phase.HOLED, Ev.HOLED, 0.0)
+
+
+## Arcade assist: a slow ball near the cup is drawn towards it (stronger closer in).
+func _pull_to_cup(dt: float) -> void:
+	var dx := hole.pin.x - _x
+	var dz := hole.pin.z - _z
+	var d2 := dx * dx + dz * dz
+	if d2 >= CUP_PULL_R * CUP_PULL_R or d2 < 1e-12:
+		return
+	if _vx * _vx + _vz * _vz > CUP_PULL_V * CUP_PULL_V:
+		return
+	var d := sqrt(d2)
+	var a := hole.cup_pull * (1.0 - d / CUP_PULL_R)
+	_vx += dx / d * a * dt
+	_vz += dz / d * a * dt
+	_sleep = 0.0
 
 
 ## Moves the rolling ball by its velocity for dt, bouncing off walls and bumpers in time order
@@ -518,7 +539,7 @@ func _cup(px: float, pz: float) -> bool:
 	var ex := _x - cx
 	var ez := _z - cz
 	if _cup_skip:
-		if ex * ex + ez * ez > (CUP_R + p.radius) * (CUP_R + p.radius):
+		if ex * ex + ez * ez > (hole.cup_r + p.radius) * (hole.cup_r + p.radius):
 			_cup_skip = false
 		return false
 	# Judge the putt where its path passes the cup centre: b is the sideways offset of the path
@@ -531,10 +552,10 @@ func _cup(px: float, pz: float) -> bool:
 	var qx := px + dx * t - cx
 	var qz := pz + dz * t - cz
 	var b2 := qx * qx + qz * qz
-	if b2 >= CUP_R * CUP_R:
+	if b2 >= hole.cup_r * hole.cup_r:
 		return false
 	var sp := sqrt(_vx * _vx + _vz * _vz)
-	var chord := 2.0 * sqrt(CUP_R * CUP_R - b2) - p.radius
+	var chord := 2.0 * sqrt(hole.cup_r * hole.cup_r - b2) - p.radius
 	var v_max := RIM_ASSIST * maxf(chord, 0.0) * _k_cup
 	if sp <= v_max:
 		_x = cx
@@ -550,7 +571,7 @@ func _cup(px: float, pz: float) -> bool:
 	var uz := _vz / sp
 	var ox := qx / b if b > 1e-6 else -uz
 	var oz := qz / b if b > 1e-6 else ux
-	var turn := 0.3 + 0.7 * b / CUP_R
+	var turn := 0.3 + 0.7 * b / hole.cup_r
 	var nx := ux + ox * turn
 	var nz := uz + oz * turn
 	var nl := sqrt(nx * nx + nz * nz)
