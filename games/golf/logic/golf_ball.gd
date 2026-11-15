@@ -415,8 +415,9 @@ func _fly_walls() -> void:
 func _sweep2d(px: float, pz: float, dx: float, dz: float, r: float) -> float:
 	var best := 2.0
 	var w := hole.walls
+	var rw := r + hole.wall_half
 	for o in range(0, w.size(), 4):
-		best = _toi_segment(px, pz, dx, dz, w[o], w[o + 1], w[o + 2], w[o + 3], r, best)
+		best = _toi_segment(px, pz, dx, dz, w[o], w[o + 1], w[o + 2], w[o + 3], rw, best)
 	var b := hole.bumpers
 	for o in range(0, b.size(), 3):
 		best = _toi_circle(px, pz, dx, dz, b[o], b[o + 1], b[o + 2] + r, best)

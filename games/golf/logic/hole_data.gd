@@ -24,6 +24,8 @@ var par := 3
 ## Mini-golf walls: 4 floats per segment (x0, z0, x1, z1); all walls are `wall_height` tall.
 var walls := PackedFloat64Array()
 var wall_height := 0.4
+## Half the thickness of a wall rail (the ball keeps radius + this from the wall's centre line).
+var wall_half := 0.0
 ## Round bumpers: 3 floats each (x, z, radius).
 var bumpers := PackedFloat64Array()
 
