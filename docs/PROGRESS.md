@@ -2,6 +2,26 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf: landmark and framing (visual step 4)
+- Plan: docs/plans/2026-11-15-fairway-flick-landmark.md. The play camera never saw the old windmill
+  (70 m out, 35 m aside), big trees blocked the course near the camera, and the top of the frame was
+  empty.
+- MiniFraming (pure, tested): the landmark goes straight ahead of the tee view, 30 m past the far
+  end of the course, 3 m to the side away from the cup; trees stay 6 m from play, off the knoll, out
+  of the tee's line of sight to the landmark, and never where their shadow would fall on the course.
+  The tee view moved from golf_game into MiniBaker.flow_dir (same behaviour).
+- New original landmark: a tapered stone windmill-tower on a grassy knoll with a balcony, door,
+  window, pointed roof and lattice sails facing the tee (merged meshes, 5 draw calls).
+- Mid skyline: wooded hills 90-160 m out (2 draw calls); fog raised so the backdrop recedes.
+- Lawn to the horizon: GolfTerrain adds four apron strips around the baked grid with the same
+  material (a first try with a big plane under the grid covered the course's pits - caught in
+  screenshots before shipping).
+- Intro: opens on the landmark over the whole course, holds 0.8 s, then glides to the aim view.
+- Ring 1: low stones join the bushes and flowers beside the rails.
+- Dev: `--hole=<n>` starts on a given hole (screenshots, phone checks).
+- Phone (Adreno 642L): 60 fps on all three holes, GPU 11-12 ms, 64-78 draw calls (gate <= 100).
+- 247 tests green. Try it: the test phone opens straight into golf; watch the intro, then aim.
+
 ## 2026-11-15 · Fairway Flick mini-golf: visual upgrade steps 0-3 (research-led)
 - Research: docs/research/Fairway Flick mini golf visuals.md (+ notes): art direction, Godot Mobile
   rendering, CC0 kits, juice and UI. Key finding: order (a value ladder, a sense of place, polish),
