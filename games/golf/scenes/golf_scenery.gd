@@ -1,10 +1,10 @@
 class_name GolfScenery
 extends Node3D
-## Course dressing (render only): gradient sky, a mid skyline of wooded
-## hills, a ring of distant hills, the world's landmark (meadow: a stone windmill-tower on a knoll),
-## water surfaces over the spec's water stamps, and two tree species kept clear of play. The
-## landmark stands straight ahead of the tee view (MiniFraming) so the portrait camera sees it.
-## Original low-poly look; everything procedural and seeded (no asset files).
+## Course dressing (render only): gradient sky, a mid skyline of wooded hills, a ring of distant
+## hills, the world's landmark (meadow: a stone windmill-tower on a knoll), water surfaces over the
+## spec's water stamps, CC0 kit trees kept clear of play, a park fence and a few small scenes beside
+## the play view (KitBatch, recoloured by GolfTheme). The landmark stands straight ahead of the tee
+## view (MiniFraming) so the portrait camera sees it. Original low-poly look; seeded.
 ## Research: docs/research/Fairway Flick courses and maps.md ("Themes are physics presets plus a
 ## fifteen-mesh visual kit").
 
@@ -28,6 +28,13 @@ void fragment() {
 }
 """
 
+## Kit trees (Kenney Nature, recoloured): [model, min height, max height] in metres.
+const TREES := [
+	["tree_oak", 6.0, 8.0],
+	["tree_default", 7.0, 9.5],
+	["tree_pineRoundC", 6.5, 9.0],
+	["tree_pineTallA", 8.0, 11.0],
+]
 const LANDMARK_SCALE := 0.8  # ~14 m tall: fills the top third of the play view, not more
 const GROUND_Y := MiniBaker.LAWN  # the terrain's apron level outside the baked grid
 
@@ -61,6 +68,8 @@ func build(hole: HoleData, spec: Dictionary, seed_value := 1, theme: GolfTheme =
 	_hills(mid, seed_value)
 	_water(hole, spec)
 	_trees(hole, seed_value, spot)
+	_fence(hole, spot)
+	_vignettes(hole, seed_value, spot)
 	_windmill(Vector3(spot.x, GROUND_Y, spot.y), view)
 	landmark = Vector3(spot.x, GROUND_Y + 11.0 * LANDMARK_SCALE, spot.y)
 
@@ -264,13 +273,12 @@ func _skyline(centre: Vector3, seed_value: int) -> void:
 	_multi(crown, _theme.bush.lerp(_theme.lawn, 0.2), crowns, Vector3.ZERO, false)
 
 
-## Two species on open lawn around play: tall conifers and round broadleaf trees. They keep
-## MiniFraming.TREE_CLEAR from the course (never between the camera and the ball), off the
-## landmark's knoll and out of the tee's line of sight to it.
+## Kit trees (TREES) on open lawn around play. They keep MiniFraming.TREE_CLEAR from the course
+## (never between the camera and the ball), off the landmark's knoll, out of the tee's line of
+## sight to it, and never where their shadow would fall on the course.
 func _trees(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 	var rng := Rng.make(seed_value)
-	var cones: Array[Transform3D] = []
-	var rounds: Array[Transform3D] = []
+	var batch := KitBatch.new()
 	var step_m := 6.0
 	var reach := 24.0
 	var tee := Vector2(hole.tee.x, hole.tee.z)
@@ -280,58 +288,135 @@ func _trees(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 		while x < hole.x0 + hole.nx * hole.cell + reach:
 			var px := x + rng.randf_range(-2.5, 2.5)
 			var pz := z + rng.randf_range(-2.5, 2.5)
-			var s := rng.randf_range(0.75, 1.3)
+			var kind: Array = TREES[rng.randi_range(0, TREES.size() - 1)]
+			var tall := rng.randf_range(kind[1], kind[2])
 			var yaw := rng.randf_range(0.0, TAU)
-			var cone := rng.randf() < 0.5
 			var q := Vector2(px, pz)
 			# Clear of play, near enough to frame it, off the knoll, out of the tee's view of the
-			# landmark, and not down in a pit.
+			# landmark, its shadow off the course, and not down in a pit.
 			var ok := (
 				MiniFraming.clear_of_course(hole, px, pz, MiniFraming.TREE_CLEAR)
 				and not MiniFraming.clear_of_course(hole, px, pz, reach)
 				and q.distance_to(spot) > 13.0
 				and Geometry2D.get_closest_point_to_segment(q, tee, spot).distance_to(q) > 7.0
-				and _shade_clear(hole, px, pz, s)
+				and _shade_clear(hole, px, pz, tall)
 				and _ground_y(px, pz) > MiniBaker.LAWN - 0.1
 			)
 			if ok:
-				var b := Basis(Vector3.UP, yaw).scaled(Vector3(s, s, s))
-				var t := Transform3D(b, Vector3(px, _ground_y(px, pz), pz))
-				if cone:
-					cones.append(t)
-				else:
-					rounds.append(t)
+				var sc := tall / KitBatch.height(kind[0])
+				var b := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * sc)
+				batch.add(kind[0], Transform3D(b, Vector3(px, _ground_y(px, pz), pz)))
 			x += step_m
 		z += step_m
-	var crown := CylinderMesh.new()
-	crown.top_radius = 0.0
-	crown.bottom_radius = 2.4
-	crown.height = 6.5
-	crown.radial_segments = 7
-	crown.rings = 1
-	var ball := SphereMesh.new()
-	ball.radius = 2.6
-	ball.height = 4.6
-	ball.radial_segments = 8
-	ball.rings = 4
-	var trunk := CylinderMesh.new()
-	trunk.top_radius = 0.22
-	trunk.bottom_radius = 0.32
-	trunk.height = 2.4
-	trunk.radial_segments = 5
-	trunk.rings = 1
-	_multi(crown, Color(0.12, 0.33, 0.16), cones, Vector3(0, 5.4, 0))
-	_multi(ball, Color(0.24, 0.45, 0.17), rounds, Vector3(0, 4.4, 0))
-	var all: Array[Transform3D] = []
-	all.append_array(cones)
-	all.append_array(rounds)
-	_multi(trunk, Color(0.36, 0.25, 0.15), all, Vector3(0, 1.2, 0))
+	batch.build(self, _theme)
 
 
-## The tree's shadow (crown about 5 m up at scale 1) stays off the course.
-func _shade_clear(hole: HoleData, x: float, z: float, s: float) -> bool:
-	var sp := MiniFraming.shadow_spot(x, z, 5.0 * s, _theme.sun_pitch, _theme.sun_yaw)
-	return MiniFraming.clear_of_course(hole, sp.x, sp.y, 3.2 * s)
+## The crown's shadow (about two thirds up the tree, crown ~0.35 x height wide) stays off the
+## course.
+func _shade_clear(hole: HoleData, x: float, z: float, tall: float) -> bool:
+	var sp := MiniFraming.shadow_spot(x, z, tall * 0.65, _theme.sun_pitch, _theme.sun_yaw)
+	return MiniFraming.clear_of_course(hole, sp.x, sp.y, tall * 0.35)
+
+
+## A fenced park: low kit fence panels along the edge of the baked lawn, skipped where they would
+## cross the tee's view of the landmark, touch the course, or hang over a pit.
+func _fence(hole: HoleData, spot: Vector2) -> void:
+	var batch := KitBatch.new()
+	var inset := 1.5
+	var x0 := hole.x0 + inset
+	var z0 := hole.z0 + inset
+	var x1 := hole.x0 + hole.nx * hole.cell - inset
+	var z1 := hole.z0 + hole.nz * hole.cell - inset
+	var tee := Vector2(hole.tee.x, hole.tee.z)
+	var corners := [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)]
+	var panel := 3.0
+	for k in 4:
+		var a: Vector2 = corners[k]
+		var b: Vector2 = corners[(k + 1) % 4]
+		var d := (b - a).normalized()
+		var count := int(a.distance_to(b) / panel)
+		for i in count:
+			var c := a + d * (i + 0.5) * (a.distance_to(b) / count)
+			var ok := (
+				MiniFraming.clear_of_course(hole, c.x, c.y, 2.0)
+				and Geometry2D.get_closest_point_to_segment(c, tee, spot).distance_to(c) > 6.0
+				and _ground_y(c.x, c.y) > MiniBaker.LAWN - 0.1
+			)
+			if not ok:
+				continue
+			var basis := Basis(Vector3.UP, atan2(-d.y, d.x)) * Basis.from_scale(Vector3(3, 2, 3))
+			# The model's panel sits on its tile's back edge (z -0.465): centre it on the line.
+			var at := Vector3(c.x, _ground_y(c.x, c.y), c.y) + basis * Vector3(0, 0, 0.465)
+			batch.add("fence_simple", Transform3D(basis, at))
+	batch.build(self, _theme)
+
+
+## Two to four small scenes on the lawn beside the play view (research: "story vignettes"): a log
+## pile, a mushroom patch, planters with flowers, or a rock garden. Seeded per hole.
+func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
+	var rng := Rng.make(seed_value * 13 + 5)
+	var big := KitBatch.new()
+	var small := KitBatch.new()
+	var tee := Vector2(hole.tee.x, hole.tee.z)
+	var along := (spot - tee).normalized()
+	var side := Vector2(-along.y, along.x)
+	var length := tee.distance_to(spot) - MiniFraming.LANDMARK_BEYOND
+	var placed := 0
+	for attempt in 24:
+		if placed >= 4:
+			break
+		var t := rng.randf_range(0.15, 0.95) * length
+		var lat := rng.randf_range(7.0, 13.0) * (1.0 if rng.randf() < 0.5 else -1.0)
+		var c := tee + along * t + side * lat
+		if (
+			not MiniFraming.clear_of_course(hole, c.x, c.y, 3.0)
+			or _ground_y(c.x, c.y) < MiniBaker.LAWN - 0.1
+		):
+			continue
+		var y := _ground_y(c.x, c.y)
+		var yaw := rng.randf_range(0.0, TAU)
+		var turn := Basis(Vector3.UP, yaw)
+		var at := func(dx: float, dz: float) -> Vector3:
+			return Vector3(c.x, y, c.y) + turn * Vector3(dx, 0, dz)
+		match placed % 4:
+			0:  # log pile with two stumps
+				big.add("log_stack", Transform3D(turn.scaled(Vector3.ONE * 2.6), at.call(0, 0)))
+				big.add(
+					"stump_round", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(1.4, 0.6))
+				)
+				big.add(
+					"stump_round", Transform3D(turn.scaled(Vector3.ONE * 1.8), at.call(1.1, -1.0))
+				)
+			1:  # mushroom patch in tall grass
+				for m in 4:
+					var model := "mushroom_redGroup" if m % 2 == 0 else "mushroom_tanGroup"
+					var p: Vector3 = at.call(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
+					small.add(model, Transform3D(turn.scaled(Vector3.ONE * 2.0), p))
+				for g in 3:
+					var p2: Vector3 = at.call(
+						rng.randf_range(-1.2, 1.2), rng.randf_range(-1.2, 1.2)
+					)
+					small.add("grass_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p2))
+			2:  # two planters with flowers
+				for k in 2:
+					var p3: Vector3 = at.call(k * 1.5 - 0.75, 0)
+					big.add("pot_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p3))
+					for f in 3:
+						var fl: String = ["flower_redA", "flower_yellowB", "flower_purpleA"][f]
+						var fp := (
+							p3 + turn * Vector3(f * 0.35 - 0.35, 0.33, rng.randf_range(-0.15, 0.15))
+						)
+						small.add(fl, Transform3D(turn.scaled(Vector3.ONE * 1.6), fp))
+			3:  # rock garden
+				big.add("rock_largeA", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(0, 0)))
+				for r in 3:
+					var p4: Vector3 = at.call(
+						rng.randf_range(-1.6, 1.6), rng.randf_range(-1.6, 1.6)
+					)
+					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.6), p4))
+		placed += 1
+	big.build(self, _theme)
+	small.build(self, _theme, false)
 
 
 func _multi(

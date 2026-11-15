@@ -4,3 +4,22 @@ Every file under games/*/assets and hub/ must be listed. The ip-checker and asse
 
 | File | Source URL | Author | Licence | Credit needed? |
 |---|---|---|---|---|
+| games/golf/assets/kenney_nature/License.txt | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/fence_simple.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/flower_purpleA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/flower_redA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/flower_yellowB.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/grass_large.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/log_stack.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/mushroom_redGroup.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/mushroom_tanGroup.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/plant_bush.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/plant_bushLarge.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/pot_large.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/rock_largeA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/rock_smallA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/stump_round.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_default.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_oak.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_pineRoundC.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_pineTallA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |

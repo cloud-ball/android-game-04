@@ -5,6 +5,7 @@ extends RefCounted
 ## from the world's GolfTheme. Split out of golf_game.gd.
 
 const RAIL_BEVEL := 0.045
+const FLOWERS := ["flower_redA", "flower_yellowB", "flower_purpleA"]  # Ring 1 kit flowers
 
 
 ## Rails: one merged mesh for the whole hole - a bevelled wooden profile swept along every wall
@@ -148,39 +149,13 @@ static func ball(world: Node3D, radius: float, theme: GolfTheme) -> MeshInstance
 	return mi
 
 
-static func multi(
-	world: Node3D, mesh: Mesh, spots: Array[Transform3D], col: Color, colors := PackedColorArray()
-) -> void:
-	if spots.is_empty():
-		return
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = not colors.is_empty()
-	mm.mesh = mesh
-	mm.instance_count = spots.size()
-	for i in spots.size():
-		mm.set_instance_transform(i, spots[i])
-		if not colors.is_empty():
-			mm.set_instance_color(i, colors[i])
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.roughness = 0.85
-	mat.vertex_color_use_as_albedo = not colors.is_empty()
-	mat.vertex_color_is_srgb = true
-	mmi.material_override = mat
-	world.add_child(mmi)
-
-
-## Flower beds and bushes on the lawn just outside the rails (seeded per hole).
+## Ring 1: kit bushes, stones, flower clusters and grass tufts on the lawn just outside the rails
+## (seeded per hole). Everything stays below about rail height so it never hides the ball; bushes
+## and stones cast shadows, the small pieces do not. Two draw calls per colour, not per prop.
 static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -> void:
 	var rng := Rng.make(4242 + index)
-	var bushes: Array[Transform3D] = []
-	var stones: Array[Transform3D] = []
-	var flowers: Array[Transform3D] = []
-	var flower_cols := PackedColorArray()
-	var palette: Array = theme.flowers
+	var big := KitBatch.new()
+	var small := KitBatch.new()
 	var w := hole.walls
 	for o in range(0, w.size(), 4):
 		var a := Vector2(w[o], w[o + 1])
@@ -193,55 +168,37 @@ static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -
 			for side in [-1.0, 1.0]:
 				var off: float = side * rng.randf_range(0.55, 1.4)
 				var q: Vector2 = a + dir * t + nrm * off
+				var roll := rng.randf()
+				var yaw := rng.randf_range(0.0, TAU)
 				if hole.surface_at(q.x, q.y) != HoleData.Surface.OUT:
 					continue
 				var y := hole.height(q.x, q.y)
 				if y < MiniBaker.LAWN - 0.05:
 					continue  # not in the gaps
-				var roll := rng.randf()
-				if roll < 0.14:  # low stones, well under rail height
-					var st := rng.randf_range(0.16, 0.32)
-					var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU))
-					stones.append(
-						Transform3D(
-							turn * Basis.from_scale(Vector3(st, st * 0.55, st * 0.8)),
-							Vector3(q.x, y + st * 0.12, q.y)
-						)
-					)
-				elif roll < 0.5:
-					var sz := rng.randf_range(0.45, 0.8)
-					bushes.append(
-						Transform3D(
-							Basis.from_scale(Vector3(sz, sz * 0.8, sz)),
-							Vector3(q.x, y + sz * 0.5, q.y)
-						)
-					)
-				else:
-					var col: Color = palette[rng.randi_range(0, palette.size() - 1)]
-					for k in 6:
+				var turn := Basis(Vector3.UP, yaw)
+				var at := Vector3(q.x, y, q.y)
+				if roll < 0.14:  # a low stone
+					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.3), at))
+				elif roll < 0.48:  # a bush, about rail height
+					var model := "plant_bush" if roll < 0.36 else "plant_bushLarge"
+					var sz := rng.randf_range(1.6, 2.0)
+					big.add(model, Transform3D(turn.scaled(Vector3.ONE * sz), at))
+				elif roll < 0.58:  # a grass tuft
+					small.add("grass_large", Transform3D(turn.scaled(Vector3.ONE * 1.3), at))
+				else:  # a cluster of three flowers of one kind
+					var model2: String = FLOWERS[rng.randi_range(0, FLOWERS.size() - 1)]
+					for k in 3:
 						var fq := (
-							q + Vector2(rng.randf_range(-0.35, 0.35), rng.randf_range(-0.35, 0.35))
+							q + Vector2(rng.randf_range(-0.3, 0.3), rng.randf_range(-0.3, 0.3))
 						)
-						var fs := rng.randf_range(0.11, 0.17)
-						flowers.append(
-							Transform3D(
-								Basis.from_scale(Vector3(fs, fs, fs)), Vector3(fq.x, y + 0.14, fq.y)
-							)
+						var fs := rng.randf_range(1.2, 1.5)
+						var ft := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(
+							Vector3.ONE * fs
 						)
-						flower_cols.append(col)
+						small.add(model2, Transform3D(ft, Vector3(fq.x, y, fq.y)))
 			t += rng.randf_range(0.7, 1.2)
-	var leaf := SphereMesh.new()
-	leaf.radial_segments = 8
-	leaf.rings = 4
-	multi(world, leaf, bushes, theme.bush)
-	var rock := SphereMesh.new()
-	rock.radial_segments = 6
-	rock.rings = 3
-	multi(world, rock, stones, theme.stone)
-	var petal := SphereMesh.new()
-	petal.radial_segments = 6
-	petal.rings = 3
-	multi(world, petal, flowers, Color.WHITE, flower_cols)
+	big.build(world, theme)
+	small.build(world, theme, false)
 
 
 static func part(world: Node3D, mesh: Mesh, col: Color, at: Vector3) -> void:
