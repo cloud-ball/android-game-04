@@ -36,6 +36,25 @@ static func golden_ball() -> GolfBall:
 	return b
 
 
+## Mini-golf golden shot: a walled green with a bumper and a 0.3 m ledge, banked towards the cup.
+static func golden_minigolf() -> GolfBall:
+	var d := HoleData.new()
+	d.setup(-6.0, -30.0, 0.25, 48, 120)
+	d.fill(
+		func(_x: float, z: float) -> float: return 0.3 if z > -12.0 else 0.0,
+		func(_x: float, _z: float) -> int: return HoleData.Surface.GREEN
+	)
+	d.add_wall_loop([[-6.0, 0.0], [6.0, 0.0], [6.0, -30.0], [-6.0, -30.0]])
+	d.add_bumper(1.5, -18.0, 0.6)
+	d.pin = Vector3(-2.0, 0.0, -26.0)
+	var pr := CoursePreset.new()
+	pr.stimp = 10.0
+	var b := GolfBall.new(d, pr)
+	b.putt(0.0, -4.0, 3.1, -7.4)
+	b.run_to_rest()
+	return b
+
+
 ## Rolling ground with mixed surfaces, like a real hole.
 static func bench_hole() -> HoleData:
 	var d := HoleData.new()
@@ -57,6 +76,7 @@ static func bench_hole() -> HoleData:
 static func run() -> void:
 	print("[golf-bench] golden flight hash %s" % golden_flight().fingerprint().md5_text())
 	print("[golf-bench] golden ball hash %s" % golden_ball().fingerprint().md5_text())
+	print("[golf-bench] golden minigolf hash %s" % golden_minigolf().fingerprint().md5_text())
 	var d := bench_hole()
 	# [name, ball mph, launch deg, rpm]
 	var shots := [

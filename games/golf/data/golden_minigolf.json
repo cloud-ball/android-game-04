@@ -1,0 +1,23 @@
+{
+	"events": [
+		7,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		0,
+		0,
+		0,
+		1
+	],
+	"fingerprint": "65e178da0ad01740b881fa72105732c0000000000000000000000000000000006f0081e8e5ee0f4000000000000008400000000000002240d4ace96e92d3174062670a9dd7d8953f77c88adeb15432c053b96618cb90b1bfe832536ea50bd9bf43b469127695c7bf",
+	"note": "GolfBench.golden_minigolf(): walled green, bumper, 0.3 m ledge, banked putt - final state at rest. Created 2026-11-15 (mini-golf step B). Regenerate only with a written justification.",
+	"phase": 3,
+	"rest": [
+		5.95316648483276,
+		-18.3400955200195
+	]
+}
