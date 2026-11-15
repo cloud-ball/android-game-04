@@ -3,7 +3,7 @@ extends Node3D
 ## Draws a baked HoleData (render only). Chunked ArrayMeshes from the height grid at every
 ## `STEP`-th vertex (1 m) with the same triangle split as the physics grid; one terrain shader
 ## colours each cell from an R8 surface texture (what you see is what the ball feels), with mowing
-## stripes on fairway and green. Decorative trees (MultiMesh) stand only out of bounds.
+## stripes on fairway and green. Trees and the rest of the dressing live in GolfScenery.
 ## Research: docs/research/Fairway Flick courses and maps.md (themes and Mobile-renderer budget).
 
 const STEP := 2  # render every 2nd physics vertex (0.5 m grid -> 1 m mesh)
@@ -53,7 +53,7 @@ const COLS := [
 var hole: HoleData
 
 
-func build(h: HoleData, seed_value := 1) -> void:
+func build(h: HoleData) -> void:
 	hole = h
 	var mat := ShaderMaterial.new()
 	var sh := Shader.new()
@@ -78,7 +78,6 @@ func build(h: HoleData, seed_value := 1) -> void:
 			mi.mesh = _chunk(ci, cj, mini(CHUNK, rx - ci), mini(CHUNK, rz - cj))
 			mi.material_override = mat
 			add_child(mi)
-	_trees(seed_value)
 
 
 func _vertex(i: int, j: int) -> Vector3:
@@ -117,61 +116,3 @@ func _chunk(ci: int, cj: int, w: int, d: int) -> ArrayMesh:
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
-
-
-## Low-poly trees scattered (seeded) on out-of-bounds ground near the playing corridor.
-func _trees(seed_value: int) -> void:
-	var rng := Rng.make(seed_value)
-	var spots: Array[Transform3D] = []
-	var step_m := 7.0
-	var z := hole.z0 + 4.0
-	while z < hole.z0 + hole.nz * hole.cell - 4.0:
-		var x := hole.x0 + 4.0
-		while x < hole.x0 + hole.nx * hole.cell - 4.0:
-			var px := x + rng.randf_range(-2.5, 2.5)
-			var pz := z + rng.randf_range(-2.5, 2.5)
-			if hole.surface_at(px, pz) == HoleData.Surface.OUT and _near_play(px, pz):
-				var s := rng.randf_range(0.8, 1.35)
-				var b := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(Vector3(s, s, s))
-				spots.append(Transform3D(b, Vector3(px, hole.height(px, pz), pz)))
-			x += step_m
-		z += step_m
-	var crown := CylinderMesh.new()
-	crown.top_radius = 0.0
-	crown.bottom_radius = 2.6
-	crown.height = 7.0
-	crown.radial_segments = 7
-	crown.rings = 1
-	var trunk := CylinderMesh.new()
-	trunk.top_radius = 0.25
-	trunk.bottom_radius = 0.35
-	trunk.height = 2.0
-	trunk.radial_segments = 5
-	trunk.rings = 1
-	_multi(crown, Color(0.1, 0.3, 0.13), spots, Vector3(0, 5.2, 0))
-	_multi(trunk, Color(0.35, 0.24, 0.14), spots, Vector3(0, 1.0, 0))
-
-
-func _near_play(x: float, z: float) -> bool:
-	for k in 8:
-		var a := TAU * k / 8.0
-		if hole.surface_at(x + cos(a) * 14.0, z + sin(a) * 14.0) != HoleData.Surface.OUT:
-			return true
-	return false
-
-
-func _multi(mesh: Mesh, col: Color, spots: Array[Transform3D], offset: Vector3) -> void:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = mesh
-	mm.instance_count = spots.size()
-	for i in spots.size():
-		var t := spots[i]
-		mm.set_instance_transform(i, Transform3D(t.basis, t.origin + t.basis * offset))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	var m := StandardMaterial3D.new()
-	m.albedo_color = col
-	m.roughness = 1.0
-	mmi.material_override = m
-	add_child(mmi)

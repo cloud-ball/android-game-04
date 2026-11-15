@@ -2,6 +2,21 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick: one-tap swing, landing camera, scenery (branch fairway-flick)
+- Phone feedback on the first hole: pulling down was uncomfortable, the swing too, never reached the
+  green, the game looked generic, the ball's landing / water / out of bounds read badly.
+- Controls (user's choice): aim + one tap. Drag the marker; power is solved automatically on the real
+  solver (wind, lie, slopes) so a perfect shot lands on it - a white dot previews where. A needle sweeps
+  the accuracy bar; tap the lower screen: centre = PERFECT, off-centre hooks / slices and comes up short.
+  Putts work the same way (pace solved with the cup ignored).
+- Ball: keeps a readable size at any distance, casts a shadow (height cue); the camera chases it up,
+  then watches the predicted landing spot side-on (exact - same solver) so bounces read; grass / sand
+  puffs per bounce, a splash for water, clear water / out-of-bounds banners.
+- Look: GolfScenery - procedural sky, ring of hills, a windmill landmark that turns, water surfaces with
+  ripples, conifers + round trees; hole fly-over with a hole card at the start (tap to skip).
+- Phone: 60 fps, 59 draw calls, GPU 10.9 ms, no errors. 223 tests green.
+- Try it: test phone opens straight into the hole (dev_args `--game=golf`).
+
 ## 2026-11-15 · Fairway Flick step 6: first playable hole (branch fairway-flick)
 - Holes are data: games/golf/data/holes/meadow_03.json ("The Bend", par 4, ~290 m dogleg right with a
   corner bunker, pond, two greenside bunkers, mounds, a back-to-front green, 3 pins). HoleBaker turns a
