@@ -41,3 +41,27 @@ func test_slow_motion_keeps_the_shot_bit_identical() -> void:
 				break
 			b.substep()
 	assert_str(b.fingerprint()).is_equal(a.fingerprint())
+
+
+func test_every_kit_material_has_a_theme_colour_below_the_ball() -> void:
+	# Every material name used by the shipped kit props is mapped (no stock colours, no magenta),
+	# and no prop is as bright as the ball; fence / planter wood stays darker than the rails.
+	var t := GolfTheme.meadow()
+	var lum := GolfTheme.luminance
+	var dir := "res://games/golf/assets/kenney_nature/"
+	var names := {}
+	for f in DirAccess.get_files_at(dir):
+		if not f.ends_with(".glb"):
+			continue
+		var root := (load(dir + f) as PackedScene).instantiate()
+		for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+			for i in mi.mesh.get_surface_count():
+				var mat := mi.mesh.surface_get_material(i)
+				names[mat.resource_name if mat != null else mi.mesh.surface_get_name(i)] = true
+		root.free()
+	assert_int(names.size()).is_greater(5)
+	for n: String in names:
+		var c := t.kit_color(n)
+		assert_bool(c == Color.MAGENTA).override_failure_message("unmapped: " + n).is_false()
+		assert_float(lum.call(c)).is_less(lum.call(t.ball) * 0.75)
+	assert_float(lum.call(t.kit_color("wood"))).is_less(lum.call(t.rail_body))

@@ -2,6 +2,24 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf: CC0 kit dressing (visual step 5)
+- 18 models from Kenney's Nature Kit 2.1 (CC0, licence file kept beside them) in
+  games/golf/assets/kenney_nature/, 200 KB, no textures; one ASSETS.md row per file. Preview
+  sheets and logos are not shipped.
+- Every prop is recoloured onto the world palette: GolfTheme.kit_color maps the kit's material
+  names to our colours; a test checks every shipped material is mapped, no prop is as bright as the
+  ball, and fence wood stays darker than the rails.
+- KitBatch merges every placed prop into one mesh per colour: a hundred flowers cost the same draw
+  calls as one. Small pieces (flowers, grass, mushrooms) cast no shadows.
+- Ring 2: kit oaks, broadleaf trees and two pines replace the procedural cones and balls (same
+  placement rules: clear of play, of the landmark's view and of the course's shade).
+- Ring 1: kit bushes, stones, grass tufts and three-flower clusters along the rails.
+- New: a low park fence around the lawn (skipped in front of the landmark and next to play), and
+  up to four small scenes beside the play view per hole: a log pile with stumps, a mushroom patch,
+  flower planters, a rock garden.
+- Phone: 60 fps, GPU ~11.5 ms, 61-73 draw calls (slightly fewer than before, thanks to batching).
+- 248 tests green. Try it: the test phone opens straight into golf.
+
 ## 2026-11-15 · Fairway Flick mini-golf: landmark and framing (visual step 4)
 - Plan: docs/plans/2026-11-15-fairway-flick-landmark.md. The play camera never saw the old windmill
   (70 m out, 35 m aside), big trees blocked the course near the camera, and the top of the frame was
