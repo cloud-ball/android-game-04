@@ -2,6 +2,21 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-15 · Fairway Flick mini-golf step C: holes from tile maps (branch fairway-flick)
+- MiniBaker (games/golf/logic/mini_baker.gd): a hole is a small text map of 3 m tiles (G green, T tee,
+  H cup, B bumper, S sand, W water, ^ v < > ramps, . nothing) plus an optional level map. It bakes a
+  10 cm height grid + surfaces, walls on every floor / nothing edge and where heights do not meet
+  (merged into long rails, 20 cm thick), bumpers, tee and cup. A ramp whose high side faces nothing
+  is a jump: lip and landing edge stay open; falling short drops the ball out of bounds.
+- Flow field (tile distance to the cup, jumps included) for the CPU and the solvability check.
+- Three World-1 holes: Corner (par 2, L-lane), Step Up (par 3, ramp to a raised green, sand,
+  bumper), The Leap (par 3, jump over a gap).
+- Tests (6): deterministic bakes, ramp heights / open top, jump cleared fast and missed slow, random
+  shots never leave the walls, flow reaches every tee, a scripted golfer holes every hole in par + 2.
+- Fix found on the way: tile-edge heights now take the highest touching floor (a jump lip had dipped
+  into the pit).
+- Try it: logic only.
+
 ## 2026-11-15 · Fairway Flick re-based as arcade mini-golf; walls, bumpers, hops (branch fairway-flick)
 - User decision after the first long hole: the game is arcade MINI-golf (genre like the popular
   mobile mini-golf battlers - short walled holes, slingshot shot, Rush race where every ball plays at
