@@ -2,6 +2,13 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Break & Bank: ball colours shown as designed
+- Godot converts Color shader parameters to linear by itself; pool_view.gd converted them again,
+  so every ball rendered darker than its palette: the 1-ball looked orange like the 5, the 4 navy
+  instead of purple, the 6 almost black. Removed the extra conversion (found while fixing the same
+  bug in Fairway Flick). Before/after checked on a seeded bot match; balls are now clearly
+  distinct. Try it: any Break & Bank match.
+
 ## 2026-11-14 · Break & Bank: smarter CPU (shot checking, 8-ball bug fixed)
 - Bug: on the 8 the planner simulated shots without calling a pocket, and the rules reject an
   uncalled 8 - so the CPU could not see a scratch on the 8 or the 8 in the wrong pocket. Rollouts

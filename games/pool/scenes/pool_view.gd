@@ -689,7 +689,7 @@ func _make_balls() -> void:
 	var cols := PackedColorArray()
 	for b in 16:
 		var c: Color = BALL_COLORS[b if b <= 8 else b - 8]
-		cols.append(c.srgb_to_linear())
+		cols.append(c)  # Godot converts shader Colors to linear itself (no double conversion)
 	_ball_mat.set_shader_parameter("colors", cols)
 	_ball_mat.set_shader_parameter("digits", _digits.get_texture())
 	_ball_mat.set_shader_parameter("radius", radius)
