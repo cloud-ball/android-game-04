@@ -2,6 +2,20 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Fairway Flick: no more freeze on the first drag (shader warm-up)
+- The first drag of each session froze ~2.3 s while the renderer compiled the aim guide, power
+  ring, trail and effect shaders. FxWarmup (scenes/fx_warmup.gd) now draws every late-appearing
+  effect once during the first hole's intro - same materials and vertex formats, but sub-pixel or
+  1% opaque - for 4 frames, then frees the copies. Covers: guide/trail material, aim ring, puff,
+  splash, confetti and spark particles, the power meter's lines/arcs/numerals, and the big score
+  and star text.
+- Measured on the emulator, cold shader cache each run (A/B via the new `--nowarm` dev switch):
+  first drag without warm-up: worst frame 2266 ms (4 fps); with warm-up: worst 12.8 ms, 60 fps.
+- The intro now advances at most 1/30 s per frame, so the warm-up hitch can't skip the fly-in.
+- Emulator notes: give it `-memory 4096` (2 GB swaps and drops everything to ~10 fps); a cold start
+  with an empty shader cache takes ~50 s on its OpenGL translator.
+- 254 tests green.
+
 ## 2026-11-17 · Fairway Flick: emulator check, release-hitch fix
 - No phone available, so the Pixel 3a emulator (API 36) was used. Its Vulkan bridge can't present
   frames on this Mac (black screen, "Couldn't present to Vulkan queue"), with host or SwiftShader
