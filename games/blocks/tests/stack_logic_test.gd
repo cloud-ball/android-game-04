@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Stack Drop rules: bag, kick data + behaviour, movement, gravity, lock delay, clears, scoring,
+## Facetfall rules: bag, kick data + behaviour, movement, gravity, lock delay, clears, scoring,
 ## hold, garbage, top-out and bit-exact replays.
 
 const W := StackState.W

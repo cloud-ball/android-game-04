@@ -1,6 +1,6 @@
 class_name StackGestures
 extends RefCounted
-## Turns touch input into Stack Drop actions (pure: feed events + time, get action names).
+## Turns touch input into Facetfall actions (pure: feed events + time, get action names).
 ##   tap                      -> "cw"
 ##   horizontal drag          -> "left"/"right", one per `cell_px` dragged (follows the finger)
 ##   slow drag down           -> "soft", one per `cell_px`

@@ -1,6 +1,6 @@
 class_name BoardLayout
 extends RefCounted
-## Screen layout for Stack Drop, as pure arithmetic (no nodes): from the canvas size (1080 wide,
+## Screen layout for Facetfall, as pure arithmetic (no nodes): from the canvas size (1080 wide,
 ## height follows the phone's aspect) and the safe-area insets it derives the cell size and every
 ## HUD rectangle, in canvas units. Research: docs/research/Stack Drop board redesign.md;
 ## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-stack-drop-bigger-tower.md.

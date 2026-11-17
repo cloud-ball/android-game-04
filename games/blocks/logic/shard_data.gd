@@ -1,6 +1,6 @@
 class_name ShardData
 extends RefCounted
-## The seven Stack Drop shards (A-G): cell layouts per rotation and the wall-kick tables.
+## The seven Facetfall shards (A-G): cell layouts per rotation and the wall-kick tables.
 ## Cells are (x, y) inside the shard's box with +y = DOWN. Rotation states: 0, R, 2, L.
 ## A = long (4 in a row), B = square, C = tee, D = skew right, E = skew left, F/G = hooks.
 

@@ -98,7 +98,7 @@ func _header() -> Control:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.add_theme_font_override("bold_font", UiKit.font(900))
 	title.add_theme_font_size_override("bold_font_size", 58)
-	title.text = "[b]POCKET ARENA [color=#ffc94a]8[/color][/b]"
+	title.text = "[b][color=#ffc94a]OCTO[/color]RIVAL[/b]"  # octo = eight games, each a rival
 	left.add_child(title)
 	left.add_child(UiKit.label("Play the CPU · offline", 30, UiKit.MUTED, 500))
 	row.add_child(left)

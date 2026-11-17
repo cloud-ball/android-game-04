@@ -66,7 +66,7 @@ func _build_bar(top: float) -> void:
 	_speed.position = Vector2(0, 222 + top)
 	_speed.size = Vector2(1080, 40)
 	add_child(_speed)
-	# 112 px disc (like Stack Drop's) in a 144 px touch area at the top-right under the score bar.
+	# 112 px disc (like Facetfall's) in a 144 px touch area at the top-right under the score bar.
 	_pause_btn = UiKit.pause_button(112.0)
 	_pause_btn.position = Vector2(1080 - 24 - 144, 190 + top)
 	_pause_btn.size = Vector2(144, 144)

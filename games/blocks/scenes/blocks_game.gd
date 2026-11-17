@@ -1,5 +1,5 @@
 extends Node3D
-## Stack Drop controller: match flow, input (touch gestures + keys), fixed-step logic for the
+## Facetfall controller: match flow, input (touch gestures + keys), fixed-step logic for the
 ## player and the CPU, garbage exchange, effects, rewards and saves.
 
 enum State { READY, COUNTDOWN, PLAYING, PAUSED, OVER }
