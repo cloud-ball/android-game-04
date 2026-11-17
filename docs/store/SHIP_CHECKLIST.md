@@ -1,6 +1,6 @@
-# Ship Pocket Arena 8 v0.2.0: checklist
+# Ship Octorival v0.2.0: checklist
 
-Goal: Pocket Arena 8 v0.2.0 (hub + Serpent Grid, Stack Drop, Break & Bank) live on Google Play
+Goal: Octorival v0.2.0 (hub + Serpent Grid, Facetfall, Break & Bank) live on Google Play
 **closed testing**, then production. New personal developer accounts must keep 12+ testers opted in
 for 14 days in a row before they can apply for production, so public release is ~2-3 weeks after
 the closed test starts. Fairway Flick and the other games stay hidden as "SOON" cards
@@ -25,31 +25,26 @@ the closed test starts. Fairway Flick and the other games stay hidden as "SOON" 
       strings: no protected names anywhere; "Cue Club" gone from everything user-facing; store text
       says "eight-ball billiards" (not "8-ball pool"); icons, store images and Roboto recorded in
       ASSETS.md; in-app version now 0.2.0.
-- [x] Web name check: "Break & Bank" and "Serpent Grid" clear. "Stack Drop" is already a Play app
-      title (com.rpm.stackdrop, a block-tower game). "Pocket Arena" is close to "Heroes: Pocket
-      Arena" and a "Pocket Arena" monster game (no trademark found).
-
-## OPEN before the first upload (decide)
-- [ ] **Stack Drop's look (ip-checker BLOCKER).** It draws a dark gridded well with flat, bright,
-      classic-coloured squares seen almost head-on - against our own design doc
-      (docs/games/blocks.md: shaded gems, crystal tower, "never ... flat bright squares"). The owner
-      of the classic falling-block game has won look-alike cases (Tetris Holding v. Xio, 2012) and
-      gets look-alike apps removed from Play. Fix: shaded gem pieces with depth, a tilted / slowly
-      turning tower, a non-classic palette, new hub icon; then retake screenshots 03, 06 and the
-      feature graphic. Consider a new name at the same time (the title is taken on Play).
-- [ ] App name: keep "Pocket Arena 8" or pick something more unique (only the display name and
-      store listing change; the package id stays).
+- [x] Names (2026-11-17): the app is now **Octorival** (was Pocket Arena 8: close to "Heroes: Pocket
+      Arena" and a "Pocket Arena" monster game) and the block game **Facetfall** (was Stack Drop:
+      already a Play app title, com.rpm.stackdrop). Both new names had no match on Google Play,
+      the App Store, Steam, itch.io or the web. "Break & Bank" and "Serpent Grid" were clear.
+      Package id unchanged (com.cloud198.pocketarena8; only visible in the store URL).
+- [x] Facetfall look redone (was the ip-checker BLOCKER: flat classic-coloured squares in a gridded
+      well): emerald-cut gems, a jewel palette where no shard keeps its shape's classic colour, a
+      gridless crystal tower, and the same gems in HUD, how-to cards and hub icon. Screenshots 01,
+      03, 06 and the feature graphic retaken.
 
 ## You (one time)
 1. **Upload key**: `scripts/make_upload_key.sh` → pick a strong password → back up the .jks file AND
    the password (password manager + offline copy). Then add to ~/.zshrc:
    `export PA8_KEYSTORE=~/.android-keys/pocketarena8-upload.jks`
 2. **Build**: `export GODOT=/opt/homebrew/bin/godot && scripts/build_release.sh`
-   → `build/pocket-arena-8-v0.2.0-1.aab` (asks for the key password; runs the tests first).
+   → `build/octorival-v0.2.0-1.aab` (asks for the key password; runs the tests first).
    Version code 1 is right for the very first upload; use `--bump` for every later upload.
 3. **Privacy policy URL**: fill in your support email in docs/store/privacy-policy.md, then publish
    it somewhere public and permanent (a public GitHub Gist, Google Sites, or GitHub Pages).
-4. **Play Console** → Create app: name "Pocket Arena 8", Game, Free, accept the declarations.
+4. **Play Console** → Create app: name "Octorival", Game, Free, accept the declarations.
    - Dashboard → Set up your app: privacy policy URL, app access (all available), ads (No), content
      rating (questionnaire answers in listing.md), target audience (13+), data safety (no data
      collected or shared), store listing (listing.md text + icon_512.png + feature graphic +

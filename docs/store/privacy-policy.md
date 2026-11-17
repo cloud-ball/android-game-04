@@ -1,8 +1,8 @@
-# Privacy Policy: Pocket Arena 8
+# Privacy Policy: Octorival
 
 _Last updated: 17 November 2026_
 
-Pocket Arena 8 ("the app") is a collection of single-player games played against the computer.
+Octorival ("the app") is a collection of single-player games played against the computer.
 
 ## What we collect
 Nothing. The app does not collect, transmit, sell or share any personal or usage data. It has no

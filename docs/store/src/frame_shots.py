@@ -11,10 +11,10 @@ W, H = 1080, 1920
 shots = [
     ("st_hub_0.png", "01_hub.png", "Original 3D games", "Play the CPU · offline · no ads", (32, 22, 62)),
     ("st_snake_2.png", "02_serpent_grid.png", "Serpent Grid", "Out-turn a CPU snake on a neon grid", (24, 18, 64)),
-    ("st_blocks_2.png", "03_stack_drop.png", "Stack Drop", "Race the CPU to clear the tower", (40, 22, 70)),
+    ("st_blocks_2.png", "03_facetfall.png", "Facetfall", "Fill rows with cut gems, race the CPU", (40, 22, 70)),
     ("st_pool_1.png", "04_break_and_bank_break.png", "Break & Bank", "Eight-ball billiards vs a smart CPU", (10, 52, 50)),
     ("st_pool_2.png", "05_break_and_bank_table.png", "Real ball physics", "Spin, cushions and pockets that feel right", (10, 52, 50)),
-    ("st_blocks_3.png", "06_stack_drop_race.png", "Three difficulty levels", "Easy, Medium or Hard in every game", (40, 22, 70)),
+    ("st_blocks_3.png", "06_facetfall_race.png", "Three difficulty levels", "Easy, Medium or Hard in every game", (40, 22, 70)),
 ]
 def font(size, weight):
     f = ImageFont.truetype(FONT, size)

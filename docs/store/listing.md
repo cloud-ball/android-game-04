@@ -1,16 +1,16 @@
-# Google Play listing: Pocket Arena 8 v0.2.0 (Serpent Grid, Stack Drop, Break & Bank)
+# Google Play listing: Octorival v0.2.0 (Serpent Grid, Facetfall, Break & Bank)
 
 Paste these into Play Console → Grow → Store presence → Main store listing.
 Never mention other companies' games or trademarks here or in keywords (see guide p. 5).
 
 ## App name (≤ 30)
-Pocket Arena 8
+Octorival
 
 ## Short description (≤ 80)
-Snake, pool and block races vs a smart CPU. Original 3D games, offline, no ads.
+Snake, pool and gem races vs a smart CPU. Original 3D games, offline, no ads.
 
 ## Full description (≤ 4000)
-Pocket Arena 8 is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
+Octorival is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
 
 Three games are ready today:
 
@@ -19,8 +19,8 @@ SERPENT GRID: a head-to-head snake duel on a floating neon grid
 • Eat glowing orbs to grow longer. The edges wrap around, so slip out one side and come back on the other.
 • Cut off the CPU snake and make it crash into you first, or play Solo and chase your best score.
 
-STACK DROP: a falling-block race inside a glass crystal tower
-• Rotate and slide the gem shards to fill complete rows and clear them.
+FACETFALL: a falling-gem race inside a crystal tower
+• Turn and slide emerald-cut gem shards to fill complete rows and clear them.
 • Hold a shard for later and plan ahead with a three-piece preview.
 • Race the CPU side by side: every row you clear pushes rows into its tower.
 
@@ -49,7 +49,7 @@ No ads. No in-app purchases. No internet permission. Your progress stays on your
 |---|---|---|
 | App icon | icon_512.png | 512×512 PNG, no alpha ✓ |
 | Feature graphic | feature_graphic_1024x500.png | 1024×500 ✓ |
-| Phone screenshots | screenshots/01_hub.png … 06_stack_drop_race.png | 1080×1920 (9:16) ✓, 6 shots with captions (min 2, max 8) |
+| Phone screenshots | screenshots/01_hub.png … 06_facetfall_race.png | 1080×1920 (9:16) ✓, 6 shots with captions (min 2, max 8) |
 
 ## App content answers (Policy → App content)
 - **Privacy policy URL**: host docs/store/privacy-policy.md publicly (see SHIP_CHECKLIST.md) and paste the URL.
