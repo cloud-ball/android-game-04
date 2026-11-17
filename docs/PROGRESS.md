@@ -2,6 +2,11 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Package id is now com.cloud198.octorival
+- Changed before the first upload (Play never allows a change afterwards), so the store URL matches
+  the app's name. Dev args on a device: `adb shell run-as com.cloud198.octorival sh -c '...'`.
+  A phone or emulator with the old debug build keeps it as a separate app; uninstall it.
+
 ## 2026-11-17 · Open-source licence page; second originality check passed
 - Second ip-checker pass: the old Facetfall (Stack Drop) look-alike blocker is resolved; no shard
   keeps its shape's classic colour, no grid, no new blockers.

@@ -12,7 +12,7 @@ the closed test starts. Fairway Flick and the other games stay hidden as "SOON" 
 - [x] Release AAB pipeline verified end to end with a THROWAWAY key (not uploadable; deleted from
       build/): signed bundle builds in ~1 min, `jarsigner -verify` passes, arm64-v8a + armeabi-v7a,
       minSdk 24, targetSdk 36 (meets Play's current requirement), version 0.2.0 / code 1,
-      package com.cloud198.pocketarena8, only the VIBRATE permission (no INTERNET).
+      package com.cloud198.octorival, only the VIBRATE permission (no INTERNET).
 - [x] Store listing for all three games: docs/store/listing.md (short description 79/80 chars,
       full 1.6k/4000), app-content answers re-checked (coins are earned only: no gambling).
 - [x] 6 captioned phone screenshots, 1080x1920: docs/store/screenshots/ (made by
@@ -29,7 +29,7 @@ the closed test starts. Fairway Flick and the other games stay hidden as "SOON" 
       Arena" and a "Pocket Arena" monster game) and the block game **Facetfall** (was Stack Drop:
       already a Play app title, com.rpm.stackdrop). Both new names had no match on Google Play,
       the App Store, Steam, itch.io or the web. "Break & Bank" and "Serpent Grid" were clear.
-      Package id unchanged (com.cloud198.pocketarena8; only visible in the store URL).
+      Package id changed to com.cloud198.octorival before the first upload (it can never change after).
 - [x] Facetfall look redone (was the ip-checker BLOCKER: flat classic-coloured squares in a gridded
       well): emerald-cut gems, a jewel palette where no shard keeps its shape's classic colour, a
       gridless crystal tower, and the same gems in HUD, how-to cards and hub icon. Screenshots 01,
