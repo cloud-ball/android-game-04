@@ -1,4 +1,4 @@
-# Stack Drop — Original falling-block puzzle vs CPU (Phase 1)
+# Facetfall (formerly Stack Drop) — Original falling-block puzzle vs CPU (Phase 1)
 
 Folder: games/blocks/ · rules: .claude/rules/blocks.md · build estimate: 1.5–2 weeks · risk: Low physics · HIGH legal care
 Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 11-12. Visual target: docs/refs/blocks/keyframe_1..3.png (+ clip.mp4).

@@ -2,6 +2,24 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Renamed: app "Octorival", block game "Facetfall" with its own gem look
+- Why: the pre-release originality check flagged the block game's look (flat, classic-coloured
+  squares in a dark gridded well, seen head-on) as too close to the classic falling-block game,
+  whose owner has won look-alike cases; "Stack Drop" is also already a Play app's title, and
+  "Pocket Arena" is close to two existing games. New names were checked on Google Play, the App
+  Store, Steam, itch.io and the web: "Octorival" (octo = eight games, each a rival) and
+  "Facetfall" (gem facets that fall) had no matches. Package id unchanged.
+- Facetfall look: emerald-cut gems (octagon outline, table facet, four lit bevels, sparkle, the
+  shard's glyph etched on the table); a jewel palette where no shard keeps its shape's classic
+  colour (garnet, sapphire, emerald, amethyst, rose quartz, topaz, aquamarine; L* 33-87, every step
+  >= 7); the well is tinted crystal glass with soft reflections and no grid; the tower turns a
+  little more (sway 1.5 -> 4 deg). GemArt (shared/ui) draws the same cut gem in the HUD previews,
+  the CPU mini-board, the how-to cards and the hub icon; the how-to well lost its grid too.
+- Hub title OCTORIVAL ("OCTO" in gold), card "Facetfall · Gem tower race"; Settings shows
+  "Octorival · v0.2.0". Desktop user data now lives under app_userdata/Octorival (Android is by
+  package id, unaffected).
+- All tests green. Try it: open Facetfall from the hub.
+
 ## 2026-11-17 · Break & Bank: ball colours shown as designed
 - Godot converts Color shader parameters to linear by itself; pool_view.gd converted them again,
   so every ball rendered darker than its palette: the 1-ball looked orange like the 5, the 4 navy

@@ -1,29 +1,33 @@
 class_name BlocksView
 extends Node3D
-## 3D crystal tower for Stack Drop. Reads a StackState every frame and draws it; never owns game
+## 3D crystal tower for Facetfall. Reads a StackState every frame and draws it; never owns game
 ## state. Design notes: docs/research/Stack Drop board redesign.md.
 ## - Orthographic camera locked to the canvas width, pitched 9 deg: 1 world unit = 1 cell =
 ##   BoardLayout.cell canvas units, identical at the top and bottom of the tower.
-## - Thin gem slabs (0.93 x 0.93 face, 0.55 deep) shaded in the shader (no lights): exact palette
-##   values, a lightness ladder that survives greyscale/colour-blindness, and a glyph per shard.
+## - Cut-gem slabs (0.93 x 0.93 face, 0.55 deep): a table facet, four lit bevels and a glyph per
+##   shard, shaded in the shader (no lights), in a jewel palette on a lightness ladder; the back
+##   pane is tinted crystal without a grid (originality review 2026-11-17).
 ## - A pedestal sized to fit inside the side margins, with a soft contact shadow.
 
-## Lightness ladder (~8 L* apart, each >= 3:1 against the pane). Index = shard kind A..G.
+## Jewel palette, deliberately unlike the classic falling-block colour scheme (no shard keeps the
+## classic colour of its shape), on a lightness ladder ~8 L* apart so shards stay distinct in
+## greyscale and for colour-blind players; each shard also carries its own glyph.
+## Index = shard kind A..G. Originality review 2026-11-17 (docs/store/SHIP_CHECKLIST.md).
 const GEM_COLORS: Array[Color] = [
-	Color("#186AA3"),  # A long   - blue        (L* 43)  glyph: bar
-	Color("#F3E745"),  # B square - yellow      (L* 90)  glyph: dot
-	Color("#F1A815"),  # C tee    - amber       (L* 74)  glyph: chevron
-	Color("#238665"),  # D skew   - green       (L* 50)  glyph: cross
-	Color("#E16811"),  # E skew   - vermillion  (L* 58)  glyph: diagonal
-	Color("#9CD3F9"),  # F hook   - sky         (L* 82)  glyph: ring
-	Color("#DA86B4"),  # G hook   - rose        (L* 66)  glyph: diamond
+	Color("#8E2340"),  # A long   - garnet      (L* 33)  glyph: bar
+	Color("#2F55C4"),  # B square - sapphire    (L* 40)  glyph: dot
+	Color("#178060"),  # C tee    - emerald     (L* 48)  glyph: chevron
+	Color("#9A6BE0"),  # D skew   - amethyst    (L* 55)  glyph: cross
+	Color("#D9799E"),  # E skew   - rose quartz (L* 62)  glyph: diagonal
+	Color("#E2A840"),  # F hook   - topaz       (L* 73)  glyph: ring
+	Color("#9FE6DC"),  # G hook   - aquamarine  (L* 87)  glyph: diamond
 ]
 const GARBAGE_COLOR := Color("#4A5068")
 const GLYPH_GARBAGE := 7
 const FACE := 0.93
 const DEPTH := 0.55
 const PITCH_DEG := 9.0
-const SWAY_DEG := 1.5
+const SWAY_DEG := 4.0  # slow turn of the tower: its crystal sides catch the light
 const CAMERA_DISTANCE := 60.0
 
 const GEM_SHADER := """
@@ -59,15 +63,36 @@ void fragment() {
 	vec3 base = COLOR.rgb;
 	vec3 col;
 	if (a.z >= a.x && a.z >= a.y) {
-		// Front face: rim light top/left, darker bottom/right, a soft glint, and the glyph.
+		// Front face cut like a gem: a flat table in the middle and four bevel facets, lit from
+		// the top left (top facet brightest, bottom darkest), dark seams between facets, a
+		// sparkle on the table and the shard's glyph etched into it.
 		vec2 f = lp.xy * 2.0;
-		float rim_hi = smoothstep(0.78, 0.92, f.y) + smoothstep(0.78, 0.92, -f.x);
-		float rim_lo = smoothstep(0.78, 0.92, -f.y) + smoothstep(0.78, 0.92, f.x);
-		float edge = max(rim_hi, rim_lo);
-		float glint = (1.0 - smoothstep(0.0, 0.5, length(f - vec2(-0.42, 0.42)))) * 0.16;
-		float g = glyph_mask(int(glyph + 0.5), f) * (1.0 - min(edge, 1.0));
-		col = base * (1.0 + 0.32 * min(rim_hi, 1.0) - 0.3 * min(rim_lo, 1.0) + glint);
-		col = mix(col, col * 0.74, g);
+		vec2 af = abs(f);
+		float table = 0.56;
+		float m = max(af.x, af.y);
+		float k;
+		if (m < table) {
+			k = 1.02 + 0.12 * (f.y - f.x) * 0.5;
+		} else if (af.y >= af.x) {
+			k = f.y > 0.0 ? 1.42 : 0.58;
+		} else {
+			k = f.x < 0.0 ? 1.16 : 0.78;
+		}
+		// Emerald cut: chamfered corners on the table and on the outline (an octagon, not a tile).
+		float dia = af.x + af.y;
+		float seam = 1.0 - smoothstep(0.0, 0.05, abs(m - table));
+		seam = max(seam, (1.0 - smoothstep(0.0, 0.05, abs(af.x - af.y))) * step(table, m));
+		seam = max(seam, smoothstep(0.9, 0.98, m));
+		float chamfer = 1.0 - smoothstep(0.0, 0.05, abs(dia - table * 1.55));
+		seam = max(seam, chamfer * step(dia, table * 1.6) * step(table * 0.75, m));
+		float cut = smoothstep(1.48, 1.56, dia);  // outside the octagon: the dark setting
+		float glint = (1.0 - smoothstep(0.0, 0.16, length(f - vec2(-0.28, 0.3)))) * 0.55;
+		float g = glyph_mask(int(glyph + 0.5), f / table * 0.62) * step(m, table - 0.06);
+		col = base * k * mix(0.9, 1.08, f.y * 0.5 + 0.5);
+		col = mix(col, col * 0.72, g);
+		col = mix(col, base * 0.35, seam * 0.85);
+		col += vec3(glint);
+		col = mix(col, base * 0.22, cut);
 	} else if (a.y >= a.x) {
 		col = base * (lp.y > 0.0 ? 1.18 : 0.55);  // top face catches light, underside is dark
 	} else {
@@ -97,15 +122,18 @@ const PANE_SHADER := """
 shader_type spatial;
 render_mode unshaded, cull_disabled;
 uniform vec2 cells = vec2(12.0, 24.0);
-uniform vec3 pane : source_color = vec3(0.075, 0.098, 0.172);
-uniform vec3 line : source_color = vec3(0.2, 0.24, 0.38);
+uniform vec3 pane : source_color = vec3(0.06, 0.09, 0.17);
+uniform vec3 glint : source_color = vec3(0.32, 0.42, 0.62);
 void fragment() {
-	vec2 g = UV * cells;
-	vec2 d = abs(fract(g + 0.5) - 0.5);
-	vec2 fw = fwidth(g);
-	vec2 l = 1.0 - smoothstep(fw * 0.5, fw * 1.5, d);
-	float shade = mix(0.82, 1.08, 1.0 - UV.y);
-	ALBEDO = mix(pane * shade, line, max(l.x, l.y) * 0.8);
+	// The back of a crystal tower: deep tinted glass, no grid. Two soft diagonal reflections and
+	// frosted edges give it depth; the landing preview shows where a shard will go.
+	float shade = mix(0.8, 1.12, 1.0 - UV.y);
+	vec3 c = pane * shade;
+	float diag = UV.x * 0.55 + UV.y;
+	float band = smoothstep(0.06, 0.0, abs(fract(diag * 0.9) - 0.32)) * 0.22;
+	band += smoothstep(0.025, 0.0, abs(fract(diag * 0.9 + 0.17) - 0.32)) * 0.14;
+	float edge = smoothstep(0.08, 0.0, min(UV.x, 1.0 - UV.x)) * 0.35;
+	ALBEDO = c + glint * (band + edge);
 }
 """
 

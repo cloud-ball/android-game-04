@@ -1,4 +1,4 @@
-# Project: Pocket Arena 8 — 3D mini-game hub (Godot 4.7.x, GDScript, Jolt)
+# Project: Octorival (formerly Pocket Arena 8) — 3D mini-game hub (Godot 4.7.x, GDScript, Jolt)
 
 ## Golden rules
 - Every game is an ORIGINAL design described by mechanics/genre. Never name, copy, or imitate a

@@ -1,6 +1,6 @@
 class_name BlocksHud
 extends GameShell
-## Stack Drop HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout:
+## Facetfall HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout:
 ## a top band (CPU mini-board, status plate, pause; then a tappable HOLD box beside the NEXT strip).
 ## Nothing covers the well. Holds no game state.
 
@@ -34,7 +34,7 @@ var _cpu: StackState
 func _ready() -> void:
 	configure(
 		{
-			"title": "Stack Drop",
+			"title": "Facetfall",
 			"accent": ACCENT,
 			"modes": {"vs": "vs CPU", "solo": "Solo"},
 			"blurbs":
@@ -275,7 +275,7 @@ func _draw_cpu(c: Control) -> void:
 				else BlocksView.GEM_COLORS[v - 1]
 			)
 			var pos := origin + Vector2(x, y - StackState.HIDDEN) * cell
-			c.draw_rect(Rect2(pos, Vector2(cell - 1, cell - 1)), col)
+			GemArt.draw(c, Rect2(pos, Vector2(cell - 1, cell - 1)), col)
 	if _cpu.pending_garbage > 0:
 		var h := minf(rows, _cpu.pending_garbage) * cell
 		c.draw_rect(
@@ -284,7 +284,7 @@ func _draw_cpu(c: Control) -> void:
 
 
 ## Draws one shard (spawn orientation) centred on `centre` with square cells of `cell` units:
-## gem face, a lighter top band, and a dark gap that doubles as an outline.
+## emerald-cut gems (GemArt) with a small gap between cells.
 static func draw_shard_at(
 	c: Control, kind: int, centre: Vector2, cell: float, alpha: float
 ) -> void:
@@ -301,14 +301,7 @@ static func draw_shard_at(
 	var gap := maxf(2.0, cell * 0.07)
 	for p in cells:
 		var r := Rect2(origin + Vector2(p - min_c) * cell, Vector2(cell - gap, cell - gap))
-		c.draw_rect(r, col)
-		c.draw_rect(
-			Rect2(r.position, Vector2(r.size.x, r.size.y * 0.18)), Color(1, 1, 1, 0.3 * alpha)
-		)
-		c.draw_rect(
-			Rect2(r.position + Vector2(0, r.size.y * 0.82), Vector2(r.size.x, r.size.y * 0.18)),
-			Color(0, 0, 0, 0.22 * alpha)
-		)
+		GemArt.draw(c, r, col)
 
 
 ## Draws a shard fitted into `box` (used by the how-to illustrations).

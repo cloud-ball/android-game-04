@@ -32,7 +32,7 @@ func _flag(kind: String, detail: String) -> void:
 		_violations[kind].examples.append(detail)
 
 
-# --- Stack Drop -------------------------------------------------------------------------------
+# --- Facetfall -------------------------------------------------------------------------------
 
 
 func _fuzz_blocks(seed_value: int) -> void:
