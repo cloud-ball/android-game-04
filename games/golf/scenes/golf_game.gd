@@ -41,6 +41,8 @@ const NAMES := {
 	-3: "Albatross!", -2: "Eagle!", -1: "Birdie!", 0: "Par", 1: "Bogey", 2: "Double bogey"
 }
 
+static var _warmed := false  # shaders compiled this session (FxWarmup)
+
 var mode: int = Mode.INTRO
 
 var _save: Dictionary
@@ -100,6 +102,7 @@ var _trail_speed := PackedFloat32Array()
 var _trail_head := 0
 var _trail_n := 0
 var _trail: ImmediateMesh
+var _fx_mat: Material  # guide and trail (vertex colours), for the warm-up
 var _flag_cloth: MeshInstance3D
 var _stars: Label
 var _hud_top: Label
@@ -184,6 +187,7 @@ func _load_hole(i: int) -> void:
 	gm.cull_mode = BaseMaterial3D.CULL_DISABLED
 	guide.material_override = gm
 	_world.add_child(guide)
+	_fx_mat = gm
 	_puff = _particles(14, 0.6, Vector2(1.0, 2.5), 0.05)
 	_splash = _particles(30, 0.9, Vector2(2.5, 5.0), 0.07)
 	_splash.color = Color(0.85, 0.93, 1.0)
@@ -368,6 +372,19 @@ func _start_hole() -> void:
 	_card.modulate.a = 1.0
 	_hint.text = "Tap to skip"
 	_cam_ready = false
+	if not _warmed and not Boot.options.has("nowarm"):  # --nowarm: A/B the first-drag stall
+		_warmed = true
+		var w := FxWarmup.new()
+		add_child(w)
+		w.start(
+			_cam,
+			[_puff, _splash, _confetti, _sparks],
+			_fx_mat,
+			[_ring],
+			[_banner, _stars],
+			_power_ui.get_parent(),
+			UiKit.font(900)
+		)
 	_refresh()
 
 
@@ -522,7 +539,7 @@ func _safe_spot(p: Vector3) -> Vector3:
 func _physics_process(delta: float) -> void:
 	match mode:
 		Mode.INTRO:
-			_intro_t += delta
+			_intro_t += minf(delta, 1.0 / 30.0)  # a warm-up hitch must not skip the fly-in
 			if _intro_t >= INTRO_TIME or (Boot.bot and _intro_t > 0.8):
 				_new_shot()
 		Mode.AIM:
