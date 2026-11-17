@@ -204,6 +204,10 @@ func _about() -> Control:
 	)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(note)
+	var licences := UiKit.button("Open-source licences", Color(1, 1, 1, 0.08), UiKit.MUTED, 28, 72)
+	licences.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	licences.pressed.connect(func() -> void: get_tree().root.add_child(LicensesView.new()))
+	text.add_child(licences)
 	h.add_child(text)
 	return box
 

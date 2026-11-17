@@ -15,6 +15,7 @@ extends Node
 ##   --howto=<card>       open the how-to cards at that card (--howto-ms=<t> freezes it there)
 ##   --practice           show first-match practice hints even for moves already learned
 ##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
+##   --licenses           open the open-source licences page over the hub (screenshot QA)
 
 var options: Dictionary = {}
 var bot := false
@@ -43,6 +44,8 @@ func _ready() -> void:
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra, true)
+	if options.has("licenses"):
+		get_tree().root.add_child.call_deferred(LicensesView.new())
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
 
 
