@@ -65,3 +65,31 @@ func test_every_kit_material_has_a_theme_colour_below_the_ball() -> void:
 		assert_bool(c == Color.MAGENTA).override_failure_message("unmapped: " + n).is_false()
 		assert_float(lum.call(c)).is_less(lum.call(t.ball) * 0.75)
 	assert_float(lum.call(t.kit_color("wood"))).is_less(lum.call(t.rail_body))
+
+
+func test_forecast_matches_a_full_run_without_a_long_frame() -> void:
+	var d := MiniBaker.bake(MiniBaker.load_spec("res://games/golf/data/mini/meadow_01.json"))
+	var pr := CoursePreset.new()
+	pr.stimp = 9.0
+	# A gentle straight putt from 1 m in front of the cup (drops), and a long tee shot.
+	for shot in [[d.pin.x, d.pin.z + 1.0, 0.0, -1.2], [d.tee.x, d.tee.z, 0.0, -6.0]]:
+		var full := GolfBall.new(d, pr)
+		full.putt(shot[0], shot[1], shot[2], shot[3])
+		full.run_to_rest()
+		var copy := GolfBall.new(d, pr)
+		copy.putt(shot[0], shot[1], shot[2], shot[3])
+		var f := ShotForecast.new()
+		f.start(copy)
+		var ticks := 0
+		while not f.ready and ticks < 100000:
+			f.advance()
+			ticks += 1
+		var substeps := int(ceil(full.time / GolfFlight.SUBSTEP))
+		# Never more than STEPS_PER_TICK substeps in one tick: 10x faster than real play.
+		assert_int(ticks).is_greater_equal(substeps / ShotForecast.STEPS_PER_TICK)
+		var want := full.time if full.phase == GolfBall.Phase.HOLED else -1.0
+		assert_float(f.hole_at).is_equal(want)
+	var near := GolfBall.new(d, pr)
+	near.putt(d.pin.x, d.pin.z + 1.0, 0.0, -1.2)
+	near.run_to_rest()
+	assert_int(near.phase).is_equal(GolfBall.Phase.HOLED)

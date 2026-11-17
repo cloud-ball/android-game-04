@@ -2,6 +2,26 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Fairway Flick: emulator check, release-hitch fix
+- No phone available, so the Pixel 3a emulator (API 36) was used. Its Vulkan bridge can't present
+  frames on this Mac (black screen, "Couldn't present to Vulkan queue"), with host or SwiftShader
+  GPUs; started with `-gpu host -feature -Vulkan` Godot falls back to OpenGL (Compatibility) and
+  runs. Colours there look paler than on a phone (different renderer); fps on a Mac GPU says
+  nothing about a mid-range phone, but it does show stalls.
+- Findings: 60 fps on all three holes; the course, windmill, kit props, fence and flowers all
+  render. Two kinds of stall:
+  - The look-ahead that times slow motion ran the whole shot in the release frame (up to 45 ms on
+    the Mac). Fixed: ShotForecast runs it at most 40 substeps per tick (10x real time) over the
+    next frames; tested to give the exact same answer. Release is now smooth.
+  - The very first drag of a session stalls ~2 s while the renderer compiles the guide / power
+    ring / trail materials (a second drag is smooth). Fix planned: warm-up during the intro
+    (visual step 8).
+  - The `--bot` test mode's shot search takes 1-2 s per shot; dev-only, left as is.
+- Emulator recipe: `emulator -avd Pixel_3a_API_36_extension_level_17_arm64-v8a -gpu host
+  -feature -Vulkan -no-snapshot-save`; shots by `adb shell input motionevent DOWN/MOVE/UP`
+  (a plain `input swipe` was not seen as a drag).
+- 254 tests green.
+
 ## 2026-11-17 · Fairway Flick mini-golf: ambient life + a colour bug fixed (visual step 6)
 - Plan: docs/plans/2026-11-15-fairway-flick-ambient.md.
 - Wind: leaves, bushes, grass and flowers sway (one shared foliage shader; KitBatch now stores a

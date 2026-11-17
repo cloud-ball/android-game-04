@@ -88,6 +88,8 @@ var _fx_rng := Rng.make(0x6f1f)
 var _clock := PresentationClock.new()
 var _hole_at := -1.0  # solver time the predicted cup drop happens (-1: this shot misses)
 var _slowmo := false
+var _slow_ok := false  # this shot would earn slow motion if it drops
+var _forecast := ShotForecast.new()
 var _kick := Vector3.ZERO  # camera kick on release, springs back
 var _trauma := 0.0  # screen shake 0..1 (hole-in-one), decays
 var _squash := 0.0  # seconds of ball squash left after a rail hit
@@ -417,13 +419,15 @@ func _shoot() -> void:
 	_ball = GolfBall.new(_hole, _preset, _ball.p)
 	var v := _shot_dir * _speed(_power)
 	_ball.putt(_ball_at.x, _ball_at.z, v.x, v.z)
-	# Will it drop, and when? (Same solver, same steps: exact.) Great hole-outs get slow motion.
+	# Will it drop, and when? A copy runs ahead over the next frames (no hitch at release); great
+	# hole-outs get slow motion.
 	var probe := GolfBall.new(_hole, _preset, _ball.p)
 	probe.putt(_ball_at.x, _ball_at.z, v.x, v.z)
-	probe.run_to_rest()
-	_hole_at = probe.time if probe.phase == GolfBall.Phase.HOLED else -1.0
+	_forecast.start(probe)
+	_hole_at = -1.0
+	_slowmo = false
 	var dist := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
-	_slowmo = _hole_at > 0.0 and (_strokes == 1 or _strokes < _hole.par or dist > 6.0)
+	_slow_ok = _strokes == 1 or _strokes < _hole.par or dist > 6.0
 	_clock.reset()
 	_trail_n = 0
 	AudioService.play("clack", 0.65 + 0.3 * _power, -6.0 + 6.0 * _power)
@@ -531,6 +535,11 @@ func _physics_process(delta: float) -> void:
 			_prev = _cur
 			# Slow motion only changes how many fixed substeps run per tick (PresentationClock):
 			# the shot itself is bit-identical.
+			if not _forecast.ready:
+				_forecast.advance()
+				if _forecast.ready:
+					_hole_at = _forecast.hole_at
+					_slowmo = _hole_at > 0.0 and _slow_ok
 			var slow := _slowmo and _ball.time > _hole_at - 0.6 and _ball.time < _hole_at + 0.15
 			_clock.rate = SLOWMO if slow else 1.0
 			for i in _clock.take():
