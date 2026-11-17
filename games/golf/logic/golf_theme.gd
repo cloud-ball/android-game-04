@@ -6,8 +6,8 @@ extends RefCounted
 ## Colour meanings stay fixed across worlds: red-orange = danger, amber = boost, tan = sand.
 
 var name := "meadow"
-var lawn := Color(0.32, 0.54, 0.23)
-var carpet := Color(0.2, 0.62, 0.32)
+var lawn := Color(0.28, 0.46, 0.2)
+var carpet := Color(0.14, 0.58, 0.26)
 var sand := Color(0.93, 0.84, 0.62)
 var water := Color(0.1, 0.38, 0.6)
 var rail_body := Color(0.86, 0.66, 0.42)  # light painted wood, lighter than the carpet
