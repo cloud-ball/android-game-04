@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Pocket Arena 8"
 config/description="Original 3D mini-games against the computer. Offline."
-config/version="0.1.0"
+config/version="0.2.0"
 run/main_scene="res://hub/hub.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/bg_color=Color(0.0627451, 0.0705882, 0.141176, 1)
