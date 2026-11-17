@@ -70,6 +70,7 @@ func build(hole: HoleData, spec: Dictionary, seed_value := 1, theme: GolfTheme =
 	_trees(hole, seed_value, spot)
 	_fence(hole, spot)
 	_vignettes(hole, seed_value, spot)
+	_life(hole, seed_value)
 	_windmill(Vector3(spot.x, GROUND_Y, spot.y), view)
 	landmark = Vector3(spot.x, GROUND_Y + 11.0 * LANDMARK_SCALE, spot.y)
 
@@ -99,12 +100,12 @@ func _environment() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.ambient_light_energy = 0.75
-	# Filmic with a little extra exposure and saturation: a bright, sunny toy-diorama look (AgX
-	# came out dull and dark on the carpet in screenshots).
+	# Filmic with a touch of exposure and saturation: a bright, sunny toy-diorama look. (Exposure
+	# was 1.18 while the terrain colours were wrongly converted to linear twice - see GolfTerrain.)
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.18
+	env.tonemap_exposure = 1.05
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.15
+	env.adjustment_saturation = 1.1
 	env.adjustment_contrast = 1.04
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.7, 0.82, 0.92)
@@ -347,7 +348,7 @@ func _fence(hole: HoleData, spot: Vector2) -> void:
 			var basis := Basis(Vector3.UP, atan2(-d.y, d.x)) * Basis.from_scale(Vector3(3, 2, 3))
 			# The model's panel sits on its tile's back edge (z -0.465): centre it on the line.
 			var at := Vector3(c.x, _ground_y(c.x, c.y), c.y) + basis * Vector3(0, 0, 0.465)
-			batch.add("fence_simple", Transform3D(basis, at))
+			batch.add("fence_simple", Transform3D(basis, at), false)
 	batch.build(self, _theme)
 
 
@@ -380,7 +381,9 @@ func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 			return Vector3(c.x, y, c.y) + turn * Vector3(dx, 0, dz)
 		match placed % 4:
 			0:  # log pile with two stumps
-				big.add("log_stack", Transform3D(turn.scaled(Vector3.ONE * 2.6), at.call(0, 0)))
+				big.add(
+					"log_stack", Transform3D(turn.scaled(Vector3.ONE * 2.6), at.call(0, 0)), false
+				)
 				big.add(
 					"stump_round", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(1.4, 0.6))
 				)
@@ -391,7 +394,7 @@ func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 				for m in 4:
 					var model := "mushroom_redGroup" if m % 2 == 0 else "mushroom_tanGroup"
 					var p: Vector3 = at.call(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
-					small.add(model, Transform3D(turn.scaled(Vector3.ONE * 2.0), p))
+					small.add(model, Transform3D(turn.scaled(Vector3.ONE * 2.0), p), false)
 				for g in 3:
 					var p2: Vector3 = at.call(
 						rng.randf_range(-1.2, 1.2), rng.randf_range(-1.2, 1.2)
@@ -400,7 +403,7 @@ func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 			2:  # two planters with flowers
 				for k in 2:
 					var p3: Vector3 = at.call(k * 1.5 - 0.75, 0)
-					big.add("pot_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p3))
+					big.add("pot_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p3), false)
 					for f in 3:
 						var fl: String = ["flower_redA", "flower_yellowB", "flower_purpleA"][f]
 						var fp := (
@@ -408,15 +411,46 @@ func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 						)
 						small.add(fl, Transform3D(turn.scaled(Vector3.ONE * 1.6), fp))
 			3:  # rock garden
-				big.add("rock_largeA", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(0, 0)))
+				big.add(
+					"rock_largeA", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(0, 0)), false
+				)
 				for r in 3:
 					var p4: Vector3 = at.call(
 						rng.randf_range(-1.6, 1.6), rng.randf_range(-1.6, 1.6)
 					)
-					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.6), p4))
+					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.6), p4), false)
 		placed += 1
 	big.build(self, _theme)
 	small.build(self, _theme, false)
+
+
+## Butterflies over lawn spots just outside the rails (spread out), birds around the landmark.
+func _life(hole: HoleData, seed_value: int) -> void:
+	var rng := Rng.make(seed_value * 7 + 11)
+	var spots := PackedVector3Array()
+	var w := hole.walls
+	var tries := 0
+	while spots.size() < AmbientLife.BUTTERFLIES and tries < 60 and w.size() >= 4:
+		tries += 1
+		var o := rng.randi_range(0, w.size() / 4 - 1) * 4
+		var a := Vector2(w[o], w[o + 1])
+		var b := Vector2(w[o + 2], w[o + 3])
+		var d := (b - a).normalized()
+		var q := a.lerp(b, rng.randf()) + Vector2(-d.y, d.x) * (1.3 if rng.randf() < 0.5 else -1.3)
+		if hole.surface_at(q.x, q.y) != HoleData.Surface.OUT:
+			continue
+		var y := hole.height(q.x, q.y)
+		if y < MiniBaker.LAWN - 0.05:
+			continue
+		var p := Vector3(q.x, y, q.y)
+		var near := false
+		for s in spots:
+			near = near or s.distance_to(p) < 4.0
+		if not near:
+			spots.append(p)
+	var life := AmbientLife.new()
+	add_child(life)
+	life.build(spots, landmark, _theme)
 
 
 func _multi(

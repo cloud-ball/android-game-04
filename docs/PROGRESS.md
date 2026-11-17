@@ -2,6 +2,27 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Fairway Flick mini-golf: ambient life + a colour bug fixed (visual step 6)
+- Plan: docs/plans/2026-11-15-fairway-flick-ambient.md.
+- Wind: leaves, bushes, grass and flowers sway (one shared foliage shader; KitBatch now stores a
+  per-vertex sway weight, 0 at a prop's base, so trunks, rocks, logs, pots, fences and mushrooms
+  stay put). The gust travels across the world instead of everything moving in step.
+- Slow cloud shadows drift across course and lawn (terrain shader, at most 13% darker).
+- The flag cloth ripples. Five butterflies loop over spots beside the rails; four birds circle
+  high around the windmill (one MultiMesh each, wings flapped in the shader, transforms updated
+  with value types only).
+- Reduce motion (Settings): no critters, no sway, no flag ripple, clouds frozen.
+- Colour bug found and fixed: Godot already converts Color shader parameters to linear, and the
+  terrain (and the new shaders) converted them again, so the lawn and carpet rendered much darker
+  and duller than their palette since the start. Proven with a render test of four quads. The
+  meadow was re-tuned for the true colours (lawn 0.28/0.46/0.20, carpet 0.14/0.58/0.26, exposure
+  1.18 -> 1.05, saturation 1.15 -> 1.1): brighter and sunnier, carpet a rich green.
+  Note: Break & Bank's ball shader has the same double conversion (pool_view.gd `colors`), left
+  alone on this branch.
+- KitBatch builds were briefly empty (packed arrays read from a Dictionary are copies); a new test
+  checks a batch holds every placed copy.
+- 253 tests green. Phone: build installed; the fps check is pending (wireless adb dropped).
+
 ## 2026-11-15 · Fairway Flick mini-golf: CC0 kit dressing (visual step 5)
 - 18 models from Kenney's Nature Kit 2.1 (CC0, licence file kept beside them) in
   games/golf/assets/kenney_nature/, 200 KB, no textures; one ASSETS.md row per file. Preview

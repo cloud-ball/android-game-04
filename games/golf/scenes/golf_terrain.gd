@@ -16,7 +16,8 @@ render_mode diffuse_lambert_wrap, specular_schlick_ggx;
 uniform sampler2D surf : filter_nearest, repeat_disable;
 uniform vec2 origin;
 uniform vec2 extent;
-uniform vec4 cols[9];
+uniform vec4 cols[9];  // sRGB Colors in; Godot hands the shader linear values
+uniform float motion = 1.0;  // 0 with reduce motion: the clouds stand still
 varying vec3 wpos;
 varying float ao;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -51,6 +52,10 @@ void fragment() {
 		// Grass: patchy tones at two scales.
 		c *= 0.8 + 0.2 * vnoise(wpos.xz * 0.35) + 0.12 * vnoise(wpos.xz * 4.0);
 	}
+	// Slow cloud shadows: big soft blobs drifting across course and lawn, at most 13% darker.
+	vec2 drift = TIME * motion * vec2(0.036, 0.015);
+	float cloud = smoothstep(0.52, 0.82, vnoise(wpos.xz * 0.03 + drift));
+	c *= 1.0 - 0.13 * cloud;
 	ALBEDO = c * ao;
 	ROUGHNESS = rough;
 	RIM = rim;
@@ -98,8 +103,9 @@ func build(h: HoleData, theme: GolfTheme = null) -> void:
 		palette[HoleData.Surface.WATER] = theme.water
 	var cols := PackedColorArray()
 	for c in palette:
-		cols.append((c as Color).srgb_to_linear())
+		cols.append(c as Color)  # Godot converts shader Colors to linear itself
 	mat.set_shader_parameter("cols", cols)
+	mat.set_shader_parameter("motion", AmbientLife.motion())
 	var rx := h.nx / STEP
 	var rz := h.nz / STEP
 	for cj in range(0, rz, CHUNK):

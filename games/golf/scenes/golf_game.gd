@@ -160,9 +160,8 @@ func _load_hole(i: int) -> void:
 	pole.bottom_radius = 0.025
 	pole.height = 1.6
 	_mesh(pole, Color(0.96, 0.96, 0.96), false, _flag).position.y = 0.8
-	var cloth := BoxMesh.new()
-	cloth.size = Vector3(0.6, 0.38, 0.02)
-	_flag_cloth = _mesh(cloth, _theme.flag, false, _flag)
+	_flag_cloth = AmbientLife.flag_cloth(Vector3(0.6, 0.38, 0.02), _theme.flag)  # ripples
+	_flag.add_child(_flag_cloth)
 	_flag_cloth.position = Vector3(0.3, 1.4, 0)
 	_cup_glow = _mesh(_disc(_hole.cup_r * 3.0), Color(1.0, 0.85, 0.3, 0.4), true, _flag)
 	var gm2 := _cup_glow.material_override as StandardMaterial3D

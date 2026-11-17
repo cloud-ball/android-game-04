@@ -178,7 +178,7 @@ static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -
 				var turn := Basis(Vector3.UP, yaw)
 				var at := Vector3(q.x, y, q.y)
 				if roll < 0.14:  # a low stone
-					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.3), at))
+					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.3), at), false)
 				elif roll < 0.48:  # a bush, about rail height
 					var model := "plant_bush" if roll < 0.36 else "plant_bushLarge"
 					var sz := rng.randf_range(1.6, 2.0)
