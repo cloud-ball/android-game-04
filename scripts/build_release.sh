@@ -35,7 +35,7 @@ fi
 rm -f "$log"
 
 mkdir -p build
-out="build/pocket-arena-8-v${name}-${code}.aab"
+out="build/octorival-v${name}-${code}.aab"
 echo "Exporting $out ..."
 GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$PA8_KEYSTORE" \
 GODOT_ANDROID_KEYSTORE_RELEASE_USER="${PA8_KEY_ALIAS:-upload}" \
