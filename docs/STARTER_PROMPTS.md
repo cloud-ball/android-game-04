@@ -1,4 +1,4 @@
-# Pocket Arena 8 — starter prompts for Claude Code
+# Octorival (formerly Pocket Arena 8) — starter prompts for Claude Code
 
 Run **one prompt per session**, in plan mode (Shift+Tab or `claude --permission-mode plan`) for anything touching more than 3 files; approve the plan, then let Claude implement.
 
@@ -49,7 +49,7 @@ Read CLAUDE.md and .claude/rules/snake.md. Implement pure grid logic with tests 
 Add swipe input via InputKit and the rival snake (A* + flood-fill safety) with tests.
 ```
 
-### Weeks 4–5 · Stack Drop (games/blocks) — details in docs/games/blocks.md
+### Weeks 4–5 · Facetfall (games/blocks) — details in docs/games/blocks.md
 
 1.
 ```

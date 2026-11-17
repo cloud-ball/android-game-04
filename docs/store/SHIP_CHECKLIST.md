@@ -38,7 +38,7 @@ the closed test starts. Fairway Flick and the other games stay hidden as "SOON" 
 ## You (one time)
 1. **Upload key**: `scripts/make_upload_key.sh` → pick a strong password → back up the .jks file AND
    the password (password manager + offline copy). Then add to ~/.zshrc:
-   `export PA8_KEYSTORE=~/.android-keys/pocketarena8-upload.jks`
+   `export PA8_KEYSTORE=~/.android-keys/octorival-upload.jks`
 2. **Build**: `export GODOT=/opt/homebrew/bin/godot && scripts/build_release.sh`
    → `build/octorival-v0.2.0-1.aab` (asks for the key password; runs the tests first).
    Version code 1 is right for the very first upload; use `--bump` for every later upload.

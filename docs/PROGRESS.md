@@ -2,6 +2,18 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-17 · Open-source licence page; second originality check passed
+- Second ip-checker pass: the old Facetfall (Stack Drop) look-alike blocker is resolved; no shard
+  keeps its shape's classic colour, no grid, no new blockers.
+- Settings → About → "Open-source licences": a scrollable page with Godot's MIT licence and every
+  bundled component's copyright and licence, built from the engine's own data
+  (shared/ui/licenses_view.gd; tested). Godot's licence requires these notices to ship.
+  `--licenses` dev switch opens it over the hub for screenshots.
+- Leftover old names cleaned up: export file names, CI artifact, upload key default file name
+  (~/.android-keys/octorival-upload.jks), the Facetfall scene's root node, GDD / starter prompts /
+  blocks design doc (the old flat-squares concept images are marked superseded). ASSETS.md now also
+  lists the store source captures and the design references.
+
 ## 2026-11-17 · Renamed: app "Octorival", block game "Facetfall" with its own gem look
 - Why: the pre-release originality check flagged the block game's look (flat, classic-coloured
   squares in a dark gridded well, seen head-on) as too close to the classic falling-block game,
