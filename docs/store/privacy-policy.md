@@ -1,6 +1,6 @@
 # Privacy Policy: Pocket Arena 8
 
-_Last updated: 10 November 2026_
+_Last updated: 17 November 2026_
 
 Pocket Arena 8 ("the app") is a collection of single-player games played against the computer.
 
