@@ -11,8 +11,10 @@ extends RefCounted
 
 enum Tier { EASY, MEDIUM, HARD }
 
-const AIM_SIGMA_DEG := [3.5, 2.0, 1.5]
-const SPEED_SIGMA := [0.10, 0.06, 0.045]  # fraction of the planned speed
+## Tuned by self-play on all 36 holes (tools/golf_selfplay.gd, 432 plays per tier, 2026-11-19):
+## CPU beats the decent-player baseline 27.2 / 51.7 / 73.0 % (targets 25 / 50 / 70).
+const AIM_SIGMA_DEG := [3.5, 2.0, 1.0]
+const SPEED_SIGMA := [0.10, 0.06, 0.03]  # fraction of the planned speed
 const TOP_K := [3, 1, 1]
 ## Seconds a CPU golfer pauses before each shot in Rush, [min, max] per tier.
 const THINK_S := [[2.8, 4.4], [2.3, 3.8], [2.1, 3.4]]  # human pace (self-play)
