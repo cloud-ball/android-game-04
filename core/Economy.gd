@@ -5,7 +5,7 @@ signal coins_changed(total: int)
 
 
 func coins() -> int:
-	return int(SaveService.data["economy"].get("coins", 0))
+	return maxi(0, int(SaveService.coerce(SaveService.data["economy"].get("coins", 0), 0)))
 
 
 func add_coins(amount: int) -> void:

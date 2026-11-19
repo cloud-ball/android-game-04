@@ -1,7 +1,7 @@
 # Serpent Grid — Snake vs CPU (Phase 1)
 
 Folder: games/snake/ · rules: .claude/rules/snake.md · build estimate: ~1 week · risk: Low
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 15-16. Visual target: docs/refs/snake/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 15-16. Visual target: docs/refs/snake/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
 No physics. Discrete grid logic (e.g., 12×18 or 20×20) rendered as 3D blocks on a floating board, smoothly interpolated between ticks.

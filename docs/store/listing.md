@@ -1,30 +1,54 @@
-# Google Play listing: Pocket Arena 8 v0.1.0 (Serpent Grid)
+# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank, Cup Dash)
 
 Paste these into Play Console → Grow → Store presence → Main store listing.
 Never mention other companies' games or trademarks here or in keywords (see guide p. 5).
 
 ## App name (≤ 30)
-Pocket Arena 8
+Playjar
 
 ## Short description (≤ 80)
-Outsmart a CPU snake on a neon 3D grid. Offline, no ads, no account.
+Snake, pool, mini-golf and gem races vs a smart CPU. Offline, no ads.
 
 ## Full description (≤ 4000)
-Pocket Arena 8 is a growing collection of original 3D mini-games you play against the computer: offline, and with no account needed.
+Playjar is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
 
-The first game is SERPENT GRID, a head-to-head snake duel on a floating neon grid in deep space:
-• Swipe anywhere to turn. A small glowing arrow confirms every turn, and quick double swipes make tight U-turns.
-• Eat glowing orbs to grow longer and score. Ripples of light run across the grid with every bite.
-• The edges wrap around: slip out one side and come back on the other.
-• A CPU rival hunts the same orbs. Cut it off and make it crash into you first.
-• Three difficulty levels (Easy, Medium, Hard), or play Solo and chase your best score.
-• Matches last one to three minutes, so they fit any break.
-• Earn coins, beat your best score, and finish a new daily challenge every day.
+Four games are ready today:
+
+SERPENT GRID: a head-to-head snake duel on a floating neon grid
+• Swipe anywhere to turn; quick double swipes make tight U-turns.
+• Eat glowing orbs to grow longer. The edges wrap around, so slip out one side and come back on the other.
+• Cut off the CPU snake and make it crash into you first, or play Solo and chase your best score.
+
+FACETFALL: a falling-gem race inside a crystal tower
+• Turn and slide emerald-cut gem shards to fill complete rows and clear them.
+• Hold a shard for later and plan ahead with a three-piece preview.
+• Race the CPU side by side: every row you clear pushes rows into its tower.
+
+BREAK & BANK: eight-ball billiards against a CPU that thinks like a player
+• Point to aim, fine-tune on the side, pull back for power and add spin.
+• Real ball physics: spin, cushion bounces and pockets behave as you expect.
+• Casual 8 rules with ball in hand after a foul. Play a best-of-three match.
+
+CUP DASH: mini-golf races against three CPU golfers
+• Drag back and let go to putt; an aim guide shows where the ball will go.
+• Rush: everyone plays the same hole at once, and the first ball in the cup wins it.
+• Tour: play nine holes on your own and earn stars for par, birdies and aces.
+• Four worlds and 36 holes: a meadow, a windy coast, a canyon of big jumps and a volcano with lava.
+
+In every game
+• Three difficulty levels: Easy, Medium and Hard.
+• Matches take a few minutes, so they fit any break.
+• Earn coins, beat your best scores and complete a new daily challenge every day.
+• Short how-to-play cards the first time you open a game.
 • Original music and sound, with separate switches for music, sound effects and vibration.
 
-More original games (pool, falling blocks, chess, carrom, penalties, golf and driving) are on the way in free updates.
+More original games (chess, carrom, penalties and driving) are on the way in free updates.
 
 No ads. No in-app purchases. No internet permission. Your progress stays on your phone.
+
+## Contact details (Store settings → Store listing contact details)
+- Email: cloud198games@gmail.com
+- Website: https://cloud-ball.github.io/
 
 ## Category and tags
 - App or game: Game · Category: Arcade
@@ -35,14 +59,15 @@ No ads. No in-app purchases. No internet permission. Your progress stays on your
 |---|---|---|
 | App icon | icon_512.png | 512×512 PNG, no alpha ✓ |
 | Feature graphic | feature_graphic_1024x500.png | 1024×500 ✓ |
-| Phone screenshots | screenshots/01_hub.png … 05_settings.png | 1260×2520 (2:1) ✓, 5 shots (min 2) |
+| Phone screenshots | screenshots/01_hub.png … 08_facetfall_race.png | 1080×1920 (9:16) ✓, 8 shots with captions (min 2, max 8) |
 
 ## App content answers (Policy → App content)
-- **Privacy policy URL**: host docs/store/privacy-policy.md publicly (see SHIP_CHECKLIST.md) and paste the URL.
+- **Privacy policy URL**: https://cloud-ball.github.io/privacy.html
 - **Ads**: No, the app does not contain ads.
 - **App access**: All functionality is available without special access.
 - **Content rating (IARC questionnaire)**: Game; no violence beyond abstract shapes colliding, no fear, sex,
-  language, drugs, gambling, user interaction, sharing of location, or purchases. Expected: Everyone / PEGI 3.
+  language, drugs, gambling (coins are only earned, never bought, spent or wagered; pool has no betting),
+  user interaction, sharing of location, or purchases. Expected: Everyone / PEGI 3.
 - **Target audience**: 13+ (keeps the app out of the Families programme's extra requirements for now).
 - **Data safety**: No data collected; no data shared. The app has no internet permission. Data is not
   encrypted in transit (none is transmitted). Users cannot request deletion because nothing leaves the device;

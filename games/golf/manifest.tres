@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_manifest")
 id = "golf"
-display_name = "Fairway Flick"
-subtitle = "Golf"
-scene = ""
+display_name = "Cup Dash"
+subtitle = "Mini-golf vs CPU"
+scene = "res://games/golf/scenes/golf_game.tscn"
 min_save_version = 1
-enabled = false
+enabled = true
 unlock_cost = 0
 coming_label = "SOON"
 order = 7

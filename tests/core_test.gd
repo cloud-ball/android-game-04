@@ -94,7 +94,8 @@ func test_registry_lists_all_eight_with_released_games_enabled() -> void:
 		. filter(func(m: GameManifest) -> bool: return m.enabled)
 		. map(func(m: GameManifest) -> String: return m.id)
 	)
-	assert_array(enabled).contains_exactly_in_any_order(["snake", "blocks"])
+	# Golf joined the released games in Cup Dash step G (2026-11-19).
+	assert_array(enabled).contains_exactly_in_any_order(["snake", "blocks", "pool", "golf"])
 
 
 func test_enabled_games_have_loadable_scenes() -> void:

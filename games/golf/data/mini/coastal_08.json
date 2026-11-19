@@ -1,0 +1,17 @@
+{
+	"id": "coastal_08",
+	"name": "Cove",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		".GGG.",
+		"GGWGG",
+		"GWWWG",
+		"GGWGG",
+		"HG.GT"
+	],
+	"wind": [
+		0.0,
+		0.05
+	]
+}

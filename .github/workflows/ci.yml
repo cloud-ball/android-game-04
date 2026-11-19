@@ -52,11 +52,11 @@ jobs:
           export/android/debug_keystore_pass = "android"
           EOF
           mkdir -p build
-          godot --headless --path . --export-debug "Android APK" build/pocket-arena-8-debug.apk
-          test -s build/pocket-arena-8-debug.apk
+          godot --headless --path . --export-debug "Android APK" build/playjar-debug.apk
+          test -s build/playjar-debug.apk
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pocket-arena-8-debug-apk
-          path: build/pocket-arena-8-debug.apk
+          name: playjar-debug-apk
+          path: build/playjar-debug.apk
           retention-days: 7

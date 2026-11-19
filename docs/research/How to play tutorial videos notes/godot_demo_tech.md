@@ -1,7 +1,7 @@
 # Animated how-to-play demos in Godot 4.7 (Android): technical routes and production pipelines
 
-Scope: Pocket Arena 8 (Godot 4.7.2, GDScript, Mobile renderer, Android min API 24, portrait 1080-wide canvas_items stretch;
-test phone Vivo V2250 / Adreno 642L). Games in scope: blocks (Stack Drop, `StackLogic.reduce`) and snake (`SnakeLogic`, fixed ticks).
+Scope: Playjar (Godot 4.7.2, GDScript, Mobile renderer, Android min API 24, portrait 1080-wide canvas_items stretch;
+test phone Vivo V2250 / Adreno 642L). Games in scope: blocks (Facetfall, `BlocksLogic.reduce`) and snake (`SnakeLogic`, fixed ticks).
 Current how-to panel: `shared/ui/game_shell.gd::_build_howto()` builds rows of 150x150 `Control`s whose `draw` signal calls a
 per-step `Callable` (static drawn icons) plus title/subtitle labels.
 
@@ -153,15 +153,15 @@ there are no published mobile numbers for SubViewport cost, so it must be profil
   Viewport API; this session did not re-fetch their doc text — [Viewport class](https://docs.godotengine.org/en/stable/classes/class_viewport.html)
 - Repo: both views already render via a Camera3D + MultiMesh (`games/blocks/scenes/blocks_view.gd` `_locked: MultiMesh`;
   `games/snake/scenes/snake_view.gd` `_snake_mm: Array[MultiMesh]`, `camera.keep_aspect = KEEP_WIDTH`); blocks AI exposes
-  `StackAI.choose(...)` and `StackAI.actions_for(state, plan) -> Array[Dictionary]`; snake AI `SnakeAI.choose(...)` — local repo
-  (`games/blocks/logic/stack_ai.gd`, `games/snake/logic/snake_ai.gd`)
+  `BlocksAI.choose(...)` and `BlocksAI.actions_for(state, plan) -> Array[Dictionary]`; snake AI `SnakeAI.choose(...)` — local repo
+  (`games/blocks/logic/blocks_ai.gd`, `games/snake/logic/snake_ai.gd`)
 - Repo: project uses `physics/common/physics_ticks_per_second=60`, `physics_interpolation=true`, Mobile renderer; CLAUDE.md requires
   `physics_interpolation_mode = OFF` on roots of games that move nodes in `_process` (snake, blocks) — `project.godot`, `CLAUDE.md`
 
 ### Inferences
 - Implementation sketch (live 3D): `SubViewportContainer(stretch=true)` → `SubViewport(size 540x540, own_world_3d=true, transparent_bg=false,
   msaa_3d=disabled, render_target_update_mode=WHEN_PARENT_VISIBLE)` → instance of the game's view node. A `DemoPlayer` (pure GDScript, no Node deps
-  for the stepping part) holds `{seed, actions:[{tick, action}], loop_ticks}`; on each fixed tick it applies due actions via `StackLogic.reduce`
+  for the stepping part) holds `{seed, actions:[{tick, action}], loop_ticks}`; on each fixed tick it applies due actions via `BlocksLogic.reduce`
   (or `SnakeLogic` step) and pushes the state to the view; at `loop_ticks` it resets from seed. `own_world_3d` is needed so the demo's
   lights/environment/camera don't collide with anything else; set `physics_interpolation_mode = OFF` on the demo root (CLAUDE.md rule).
 - Cost model: a 540x540 RGBA8 colour target ≈ 1.2 MB VRAM (+ depth); the Mobile renderer does a full extra render pass setup per viewport
@@ -263,10 +263,10 @@ Guard it with golden-replay unit tests and prefer regenerating demos from the AI
 ### Cited Findings
 - Repo rules: simulation uses fixed timesteps and seeded `core/Rng.gd`, never `randf()`; logic is pure GDScript under `games/<id>/logic/` and unit tested;
   save schema bumps require `migrate()` — `CLAUDE.md` (local)
-- Recent commits changed exactly the inputs a replay depends on: "Stack Drop: gentler gravity until level 25" (2422c84), "12 x 24 tower" (633be40),
+- Recent commits changed exactly the inputs a replay depends on: "Facetfall: gentler gravity until level 25" (2422c84), "12 x 24 tower" (633be40),
   "10 x 20 tower" (b81ca16), "CPU retune" (08da76d) — local `git log`
 - Blocks logic data files (`shard_data.gd` loads a kick table via `_load_kicks()`), and AI planning returns explicit actions via
-  `StackAI.actions_for(state, plan)` — local repo
+  `BlocksAI.actions_for(state, plan)` — local repo
 
 ### Inferences
 - Pitfalls: (1) gravity/lock-delay or level-curve changes shift *when* pieces land → later actions apply to a different board; (2) board size changes
@@ -277,7 +277,7 @@ Guard it with golden-replay unit tests and prefer regenerating demos from the AI
   test that replays it headless and asserts the final state hash (and key checkpoints, e.g. "line clear happened at tick N"). Give each logic class a
   `RULES_VERSION` const bumped on any rules change; the test fails when versions differ, forcing regeneration.
 - More robust script format: record *intent* rather than raw inputs — e.g. for blocks a list of placements `{kind, rot, col, hold}` replayed through
-  `StackAI.actions_for` at runtime, and for snake a short list of target cells/turn points, or simply "AI with fixed seed + difficulty" plus a
+  `BlocksAI.actions_for` at runtime, and for snake a short list of target cells/turn points, or simply "AI with fixed seed + difficulty" plus a
   checkpoint assertion. Intent scripts survive gravity/timing changes; only geometry changes break them.
 - For pre-rendered video, add a CI check that re-renders the demo (Movie Maker) and compares a few frames or a state hash at the same ticks; at minimum,
   write the logic version/commit into the clip's filename/metadata so stale videos are visible in review.
@@ -286,4 +286,4 @@ Guard it with golden-replay unit tests and prefer regenerating demos from the AI
 
 ### Gaps
 - No external sources consulted specifically on replay determinism in Godot (relied on repo rules and general reasoning); not verified whether
-  `StackLogic`/`SnakeLogic` use any float math.
+  `BlocksLogic`/`SnakeLogic` use any float math.

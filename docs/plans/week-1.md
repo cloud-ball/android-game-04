@@ -24,7 +24,7 @@ No game code this week. Every step ends with a headless check that a script or C
 
 - `project.godot` with: Jolt Physics, 60 physics ticks, physics interpolation on, Mobile renderer
   (Compatibility fallback for GLES3), ETC2/ASTC import, portrait 1080×1920 stretch `canvas_items`/`expand`,
-  app name "Pocket Arena 8".
+  app name "Playjar".
 - Empty folder layout from CLAUDE.md: `core/ hub/ shared/{cue_sim,aim_ui,power_meter,ai_common} games/ tests/`
   (`.gdkeep` files so git tracks them).
 - Placeholder `hub/hub.tscn` as main scene (a label — real hub is week 2).
@@ -66,7 +66,7 @@ since headless has no renderer); Claude opens it.
   (gdUnit4-action), then Android debug export with JDK 17 and upload the APK as an artifact.
 - Cache `.godot/imported` and Gradle.
 
-**Verify locally first:** run the same commands in a clean clone (`git clone . /tmp/pa8 && cd /tmp/pa8 && …`).
+**Verify locally first:** run the same commands in a clean clone (`git clone . /tmp/playjar && cd /tmp/playjar && …`).
 CI runs only after you push — I won't push without asking.
 
 ## 6. Claude Code wiring

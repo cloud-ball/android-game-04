@@ -1,7 +1,7 @@
 # Top Corner — Penalty shootout vs CPU (Phase 2)
 
 Folder: games/penalty/ · rules: .claude/rules/penalty.md · build estimate: 2–3 weeks · risk: Medium
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 19-20. Visual target: docs/refs/penalty/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 19-20. Visual target: docs/refs/penalty/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
 Custom flight integrator (as for golf) for drag + Magnus; after any contact (post, keeper, net) the ball becomes a Jolt RigidBody3D. Net = a few low-restitution StaticBody3D panels, or a vertex shader for visual flex.

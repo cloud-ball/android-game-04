@@ -1,13 +1,13 @@
 ; Engine configuration file.
-; Settings follow docs/design/PocketArena8_Build_Guide.pdf p. 6.
+; Settings follow docs/design/Playjar_Build_Guide.pdf p. 6.
 
 config_version=5
 
 [application]
 
-config/name="Pocket Arena 8"
+config/name="Playjar"
 config/description="Original 3D mini-games against the computer. Offline."
-config/version="0.1.0"
+config/version="0.2.0"
 run/main_scene="res://hub/hub.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/bg_color=Color(0.0627451, 0.0705882, 0.141176, 1)

@@ -7,7 +7,7 @@ Source: docs/research/How to play tutorial videos.md (user chose "animated cards
   drawn live with `_draw` on a stylised mini-board, an original fingertip glyph, a 1-line title and a
   short sub-line. Header: HOW TO PLAY + Skip. Footer: progress dots, Back, Next -> PLAY on the last card.
 - Serpent Grid: Swipe to turn · Edges wrap around · Make the CPU crash (vs only).
-- Stack Drop: Tap to rotate · Drag to move · Flick down to drop · Tap HOLD to keep ·
+- Facetfall: Tap to rotate · Drag to move · Flick down to drop · Tap HOLD to keep ·
   Clear rows, send garbage (vs only).
 - Each demo loops 3 times then freezes on its result frame with a Replay chip; tap the stage to
   pause/resume. Cards advance only by buttons (no swipe paging - players copy the gestures).
@@ -33,6 +33,6 @@ Source: docs/research/How to play tutorial videos.md (user chose "animated cards
   moved to a corner button so taps on the stage are attempts.
 - First-match practice hints (shared/ui/practice_hint.gd + practice_plan.gd): the fingertip loops a
   move over the real board until the player does it (max 2 showings per match, 3 loops each).
-  Stack Drop: rotate after 2 shards, move 3, drop 5, HOLD 8. Serpent Grid: swipe 4 s after GO,
+  Facetfall: rotate after 2 shards, move 3, drop 5, HOLD 8. Serpent Grid: swipe 4 s after GO,
   "edges wrap" caption ~1 s before the first edge. Learned moves saved per game
   (blocks schema 2, snake schema 3, migrate marks experienced players). Dev: --practice.

@@ -1,6 +1,6 @@
 class_name BlocksHud
 extends GameShell
-## Stack Drop HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout:
+## Facetfall HUD on top of the shared GameShell overlays. Every rectangle comes from BoardLayout:
 ## a top band (CPU mini-board, status plate, pause; then a tappable HOLD box beside the NEXT strip).
 ## Nothing covers the well. Holds no game state.
 
@@ -27,14 +27,14 @@ var _hold_draw: Control
 var _cpu_panel: Panel
 var _cpu_draw: Control
 var _pause_btn: Button
-var _player: StackState
-var _cpu: StackState
+var _player: BlocksState
+var _cpu: BlocksState
 
 
 func _ready() -> void:
 	configure(
 		{
-			"title": "Stack Drop",
+			"title": "Facetfall",
 			"accent": ACCENT,
 			"modes": {"vs": "vs CPU", "solo": "Solo"},
 			"blurbs":
@@ -219,7 +219,7 @@ func show_end(info: Dictionary) -> void:
 
 
 ## Push the latest states in; the panels redraw themselves.
-func update_states(player: StackState, cpu: StackState) -> void:
+func update_states(player: BlocksState, cpu: BlocksState) -> void:
 	_player = player
 	_cpu = cpu
 	_score.text = UiKit.format_int(player.score)
@@ -260,22 +260,24 @@ func _draw_hold(c: Control) -> void:
 func _draw_cpu(c: Control) -> void:
 	if _cpu == null:
 		return
-	var rows := StackState.H - StackState.HIDDEN
-	var cell := minf((c.size.x - 12.0) / StackState.W, (c.size.y - 50.0) / rows)
-	var origin := Vector2((c.size.x - cell * StackState.W) * 0.5, 42)
-	c.draw_rect(Rect2(origin, Vector2(cell * StackState.W, cell * rows)), Color(1, 1, 1, 0.07))
-	for y in range(StackState.HIDDEN, StackState.H):
-		for x in StackState.W:
-			var v := _cpu.board[y * StackState.W + x]
+	var rows := BlocksState.H - BlocksState.HIDDEN
+	var cell := minf((c.size.x - 12.0) / BlocksState.W, (c.size.y - 50.0) / rows)
+	var origin := Vector2((c.size.x - cell * BlocksState.W) * 0.5, 42)
+	c.draw_rect(Rect2(origin, Vector2(cell * BlocksState.W, cell * rows)), Color(1, 1, 1, 0.07))
+	var gems := GemArt.Batch.new()  # the whole mini-board in one draw call
+	for y in range(BlocksState.HIDDEN, BlocksState.H):
+		for x in BlocksState.W:
+			var v := _cpu.board[y * BlocksState.W + x]
 			if v == 0:
 				continue
 			var col := (
 				BlocksView.GARBAGE_COLOR
-				if v == StackState.GARBAGE
+				if v == BlocksState.GARBAGE
 				else BlocksView.GEM_COLORS[v - 1]
 			)
-			var pos := origin + Vector2(x, y - StackState.HIDDEN) * cell
-			c.draw_rect(Rect2(pos, Vector2(cell - 1, cell - 1)), col)
+			var pos := origin + Vector2(x, y - BlocksState.HIDDEN) * cell
+			GemArt.add(gems, Rect2(pos, Vector2(cell - 1, cell - 1)), col)
+	GemArt.flush(c, gems)
 	if _cpu.pending_garbage > 0:
 		var h := minf(rows, _cpu.pending_garbage) * cell
 		c.draw_rect(
@@ -284,7 +286,7 @@ func _draw_cpu(c: Control) -> void:
 
 
 ## Draws one shard (spawn orientation) centred on `centre` with square cells of `cell` units:
-## gem face, a lighter top band, and a dark gap that doubles as an outline.
+## emerald-cut gems (GemArt) with a small gap between cells.
 static func draw_shard_at(
 	c: Control, kind: int, centre: Vector2, cell: float, alpha: float
 ) -> void:
@@ -299,16 +301,11 @@ static func draw_shard_at(
 	var col: Color = BlocksView.GEM_COLORS[kind]
 	col.a = alpha
 	var gap := maxf(2.0, cell * 0.07)
+	var gems := GemArt.Batch.new()
 	for p in cells:
 		var r := Rect2(origin + Vector2(p - min_c) * cell, Vector2(cell - gap, cell - gap))
-		c.draw_rect(r, col)
-		c.draw_rect(
-			Rect2(r.position, Vector2(r.size.x, r.size.y * 0.18)), Color(1, 1, 1, 0.3 * alpha)
-		)
-		c.draw_rect(
-			Rect2(r.position + Vector2(0, r.size.y * 0.82), Vector2(r.size.x, r.size.y * 0.18)),
-			Color(0, 0, 0, 0.22 * alpha)
-		)
+		GemArt.add(gems, r, col)
+	GemArt.flush(c, gems)
 
 
 ## Draws a shard fitted into `box` (used by the how-to illustrations).

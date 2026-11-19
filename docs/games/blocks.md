@@ -1,7 +1,7 @@
-# Stack Drop — Original falling-block puzzle vs CPU (Phase 1)
+# Facetfall (formerly Stack Drop) — Original falling-block puzzle vs CPU (Phase 1)
 
 Folder: games/blocks/ · rules: .claude/rules/blocks.md · build estimate: 1.5–2 weeks · risk: Low physics · HIGH legal care
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 11-12. Visual target: docs/refs/blocks/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 11-12. Visual target: docs/store/screenshots/03_facetfall.png and 06_facetfall_race.png (emerald-cut gems, jewel palette, gridless crystal tower). SUPERSEDED, do not follow: docs/refs/blocks/keyframe_1..3.png + clip.mp4 (the rejected flat-squares-in-a-grid concept, 2026-11-17 originality review).
 
 ## Physics approach
 No physics. A pure functional core reduce(state, action) with a seeded RNG, so any game replays bit-exactly.
@@ -40,7 +40,7 @@ Never use the 10×20 well with flat bright squares, the trademarked name or '-tr
 Drop vs-CPU; ship score-attack only.
 
 ## The 10-second moment (what the concept clip shows)
-A purple shard is dragged against the glass wall and rotated (WALL KICK), hard-dropped; a long sapphire shard drops into the gap and four rows flash and shatter into crystal fragments — 'QUAD CLEAR', +4 garbage rows hit the CPU's tower.
+A purple shard is dragged against the glass wall and rotated (WALL KICK), hard-dropped; a long garnet shard drops into the gap and four rows flash and shatter into crystal fragments — 'QUAD CLEAR', +4 garbage rows hit the CPU's tower.
 
 ## Open questions
 _(fill in during planning)_

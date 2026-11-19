@@ -1,0 +1,17 @@
+{
+	"id": "coastal_02",
+	"name": "Tide Turn",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		"GGGH",
+		"GWW.",
+		"GW..",
+		"G...",
+		"T..."
+	],
+	"wind": [
+		0.08,
+		0.0
+	]
+}

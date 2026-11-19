@@ -14,6 +14,9 @@ extends Node
 ##   --time-scale=<x>     run game time x times faster (QA soak runs)
 ##   --howto=<card>       open the how-to cards at that card (--howto-ms=<t> freezes it there)
 ##   --practice           show first-match practice hints even for moves already learned
+##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
+##   --bench=golf         run the golf solver benchmark, print "[golf-bench]" lines and quit
+##   --licenses           open the open-source licences page over the hub (screenshot QA)
 
 var options: Dictionary = {}
 var bot := false
@@ -25,11 +28,15 @@ var _shots_taken := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	options = parse_args(OS.get_cmdline_user_args())
+	options.merge(_dev_args_file(), true)
 	bot = options.has("bot")
 	if options.has("time-scale"):
 		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
 	if options.has("seed"):
 		Rng.session_seed = int(options["seed"])
+	if str(options.get("bench", "")) in ["cue", "golf"]:
+		_run_bench.call_deferred(str(options["bench"]))
+		return
 	if options.has("game"):
 		var extra := {}
 		for key in ["difficulty", "mode"]:
@@ -38,7 +45,18 @@ func _ready() -> void:
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra, true)
+	if options.has("licenses"):
+		get_tree().root.add_child.call_deferred(LicensesView.new())
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
+
+
+func _run_bench(which: String) -> void:
+	await get_tree().create_timer(0.5).timeout  # let the first frame settle
+	if which == "golf":
+		GolfBench.run()
+	else:
+		CueBench.run()
+	get_tree().quit()
 
 
 func _process(_delta: float) -> void:
@@ -48,13 +66,19 @@ func _process(_delta: float) -> void:
 		RenderingServer.viewport_set_measure_render_time(rid, true)
 		print(
 			(
-				"[fps] %d  process %.1f ms  render cpu %.1f ms  gpu %.1f ms  draws %d"
+				(
+					"[fps] %d  process %.1f ms  render cpu %.1f ms  gpu %.1f ms  draws %d"
+					+ "  nodes %d  objs %d  mem %.0f MB"
+				)
 				% [
 					Engine.get_frames_per_second(),
 					Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 					RenderingServer.viewport_get_measured_render_time_cpu(rid),
 					RenderingServer.viewport_get_measured_render_time_gpu(rid),
 					Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+					Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+					Performance.get_monitor(Performance.OBJECT_COUNT),
+					Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
 				]
 			)
 		)
@@ -64,8 +88,8 @@ func _process(_delta: float) -> void:
 		var count := int(options.get("shot-count", 1))
 		if _shots_taken < count and _frame >= at and (_frame - at) % every == 0:
 			_save_shot(str(options["shot"]))
-	if options.has("quit-after") and _frame >= int(options["quit-after"]):
-		get_tree().quit()
+	if options.has("quit-after") and _frame == int(options["quit-after"]):
+		AudioService.quit_app()
 
 
 func _save_shot(pattern: String) -> void:
@@ -76,6 +100,19 @@ func _save_shot(pattern: String) -> void:
 	var err := img.save_png(abs_path)
 	print("[shot] %s -> %s" % [abs_path, error_string(err)])
 	_shots_taken += 1
+
+
+## Debug builds only: one-shot dev arguments from user://dev_args.txt (deleted after reading).
+## Android cannot pass command-line arguments to the game activity from adb, so the phone gets
+## them via: adb shell run-as <package> sh -c 'echo "--bench=cue" > files/dev_args.txt'
+func _dev_args_file() -> Dictionary:
+	const PATH := "user://dev_args.txt"
+	if not OS.is_debug_build() or not FileAccess.file_exists(PATH):
+		return {}
+	var text := FileAccess.get_file_as_string(PATH).strip_edges()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
+	print("[boot] dev args from file: ", text)
+	return parse_args(PackedStringArray(text.split(" ", false)))
 
 
 ## Accepts "--key=value", "--key value" and bare "--flag".

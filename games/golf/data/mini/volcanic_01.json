@@ -1,0 +1,13 @@
+{
+	"id": "volcanic_01",
+	"name": "Ash Path",
+	"par": 2,
+	"tile": 3.0,
+	"map": [
+		".H.",
+		"WGW",
+		"GGG",
+		"WGW",
+		".T."
+	]
+}
