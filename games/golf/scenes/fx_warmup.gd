@@ -5,7 +5,7 @@ extends Node
 ## big score text) made the renderer compile their shaders on first use: a ~2 s freeze on the
 ## first drag of a session (seen on the emulator, 2026-11-17). Here every one of them is drawn for
 ## a few frames - same materials, same vertex formats - but too small or too faint to see, while
-## the intro card is up; then the copies are freed. Research: docs/research/Fairway Flick mini golf
+## the intro card is up; then the copies are freed. Research: docs/research/Cup Dash mini golf
 ## visuals.md ("Stutter, not frame rate, is the hidden polish killer"; plan row 8).
 
 const FRAMES := 4

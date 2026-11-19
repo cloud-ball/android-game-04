@@ -1,6 +1,6 @@
 class_name GolfBench
 extends RefCounted
-## Fairway Flick solver benchmark (step 5 of docs/plans/2026-11-14-fairway-flick-courses.md):
+## Cup Dash solver benchmark (step 5 of docs/plans/2026-11-14-cup-dash-courses.md):
 ## `--bench=golf` prints "[golf-bench]" lines and quits. On the phone:
 ##   adb shell run-as <package> sh -c 'echo --bench=golf > files/dev_args.txt'
 ## Also prints the golden hashes, so cross-device bit-exactness can be checked against the tests.

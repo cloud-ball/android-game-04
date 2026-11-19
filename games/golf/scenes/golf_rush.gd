@@ -3,7 +3,7 @@ extends Node
 ## Rush glue for the hole screen (GolfGame): owns the rules (RushMatch), the CPU golfers
 ## (RushField) and the overlay (RushHud), and drives hole and match changes. GolfGame only reports
 ## its own ball (shot taken, how it ended, the substep it dropped in) and asks can_shoot().
-## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step E3).
+## Plan: docs/plans/2026-11-19-cup-dash-complete.md (step E3).
 
 signal finished(info: Dictionary)  # GolfShell.show_end() info, coins already paid
 

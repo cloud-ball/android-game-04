@@ -2,7 +2,7 @@ class_name MiniBaker
 extends RefCounted
 ## Bakes a mini-golf hole from a tile map (pure, deterministic: + - * / only) into HoleData with
 ## walls, bumpers, ramps, sand, water, tee and cup.
-## Plan: docs/plans/2026-11-15-fairway-flick-minigolf.md (step C).
+## Plan: docs/plans/2026-11-15-cup-dash-minigolf.md (step C).
 ##
 ## Spec (games/golf/data/mini/*.json):
 ##   tile: tile size in metres (default 3)

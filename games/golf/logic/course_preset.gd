@@ -1,7 +1,7 @@
 class_name CoursePreset
 extends RefCounted
 ## Per-course conditions (pure): green speed and firmness, fairway roll, altitude, wind range.
-## Research: docs/research/Fairway Flick courses and maps.md (course line-up table) and the
+## Research: docs/research/Cup Dash courses and maps.md (course line-up table) and the
 ## ball physics notes (Stimpmeter conversion, section 5).
 
 ## Stimpmeter exit speed (m/s) and feet -> metres.

@@ -1,9 +1,10 @@
 class_name PoolRules
 extends RefCounted
-## "Casual 8" rules (docs/research/Cue Club pool game design.md, rules R1-R20): WPA 2025 8-ball
-## with every option fixed. Only the 8's pocket is called; ball in hand anywhere after every foul
-## (break too); the 8 on the break is re-spotted; the table stays open after the break; groups go
-## to the first legal pot (first-contacted group wins a mixed pot); 24 shots without a pot re-rack.
+## "Casual 8" rules (docs/research/Break and Bank pool game design.md, rules R1-R20): WPA 2025
+## 8-ball with every option fixed. Only the 8's pocket is called; ball in hand anywhere after every
+## foul (break too); the 8 on the break is re-spotted; the table stays open after the break; groups
+## go to the first legal pot (first-contacted group wins a mixed pot); 24 shots without a pot
+## re-rack.
 ## apply_shot() is pure: it reads a state and a PoolShot and returns a PoolResult with a new state.
 ## Evaluation order matters: "group cleared" is snapshotted at shot start, so the last group ball
 ## plus the 8 on the same stroke is an early 8, not a win.

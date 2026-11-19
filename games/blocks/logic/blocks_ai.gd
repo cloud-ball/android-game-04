@@ -1,4 +1,4 @@
-class_name StackAI
+class_name BlocksAI
 extends RefCounted
 ## CPU placement search for Facetfall: tries every rotation and column for the current shard
 ## (and the hold/next shard when allowed), drops it straight down, and scores the resulting
@@ -14,7 +14,7 @@ const W_BUMPS := -0.18
 ## Best placement as {use_hold: bool, kind, rot, x, score}; empty when nothing fits.
 ## top_k > 1 picks uniformly among the best top_k (weaker play); noise jitters every score.
 static func choose(
-	s: StackState, rng: RandomNumberGenerator, allow_hold := true, top_k := 1, noise := 0.0
+	s: BlocksState, rng: RandomNumberGenerator, allow_hold := true, top_k := 1, noise := 0.0
 ) -> Dictionary:
 	var options: Array[Dictionary] = []
 	options.append_array(_placements(s, s.kind, false))
@@ -33,21 +33,21 @@ static func choose(
 
 
 ## The reducer actions that carry out a chosen placement from the current spawn state.
-static func actions_for(s: StackState, plan: Dictionary) -> Array[Dictionary]:
+static func actions_for(s: BlocksState, plan: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var sim := s
 	if plan.use_hold:
 		out.append({"type": "hold"})
-		sim = StackLogic.reduce(sim, out.back())
+		sim = BlocksLogic.reduce(sim, out.back())
 	var turns := (int(plan.rot) - sim.rot + 4) % 4
 	for i in turns:
 		out.append({"type": "cw"})
-		sim = StackLogic.reduce(sim, out.back())
+		sim = BlocksLogic.reduce(sim, out.back())
 	var guard := 0
-	while sim.px != int(plan.x) and guard < StackState.W:
+	while sim.px != int(plan.x) and guard < BlocksState.W:
 		var step := {"type": "right" if plan.x > sim.px else "left"}
 		var before := sim.px
-		sim = StackLogic.reduce(sim, step)
+		sim = BlocksLogic.reduce(sim, step)
 		out.append(step)
 		guard += 1
 		if sim.px == before:
@@ -56,25 +56,25 @@ static func actions_for(s: StackState, plan: Dictionary) -> Array[Dictionary]:
 	return out
 
 
-static func _placements(s: StackState, kind: int, use_hold: bool) -> Array[Dictionary]:
+static func _placements(s: BlocksState, kind: int, use_hold: bool) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var rotations := 1 if kind == ShardData.SQUARE else 4
 	for rot in rotations:
-		for x in range(-3, StackState.W):
-			var y := StackLogic.SPAWN_Y
-			if not StackLogic.fits(s, kind, rot, x, y):
+		for x in range(-3, BlocksState.W):
+			var y := BlocksLogic.SPAWN_Y
+			if not BlocksLogic.fits(s, kind, rot, x, y):
 				continue
-			while StackLogic.fits(s, kind, rot, x, y + 1):
+			while BlocksLogic.fits(s, kind, rot, x, y + 1):
 				y += 1
-			var score := evaluate_after(s.board, StackLogic.shard_cells(kind, rot, x, y))
+			var score := evaluate_after(s.board, BlocksLogic.shard_cells(kind, rot, x, y))
 			out.append({"use_hold": use_hold, "kind": kind, "rot": rot, "x": x, "score": score})
 	return out
 
 
 ## Heuristic score of the board after placing `cells` and clearing full rows (higher = better).
 static func evaluate_after(board: PackedByteArray, cells: Array[Vector2i]) -> float:
-	var w := StackState.W
-	var h := StackState.H
+	var w := BlocksState.W
+	var h := BlocksState.H
 	var b := board.duplicate()
 	for c in cells:
 		b[c.y * w + c.x] = 1

@@ -21,7 +21,7 @@ const SAVE_DEFAULTS := {
 }
 ## First-match practice hints: [move, shards placed before its hint appears].
 const PRACTICE := [["rotate", 2], ["move", 3], ["drop", 5], ["hold", 8]]
-const LEVELS := StackDifficulty.LEVELS
+const LEVELS := BlocksDifficulty.LEVELS
 const WIN_BONUS := {"easy": 15, "medium": 30, "hard": 60}
 const CLEAR_NAMES := ["", "SINGLE", "DOUBLE!", "TRIPLE!", "QUAD CLEAR!"]
 const KEY_ACTIONS := {
@@ -41,15 +41,15 @@ const KEY_ACTIONS := {
 const DAS := 0.17
 const ARR := 0.05
 
-var player: StackState
-var cpu: StackState
+var player: BlocksState
+var cpu: BlocksState
 var state: int = State.READY
 var difficulty := "medium"
 var mode := "vs"
 
 var _view: BlocksView
 var _hud: BlocksHud
-var _gestures := StackGestures.new()
+var _gestures := BlocksGestures.new()
 var _save: Dictionary
 var _ai_rng: RandomNumberGenerator
 var _cpu_rng: RandomNumberGenerator
@@ -169,8 +169,8 @@ func _new_match() -> void:
 		_practice.new_match()
 	var seed_value := Rng.next_seed()
 	var lv: Dictionary = LEVELS[difficulty]
-	player = StackLogic.new_game(seed_value, lv.start)
-	cpu = StackLogic.new_game(seed_value ^ 0x5bd1e995, lv.start)
+	player = BlocksLogic.new_game(seed_value, lv.start)
+	cpu = BlocksLogic.new_game(seed_value ^ 0x5bd1e995, lv.start)
 	_ai_rng = Rng.make(seed_value ^ 0x2545f491)
 	_cpu_rng = Rng.make(seed_value ^ 0x68e31da4)
 	_acc = 0.0
@@ -227,11 +227,11 @@ func _fixed_step() -> void:
 
 ## Applies one action to the player's board and handles its events + outgoing garbage.
 func _apply_player(action: Dictionary) -> void:
-	player = StackLogic.reduce(player, action)
+	player = BlocksLogic.reduce(player, action)
 	for e in player.events:
 		_on_player_event(e)
 	if player.outgoing > 0 and mode == "vs":
-		cpu = StackLogic.reduce(cpu, {"type": "garbage", "rows": player.outgoing})
+		cpu = BlocksLogic.reduce(cpu, {"type": "garbage", "rows": player.outgoing})
 
 
 func _player_action(type: String) -> void:
@@ -251,18 +251,18 @@ func _cpu_step() -> void:
 		_start_cpu_plan()
 	_cpu_timer += STEP
 	var lv: Dictionary = LEVELS[difficulty]
-	var think := StackDifficulty.cpu_think(difficulty, cpu.level)
+	var think := BlocksDifficulty.cpu_think(difficulty, cpu.level)
 	if _cpu_timer < think or not WorkerThreadPool.is_task_completed(_cpu_task):
 		return
 	_finish_cpu_task()
 	_cpu_timer = 0.0
 	if _cpu_plan.is_empty():
-		cpu = StackLogic.reduce(cpu, {"type": "hard"})
+		cpu = BlocksLogic.reduce(cpu, {"type": "hard"})
 	else:
-		for a in StackAI.actions_for(cpu, _cpu_plan):
-			cpu = StackLogic.reduce(cpu, a)
+		for a in BlocksAI.actions_for(cpu, _cpu_plan):
+			cpu = BlocksLogic.reduce(cpu, a)
 	if cpu.outgoing > 0:
-		player = StackLogic.reduce(player, {"type": "garbage", "rows": cpu.outgoing})
+		player = BlocksLogic.reduce(player, {"type": "garbage", "rows": cpu.outgoing})
 		AudioService.play("count", 0.6)
 	if not cpu.over:
 		_start_cpu_plan()
@@ -276,7 +276,7 @@ func _start_cpu_plan() -> void:
 	var rng := _cpu_rng
 	_cpu_plan = {}
 	_cpu_task = WorkerThreadPool.add_task(
-		func() -> void: _cpu_plan = StackAI.choose(snapshot, rng, lv.hold, lv.top_k, lv.noise)
+		func() -> void: _cpu_plan = BlocksAI.choose(snapshot, rng, lv.hold, lv.top_k, lv.noise)
 	)
 
 
@@ -294,9 +294,9 @@ func _bot_turn() -> void:
 	_bot_timer += STEP
 	if _bot_timer >= 0.35:
 		_bot_timer = 0.0
-		var plan := StackAI.choose(player, _ai_rng)
+		var plan := BlocksAI.choose(player, _ai_rng)
 		if not plan.is_empty():
-			for a in StackAI.actions_for(player, plan):
+			for a in BlocksAI.actions_for(player, plan):
 				_apply_player(a)
 
 
@@ -324,8 +324,8 @@ func _on_player_event(e: Dictionary) -> void:
 			AudioService.play("eat", 0.9 + 0.1 * n)
 			AudioService.buzz(20 + 15 * n)
 			if n >= 2:
-				var sent: int = StackLogic.GARBAGE_SENT[n]
-				var sub := "+%d" % (StackLogic.LINE_SCORES[n] * player.level)
+				var sent: int = BlocksLogic.GARBAGE_SENT[n]
+				var sub := "+%d" % (BlocksLogic.LINE_SCORES[n] * player.level)
 				if mode == "vs" and sent > 0:
 					sub += " · %d garbage row%s sent to CPU" % [sent, "" if sent == 1 else "s"]
 				_hud.banner(CLEAR_NAMES[n], sub, BlocksHud.ACCENT if n < 4 else UiKit.GOLD)

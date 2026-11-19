@@ -7,7 +7,7 @@ extends RefCounted
 ## Each vertex carries a sway weight in COLOR.r (its height within the model, 0..1; 0 for props
 ## placed with sway off); surfaces in SWAY move in the wind via AmbientLife.FOLIAGE_SHADER.
 ## Models: games/golf/assets/kenney_nature/*.glb (Kenney Nature Kit, CC0; see ASSETS.md).
-## Plan: docs/plans/2026-11-15-fairway-flick-ambient.md.
+## Plan: docs/plans/2026-11-15-cup-dash-ambient.md.
 
 const DIR := "res://games/golf/assets/kenney_nature/"
 ## Kit material name -> sway at full weight (metres): leaves and soft plants only.

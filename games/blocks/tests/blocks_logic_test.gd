@@ -2,8 +2,8 @@ extends GdUnitTestSuite
 ## Facetfall rules: bag, kick data + behaviour, movement, gravity, lock delay, clears, scoring,
 ## hold, garbage, top-out and bit-exact replays.
 
-const W := StackState.W
-const H := StackState.H
+const W := BlocksState.W
+const H := BlocksState.H
 
 ## Reference kick offsets (+y up), one entry per rotation case.
 const EXPECTED_STANDARD := {
@@ -29,15 +29,15 @@ const EXPECTED_LONG := {
 const ROT := {"0": 0, "R": 1, "2": 2, "L": 3}
 
 
-func _act(s: StackState, type: String, extra := {}) -> StackState:
+func _act(s: BlocksState, type: String, extra := {}) -> BlocksState:
 	var a := {"type": type}
 	a.merge(extra)
-	return StackLogic.reduce(s, a)
+	return BlocksLogic.reduce(s, a)
 
 
 ## A state with a chosen active shard at a chosen place (board empty unless given).
-func _with_shard(kind: int, rot := 0, x := 3, y := 2) -> StackState:
-	var s := StackLogic.new_game(7)
+func _with_shard(kind: int, rot := 0, x := 3, y := 2) -> BlocksState:
+	var s := BlocksLogic.new_game(7)
 	s.kind = kind
 	s.rot = rot
 	s.px = x
@@ -46,7 +46,7 @@ func _with_shard(kind: int, rot := 0, x := 3, y := 2) -> StackState:
 	return s
 
 
-func _fill_row(s: StackState, y: int, gap := -1) -> void:
+func _fill_row(s: BlocksState, y: int, gap := -1) -> void:
 	for x in W:
 		s.board[y * W + x] = 0 if x == gap else 1
 
@@ -55,7 +55,7 @@ func _fill_row(s: StackState, y: int, gap := -1) -> void:
 
 
 func test_seven_bag_never_repeats_within_a_bag() -> void:
-	var s := StackLogic.new_game(12345)
+	var s := BlocksLogic.new_game(12345)
 	var seen: Array[int] = [s.kind]
 	while seen.size() < 70:
 		s = _act(s, "hard")
@@ -68,7 +68,7 @@ func test_seven_bag_never_repeats_within_a_bag() -> void:
 
 
 func test_preview_has_three_or_more_shards() -> void:
-	assert_int(StackLogic.new_game(3).queue.size()).is_greater_equal(StackLogic.PREVIEW)
+	assert_int(BlocksLogic.new_game(3).queue.size()).is_greater_equal(BlocksLogic.PREVIEW)
 
 
 # --- kick data: one case per rotation transition ----------------------------------------
@@ -109,7 +109,7 @@ func test_tee_rotates_off_the_left_wall_with_a_kick() -> void:
 	# Tee in state R (nub right) with its stem in column 0: turning back to state 0 needs
 	# columns -1..1, so the plain rotation fails and the second kick (+1, 0) is used.
 	var s := _with_shard(2, 1, -1, 6)
-	assert_bool(StackLogic.fits(s, 2, 1, -1, 6)).is_true()
+	assert_bool(BlocksLogic.fits(s, 2, 1, -1, 6)).is_true()
 	s = _act(s, "ccw")
 	assert_int(s.rot).is_equal(0)
 	assert_int(s.px).is_equal(0)
@@ -122,7 +122,7 @@ func test_long_rotates_next_to_the_right_wall_with_a_kick() -> void:
 	var s := _with_shard(ShardData.LONG, 1, W - 3, 8)
 	s = _act(s, "cw")
 	assert_int(s.rot).is_equal(2)
-	for c in StackLogic.shard_cells(s.kind, s.rot, s.px, s.py):
+	for c in BlocksLogic.shard_cells(s.kind, s.rot, s.px, s.py):
 		assert_bool(c.x >= 0 and c.x < W).is_true()
 	var rotations := s.events.filter(func(e: Dictionary) -> bool: return e.type == "rotate")
 	assert_int(rotations.size()).is_equal(1)
@@ -143,9 +143,9 @@ func test_rotation_fails_cleanly_when_no_kick_fits() -> void:
 
 func test_square_never_changes_cells_when_rotated() -> void:
 	var s := _with_shard(ShardData.SQUARE)
-	var before := StackLogic.shard_cells(s.kind, s.rot, s.px, s.py)
+	var before := BlocksLogic.shard_cells(s.kind, s.rot, s.px, s.py)
 	s = _act(s, "cw")
-	assert_array(StackLogic.shard_cells(s.kind, s.rot, s.px, s.py)).contains_exactly_in_any_order(
+	assert_array(BlocksLogic.shard_cells(s.kind, s.rot, s.px, s.py)).contains_exactly_in_any_order(
 		before
 	)
 
@@ -170,18 +170,18 @@ func test_gravity_moves_one_row_per_second_at_level_one() -> void:
 
 
 func test_gravity_ramps_gently_until_level_25_then_faster() -> void:
-	assert_float(StackLogic.gravity(1)).is_equal_approx(1.0, 0.001)
-	assert_float(StackLogic.gravity(10)).is_equal_approx(2.8, 0.001)
-	assert_float(StackLogic.gravity(25)).is_equal_approx(5.8, 0.001)
-	assert_float(StackLogic.gravity(26)).is_equal_approx(6.5, 0.001)
-	assert_float(StackLogic.gravity(99)).is_equal_approx(20.0, 0.001)
+	assert_float(BlocksLogic.gravity(1)).is_equal_approx(1.0, 0.001)
+	assert_float(BlocksLogic.gravity(10)).is_equal_approx(2.8, 0.001)
+	assert_float(BlocksLogic.gravity(25)).is_equal_approx(5.8, 0.001)
+	assert_float(BlocksLogic.gravity(26)).is_equal_approx(6.5, 0.001)
+	assert_float(BlocksLogic.gravity(99)).is_equal_approx(20.0, 0.001)
 	for lv in range(1, 60):
-		assert_float(StackLogic.gravity(lv + 1)).is_greater_equal(StackLogic.gravity(lv))
+		assert_float(BlocksLogic.gravity(lv + 1)).is_greater_equal(BlocksLogic.gravity(lv))
 
 
 func test_hard_drop_lands_on_ghost_scores_and_locks() -> void:
 	var s := _with_shard(2, 0, 3, 2)
-	var ghost := StackLogic.ghost_y(s)
+	var ghost := BlocksLogic.ghost_y(s)
 	var rows := ghost - s.py
 	var kind := s.kind
 	s = _act(s, "hard")
@@ -232,14 +232,14 @@ func test_single_and_quad_clear_scores_by_level() -> void:
 
 
 func test_level_rises_every_ten_lines() -> void:
-	var s := StackLogic.new_game(9, 1)
+	var s := BlocksLogic.new_game(9, 1)
 	s.lines = 9
 	s = _with_line_clear(s)
 	assert_int(s.lines).is_equal(10)
 	assert_int(s.level).is_equal(2)
 
 
-func _with_line_clear(s: StackState) -> StackState:
+func _with_line_clear(s: BlocksState) -> BlocksState:
 	s.kind = ShardData.LONG
 	s.rot = 0
 	s.px = 0
@@ -255,7 +255,7 @@ func _with_line_clear(s: StackState) -> StackState:
 
 
 func test_hold_once_per_shard() -> void:
-	var s := StackLogic.new_game(21)
+	var s := BlocksLogic.new_game(21)
 	var first := s.kind
 	var next := s.queue[0]
 	s = _act(s, "hold")
@@ -272,7 +272,7 @@ func test_hold_once_per_shard() -> void:
 
 
 func test_garbage_arrives_on_next_lock_with_one_gap() -> void:
-	var s := StackLogic.new_game(5)
+	var s := BlocksLogic.new_game(5)
 	s = _act(s, "garbage", {"rows": 2})
 	assert_int(s.pending_garbage).is_equal(2)
 	s = _act(s, "hard")
@@ -296,7 +296,7 @@ func test_clearing_lines_cancels_incoming_garbage() -> void:
 
 
 func test_blocked_spawn_ends_the_game() -> void:
-	var s := StackLogic.new_game(4)
+	var s := BlocksLogic.new_game(4)
 	for y in range(0, H):
 		_fill_row(s, y, 0)
 	s.board[0] = 0
@@ -311,9 +311,9 @@ func test_blocked_spawn_ends_the_game() -> void:
 
 
 func test_reduce_never_mutates_its_input() -> void:
-	var s := StackLogic.new_game(77)
+	var s := BlocksLogic.new_game(77)
 	var print_before := s.fingerprint()
-	StackLogic.reduce(s, {"type": "hard"})
+	BlocksLogic.reduce(s, {"type": "hard"})
 	assert_int(s.fingerprint()).is_equal(print_before)
 
 
@@ -329,7 +329,7 @@ func _replay(seed_value: int) -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 99
 	var kinds := ["left", "right", "cw", "ccw", "soft", "hard", "hold"]
-	var s := StackLogic.new_game(seed_value)
+	var s := BlocksLogic.new_game(seed_value)
 	var prints := []
 	for i in 600:
 		var a := {"type": "tick", "dt": 1.0 / 60.0}
@@ -337,7 +337,7 @@ func _replay(seed_value: int) -> Array:
 			a = {"type": kinds[rng.randi_range(0, kinds.size() - 1)]}
 		if i % 97 == 0:
 			a = {"type": "garbage", "rows": 1}
-		s = StackLogic.reduce(s, a)
+		s = BlocksLogic.reduce(s, a)
 		prints.append(s.fingerprint())
 	return prints
 
@@ -348,22 +348,22 @@ func _replay(seed_value: int) -> Array:
 func test_shards_never_rotate_into_the_hidden_rows() -> void:
 	# A tall stack right under the top: rotations that would need an upward kick fail instead.
 	for kind in ShardData.COUNT:
-		var s := _with_shard(kind, 0, 3, StackState.HIDDEN)
-		for y in range(StackState.HIDDEN + 2, H):
+		var s := _with_shard(kind, 0, 3, BlocksState.HIDDEN)
+		for y in range(BlocksState.HIDDEN + 2, H):
 			_fill_row(s, y, -1)
 		for turn in 4:
 			s = _act(s, "cw")
-			for c in StackLogic.shard_cells(s.kind, s.rot, s.px, s.py):
+			for c in BlocksLogic.shard_cells(s.kind, s.rot, s.px, s.py):
 				(
-					assert_bool(c.y >= StackState.HIDDEN)
+					assert_bool(c.y >= BlocksState.HIDDEN)
 					. override_failure_message("shard %d rotated into hidden row %d" % [kind, c.y])
 					. is_true()
 				)
 
 
 func test_garbage_lifting_blocks_above_the_top_ends_the_game() -> void:
-	var s := StackLogic.new_game(8)
-	s.board[StackState.HIDDEN * W + 4] = 1  # one block in the top visible row
+	var s := BlocksLogic.new_game(8)
+	s.board[BlocksState.HIDDEN * W + 4] = 1  # one block in the top visible row
 	s = _act(s, "garbage", {"rows": 1})
 	s = _act(s, "hard")
 	assert_bool(s.over).is_true()
@@ -372,8 +372,8 @@ func test_garbage_lifting_blocks_above_the_top_ends_the_game() -> void:
 
 
 func test_garbage_below_the_top_does_not_end_the_game() -> void:
-	var s := StackLogic.new_game(8)
-	s.board[(StackState.HIDDEN + 3) * W + 0] = 1  # edge column, clear of the dropped shard
+	var s := BlocksLogic.new_game(8)
+	s.board[(BlocksState.HIDDEN + 3) * W + 0] = 1  # edge column, clear of the dropped shard
 	s = _act(s, "garbage", {"rows": 2})
 	s = _act(s, "hard")
 	assert_bool(s.over).is_false()

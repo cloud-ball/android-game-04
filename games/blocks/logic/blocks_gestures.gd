@@ -1,4 +1,4 @@
-class_name StackGestures
+class_name BlocksGestures
 extends RefCounted
 ## Turns touch input into Facetfall actions (pure: feed events + time, get action names).
 ##   tap                      -> "cw"

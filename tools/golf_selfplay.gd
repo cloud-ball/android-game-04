@@ -1,5 +1,5 @@
 extends SceneTree
-## Headless Fairway Flick self-play for Rush tuning. Plays every hole K times for ONE golfer type
+## Headless Cup Dash self-play for Rush tuning. Plays every hole K times for ONE golfer type
 ## (a CPU tier, or the human "baseline") and writes one CSV row per play: when the ball dropped
 ## (seconds since the hole started, counting thinking / aiming pauses and the real roll time) or
 ## that it never did (stroke cap par + 3). Rush balls never touch, so golfers can be simulated

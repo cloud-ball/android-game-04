@@ -94,7 +94,7 @@ func test_registry_lists_all_eight_with_released_games_enabled() -> void:
 		. filter(func(m: GameManifest) -> bool: return m.enabled)
 		. map(func(m: GameManifest) -> String: return m.id)
 	)
-	# Golf joined the released games in Fairway Flick step G (2026-11-19).
+	# Golf joined the released games in Cup Dash step G (2026-11-19).
 	assert_array(enabled).contains_exactly_in_any_order(["snake", "blocks", "pool", "golf"])
 
 

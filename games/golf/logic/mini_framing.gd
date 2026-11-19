@@ -5,8 +5,8 @@ extends RefCounted
 ## ahead of the tee view, past the far end of the course: it lands in the top third of the frame
 ## on the first shot and in the intro fly-over. Trees and props keep clear of play so they never
 ## stand between the camera and the ball.
-## Research: docs/research/Fairway Flick mini golf visuals.md ("Reviewers reward themed places");
-## plan: docs/plans/2026-11-15-fairway-flick-landmark.md.
+## Research: docs/research/Cup Dash mini golf visuals.md ("Reviewers reward themed places");
+## plan: docs/plans/2026-11-15-cup-dash-landmark.md.
 
 const LANDMARK_BEYOND := 30.0  # metres past the far edge of the course, on the tee view line
 const LANDMARK_SIDE := 3.0  # sideways, away from the cup, so it never hides the flag

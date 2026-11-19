@@ -14,4 +14,4 @@ chmod 600 "$dest"
 echo
 echo "Created $dest"
 echo "Add this to ~/.zshrc so scripts/build_release.sh finds it:"
-echo "  export PA8_KEYSTORE=\"$dest\""
+echo "  export PLAYJAR_KEYSTORE=\"$dest\""

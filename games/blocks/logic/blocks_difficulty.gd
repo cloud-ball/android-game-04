@@ -1,7 +1,7 @@
-class_name StackDifficulty
+class_name BlocksDifficulty
 extends RefCounted
 ## Facetfall difficulty data (pure): the player's start level and how the CPU plays.
-## Tune with tools/stack_selfplay.gd. 12 x 24 board, vs its "average" player profile (2026-11-13):
+## Tune with tools/blocks_selfplay.gd. 12 x 24 board, vs its "average" player profile (2026-11-13):
 ## Easy wins ~27%, Medium ~53%, Hard ~100% (Hard ~35% vs the "good" profile).
 
 ## Per difficulty: player's start level, CPU seconds per shard, CPU top_k, noise, hold.

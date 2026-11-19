@@ -43,7 +43,7 @@ func _fuzz_blocks(seed_value: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var kinds := ["left", "right", "cw", "ccw", "soft", "hard", "hold"]
-	var s := StackLogic.new_game(seed_value, 1 + seed_value % 8)
+	var s := BlocksLogic.new_game(seed_value, 1 + seed_value % 8)
 	var prev_score := 0
 	var prev_lines := 0
 	for i in 4000:
@@ -54,27 +54,27 @@ func _fuzz_blocks(seed_value: int) -> void:
 		elif r < 0.37:
 			a = {"type": "garbage", "rows": rng.randi_range(1, 4)}
 		var before := s.fingerprint()
-		var n := StackLogic.reduce(s, a)
+		var n := BlocksLogic.reduce(s, a)
 		if s.fingerprint() != before:
 			_flag("blocks: reduce mutated its input", "seed %d step %d %s" % [seed_value, i, a])
 		s = n
 		var where := "seed %d step %d after %s" % [seed_value, i, a.type]
 		for v in s.board:
-			if v > StackState.GARBAGE:
+			if v > BlocksState.GARBAGE:
 				_flag("blocks: invalid cell value", where)
 				break
 		if not s.over:
-			if not StackLogic.fits(s, s.kind, s.rot, s.px, s.py):
+			if not BlocksLogic.fits(s, s.kind, s.rot, s.px, s.py):
 				_flag("blocks: active shard overlaps the board or walls", where)
-			if s.queue.size() < StackLogic.PREVIEW:
+			if s.queue.size() < BlocksLogic.PREVIEW:
 				_flag("blocks: preview queue too short", where)
-			for c in StackLogic.shard_cells(s.kind, s.rot, s.px, s.py):
-				if c.y < StackState.HIDDEN:
+			for c in BlocksLogic.shard_cells(s.kind, s.rot, s.px, s.py):
+				if c.y < BlocksState.HIDDEN:
 					_flag("blocks: active shard partly in hidden rows (invisible)", where)
 					break
-		for y in StackState.HIDDEN:
-			for x in StackState.W:
-				if s.board[y * StackState.W + x] != 0 and not s.over:
+		for y in BlocksState.HIDDEN:
+			for x in BlocksState.W:
+				if s.board[y * BlocksState.W + x] != 0 and not s.over:
 					_flag(
 						"blocks: locked cell in hidden rows while playing (invisible block)", where
 					)
@@ -87,7 +87,7 @@ func _fuzz_blocks(seed_value: int) -> void:
 		prev_score = s.score
 		prev_lines = s.lines
 		if s.over:
-			s = StackLogic.new_game(seed_value + i, 1)
+			s = BlocksLogic.new_game(seed_value + i, 1)
 			prev_score = 0
 			prev_lines = 0
 
@@ -205,7 +205,7 @@ func _in_pocket_mouth(t: CueTable, x: float, y: float, r: float) -> bool:
 	return false
 
 
-# --- Fairway Flick ------------------------------------------------------------------------------
+# --- Cup Dash ------------------------------------------------------------------------------
 
 
 func _golf_holes() -> PackedStringArray:

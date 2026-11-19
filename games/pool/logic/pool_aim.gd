@@ -1,7 +1,7 @@
 class_name PoolAim
 extends RefCounted
 ## Aiming maths for Break & Bank (pure): power curve, lift-off filter and the guideline prediction.
-## Research: docs/research/Cue Club pool game design.md (portrait touch controls).
+## Research: docs/research/Break and Bank pool game design.md (portrait touch controls).
 ##   speed = v_max * p^2 (8 m/s, 12 m/s on the break): a medium 1.5 m/s shot sits at ~43%
 ##   of the bar.
 ##   On release the aim reverts to where it was LIFT_MS earlier (fingers nudge it as they lift).

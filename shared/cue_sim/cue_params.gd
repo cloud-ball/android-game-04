@@ -1,13 +1,14 @@
 class_name CueParams
 extends RefCounted
 ## Physical constants for the cue solver (SI units). Defaults are pool on a 6-ft bar table; sources
-## and reasoning in docs/research/Cue Club pool game design.md. Plain vars so tests can vary them.
+## and reasoning in docs/research/Break and Bank pool game design.md. Plain vars so tests can
+## vary them.
 
 var g := 9.81
 var radius := 0.028575
 var mass := 0.17
 ## Sliding (cloth) friction; rolling resistance (deceleration = mu_roll * g, no 5/7 factor).
-## 2026-11-14 (docs/research/Cue Club versus mobile pool games.md): mu_roll 0.012 -> 0.010 and
+## 2026-11-14 (docs/research/Break and Bank versus mobile pool games.md): mu_roll 0.012 -> 0.010 and
 ## e_cushion 0.85 -> 0.95 make the WPA rail test pass (~4.1 table lengths, was 3.4); casual pockets
 ## 12.7 / 14.0 cm (were pro-spec 11.8 / 13.0) for friendlier breaks and cuts.
 var mu_slide := 0.2

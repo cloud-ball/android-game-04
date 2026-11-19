@@ -1,8 +1,8 @@
 extends SceneTree
 ## Headless self-play for Facetfall difficulty tuning (vs CPU matches, fixed 60 Hz steps).
-## Each difficulty's CPU (StackDifficulty) plays simulated
+## Each difficulty's CPU (BlocksDifficulty) plays simulated
 ## human profiles. Reports CPU win rate, match length, lines and the AI's planning cost.
-## Run: godot --headless --path . -s res://tools/stack_selfplay.gd -- [matches]
+## Run: godot --headless --path . -s res://tools/blocks_selfplay.gd -- [matches]
 ##      [start,think,top_k,noise,hold ...]   (try CPU settings instead of the shipped ones)
 
 const STEP := 1.0 / 60.0
@@ -24,7 +24,7 @@ func _init() -> void:
 	print(
 		(
 			"board %d x %d, %d matches per cell"
-			% [StackState.W, StackState.H - StackState.HIDDEN, matches]
+			% [BlocksState.W, BlocksState.H - BlocksState.HIDDEN, matches]
 		)
 	)
 	print("difficulty  player    cpu_win  avg_min  cpu_lines/min  player_lines/min")
@@ -32,7 +32,7 @@ func _init() -> void:
 	if specs.is_empty():
 		for d in ["easy", "medium", "hard"]:
 			for p in PROFILES:
-				_report(d, StackDifficulty.LEVELS[d], p, matches)
+				_report(d, BlocksDifficulty.LEVELS[d], p, matches)
 	for spec in specs:
 		var v: PackedStringArray = spec.split(",")
 		var lv := {
@@ -82,8 +82,8 @@ func _report(label: String, lv: Dictionary, profile: String, matches: int) -> vo
 
 func _match(lv: Dictionary, profile: String, seed_value: int) -> Dictionary:
 	var pr: Dictionary = PROFILES[profile]
-	var player := StackLogic.new_game(seed_value, int(lv.start))
-	var cpu := StackLogic.new_game(seed_value, int(lv.start))
+	var player := BlocksLogic.new_game(seed_value, int(lv.start))
+	var cpu := BlocksLogic.new_game(seed_value, int(lv.start))
 	var cpu_rng := RandomNumberGenerator.new()
 	cpu_rng.seed = seed_value * 7 + 1
 	var p_rng := RandomNumberGenerator.new()
@@ -93,20 +93,20 @@ func _match(lv: Dictionary, profile: String, seed_value: int) -> Dictionary:
 	var t := 0.0
 	while t < MAX_SECONDS and not player.over and not cpu.over:
 		t += STEP
-		player = StackLogic.reduce(player, {"type": "tick", "dt": STEP})
+		player = BlocksLogic.reduce(player, {"type": "tick", "dt": STEP})
 		p_t += STEP
 		if p_t >= float(pr.think) and not player.over:
 			p_t = 0.0
 			player = _place(player, p_rng, pr)
 			if player.outgoing > 0:
-				cpu = StackLogic.reduce(cpu, {"type": "garbage", "rows": player.outgoing})
+				cpu = BlocksLogic.reduce(cpu, {"type": "garbage", "rows": player.outgoing})
 		cpu_t += STEP
-		var think := StackDifficulty.think_at(float(lv.think), cpu.level)
+		var think := BlocksDifficulty.think_at(float(lv.think), cpu.level)
 		if cpu_t >= think and not cpu.over:
 			cpu_t = 0.0
 			cpu = _place(cpu, cpu_rng, lv)
 			if cpu.outgoing > 0:
-				player = StackLogic.reduce(player, {"type": "garbage", "rows": cpu.outgoing})
+				player = BlocksLogic.reduce(player, {"type": "garbage", "rows": cpu.outgoing})
 	return {
 		"cpu_won": player.over and not cpu.over,
 		"seconds": t,
@@ -115,13 +115,13 @@ func _match(lv: Dictionary, profile: String, seed_value: int) -> Dictionary:
 	}
 
 
-func _place(s: StackState, rng: RandomNumberGenerator, p: Dictionary) -> StackState:
+func _place(s: BlocksState, rng: RandomNumberGenerator, p: Dictionary) -> BlocksState:
 	var t0 := Time.get_ticks_usec()
-	var plan := StackAI.choose(s, rng, bool(p.hold), int(p.top_k), float(p.noise))
+	var plan := BlocksAI.choose(s, rng, bool(p.hold), int(p.top_k), float(p.noise))
 	_plan_us += Time.get_ticks_usec() - t0
 	_plans += 1
 	if plan.is_empty():
-		return StackLogic.reduce(s, {"type": "hard"})
-	for a in StackAI.actions_for(s, plan):
-		s = StackLogic.reduce(s, a)
+		return BlocksLogic.reduce(s, {"type": "hard"})
+	for a in BlocksAI.actions_for(s, plan):
+		s = BlocksLogic.reduce(s, a)
 	return s

@@ -1,5 +1,5 @@
 extends SceneTree
-## Fairway Flick hole validator: for every hole of a world (or all), prints the route length, the
+## Cup Dash hole validator: for every hole of a world (or all), prints the route length, the
 ## strokes the Hard CPU needs with perfect execution (must be <= par), and a sweep of 144 tee
 ## shots (all must stop, in under 20 s, with fewer than 15 bounces).
 ## Run: godot --headless --path . -s res://tools/golf_validate.gd -- [world]

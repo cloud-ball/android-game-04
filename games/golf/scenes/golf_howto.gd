@@ -1,6 +1,6 @@
 class_name GolfHowto
 extends RefCounted
-## Fairway Flick how-to cards (HowtoDeck, 920 x 920 design units): a top-down sketch of a hole in
+## Cup Dash how-to cards (HowtoDeck, 920 x 920 design units): a top-down sketch of a hole in
 ## the game's own colours. 1) drag back and let go (the ball rolls the other way, into the cup);
 ## 2) Rush: first ball in the cup wins; 3) Tour: par or better earns stars.
 

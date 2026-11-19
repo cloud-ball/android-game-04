@@ -2,15 +2,15 @@ class_name BoardLayout
 extends RefCounted
 ## Screen layout for Facetfall, as pure arithmetic (no nodes): from the canvas size (1080 wide,
 ## height follows the phone's aspect) and the safe-area insets it derives the cell size and every
-## HUD rectangle, in canvas units. Research: docs/research/Stack Drop board redesign.md;
-## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-stack-drop-bigger-tower.md.
+## HUD rectangle, in canvas units. Research: docs/research/Facetfall board redesign.md;
+## HOLD moved to the top band for a bigger tower: docs/plans/2026-11-12-facetfall-bigger-tower.md.
 ##   top band : CPU mini-board | status (score, lines, level) | pause
 ##              CPU mini-board | HOLD | NEXT strip
 ##   middle   : the 12 x 24 well (garbage meter beside its left edge), pedestal below
 ##   bottom   : keep-out above the system gesture area
 
-const COLS := StackState.W
-const ROWS := StackState.H - StackState.HIDDEN
+const COLS := BlocksState.W
+const ROWS := BlocksState.H - BlocksState.HIDDEN
 ## Outer margin; nothing tappable and no gesture starts inside it (back-gesture zones).
 const SIDE := 42.0
 ## Horizontal space per side reserved beside the well (meter + posts).

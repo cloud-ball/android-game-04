@@ -3,7 +3,7 @@ extends RefCounted
 ## Slow motion that never touches the physics: the solver always runs whole fixed substeps in the
 ## same order; this clock only decides HOW MANY to run on each display tick. At rate 1.0 that is
 ## exactly SUBSTEPS_PER_TICK; slower rates bank fractions of a substep until a whole one is due.
-## Research: docs/research/Fairway Flick mini golf visuals.md ("Slow motion without touching the
+## Research: docs/research/Cup Dash mini golf visuals.md ("Slow motion without touching the
 ## solver"). Pure; unit tested (same end state at any rate schedule).
 
 const SUBSTEPS_PER_TICK := 4

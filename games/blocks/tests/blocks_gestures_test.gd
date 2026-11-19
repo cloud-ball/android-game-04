@@ -16,7 +16,7 @@ func _drag(p: Vector2) -> InputEventScreenDrag:
 	return d
 
 
-func _run(g: StackGestures, steps: Array) -> PackedStringArray:
+func _run(g: BlocksGestures, steps: Array) -> PackedStringArray:
 	var out := PackedStringArray()
 	for s in steps:
 		out.append_array(g.feed(s[0], s[1]))
@@ -24,7 +24,7 @@ func _run(g: StackGestures, steps: Array) -> PackedStringArray:
 
 
 func test_quick_tap_rotates() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	var out := _run(
 		g, [[_touch(Vector2(300, 900), true), 0], [_touch(Vector2(305, 902), false), 120]]
 	)
@@ -32,7 +32,7 @@ func test_quick_tap_rotates() -> void:
 
 
 func test_long_press_is_not_a_tap() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	var out := _run(
 		g, [[_touch(Vector2(300, 900), true), 0], [_touch(Vector2(300, 900), false), 900]]
 	)
@@ -40,7 +40,7 @@ func test_long_press_is_not_a_tap() -> void:
 
 
 func test_horizontal_drag_moves_one_column_per_cell() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	g.cell_px = 50.0
 	var out := _run(
 		g,
@@ -56,7 +56,7 @@ func test_horizontal_drag_moves_one_column_per_cell() -> void:
 
 
 func test_fast_flick_down_hard_drops() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	var out := _run(
 		g,
 		[
@@ -69,7 +69,7 @@ func test_fast_flick_down_hard_drops() -> void:
 
 
 func test_slow_drag_down_soft_drops_without_hard_drop() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	g.cell_px = 50.0
 	var out := _run(
 		g,
@@ -84,7 +84,7 @@ func test_slow_drag_down_soft_drops_without_hard_drop() -> void:
 
 
 func test_second_finger_holds_and_cancels_the_tap() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	var out := _run(
 		g,
 		[
@@ -98,7 +98,7 @@ func test_second_finger_holds_and_cancels_the_tap() -> void:
 
 
 func test_touches_starting_in_rejected_areas_are_ignored() -> void:
-	var g := StackGestures.new()
+	var g := BlocksGestures.new()
 	g.reject = func(p: Vector2) -> bool: return p.y > 2000.0
 	var out := _run(
 		g, [[_touch(Vector2(300, 2100), true), 0], [_touch(Vector2(302, 2101), false), 100]]

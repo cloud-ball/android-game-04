@@ -1,6 +1,6 @@
-class_name StackState
+class_name BlocksState
 extends RefCounted
-## Complete Facetfall game state. Plain data: StackLogic.reduce() copies it and returns a new one,
+## Complete Facetfall game state. Plain data: BlocksLogic.reduce() copies it and returns a new one,
 ## so any game can be replayed bit-exactly from (seed, actions).
 ## Board: W x H cells, row 0 at the top; the top HIDDEN rows are the spawn area (not drawn).
 
@@ -40,8 +40,8 @@ var over := false
 var events: Array = []
 
 
-func copy() -> StackState:
-	var s := StackState.new()
+func copy() -> BlocksState:
+	var s := BlocksState.new()
 	s.board = board.duplicate()
 	s.kind = kind
 	s.rot = rot

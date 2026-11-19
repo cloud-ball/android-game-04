@@ -1,7 +1,7 @@
 class_name GolfParams
 extends RefCounted
-## Fairway Flick physical constants and aerodynamic coefficients (SI units). Pure; no nodes.
-## Sources and reasoning: docs/research/Fairway Flick golf game design.md (ball physics notes).
+## Cup Dash physical constants and aerodynamic coefficients (SI units). Pure; no nodes.
+## Sources and reasoning: docs/research/Cup Dash golf game design.md (ball physics notes).
 ## The coefficient curves are polynomial / piecewise-linear on purpose: no pow / exp in the solver
 ## hot path (cross-device determinism, the golf rules).
 

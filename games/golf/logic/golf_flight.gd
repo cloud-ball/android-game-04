@@ -1,8 +1,8 @@
 class_name GolfFlight
 extends RefCounted
-## Fairway Flick ball flight (pure; no nodes). RK4 on position / velocity with drag, Magnus lift and
+## Cup Dash ball flight (pure; no nodes). RK4 on position / velocity with drag, Magnus lift and
 ## gravity; spin magnitude decays per metre travelled, the spin axis stays fixed (TrackMan).
-## Research: docs/research/Fairway Flick golf game design.md (ball physics notes, sections 1-3).
+## Research: docs/research/Cup Dash golf game design.md (ball physics notes, sections 1-3).
 ## Frame: x right, y up, z towards the player - downrange is -z (Godot's forward), so world
 ## positions need no conversion. State is PackedFloat64Array; the hot path uses only + - * / and
 ## sqrt (no pow / exp / trig) so results match across devices.

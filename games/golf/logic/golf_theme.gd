@@ -2,7 +2,7 @@ class_name GolfTheme
 extends RefCounted
 ## A world's look as pure data (like CoursePreset): every colour the course uses, ordered on a
 ## value ladder - surroundings darkest, carpet mid, rails lighter, ball / cup rim / aim guide
-## brightest - plus which landmark, trees and props dress it. Research: docs/research/Fairway Flick
+## brightest - plus which landmark, trees and props dress it. Research: docs/research/Cup Dash
 ## mini golf visuals.md ("A strict value ladder", world table). Colour meanings stay fixed across
 ## worlds: red-orange = danger (bumpers, lava), amber = boost, tan = sand. One constructor per
 ## world (meadow, coastal, canyon, volcanic); for_world() picks one.
@@ -68,7 +68,7 @@ var _kit := {}  # kit material name -> colour (built on first use)
 
 ## Colours for the CC0 Kenney Nature Kit props (games/golf/assets/kenney_nature), by the kit's
 ## material names: every prop is recoloured onto this world's palette, so stock kit colours never
-## ship (research: "Recolour everything onto Fairway Flick's own palette"). Props stay mid-value:
+## ship (research: "Recolour everything onto Cup Dash's own palette"). Props stay mid-value:
 ## darker than the rails and well below the ball. Unknown names return magenta (tested).
 func kit_color(material: String) -> Color:
 	if _kit.is_empty():
