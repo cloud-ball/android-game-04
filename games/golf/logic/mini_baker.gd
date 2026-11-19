@@ -140,6 +140,21 @@ static func flow_dir(spec: Dictionary, pin: Vector3, from: Vector3) -> Vector3:
 	return d.normalized()
 
 
+## Route distance (metres along the flow field) from a world point to the cup's tile; 1e5 when the
+## point is off the map or on a tile that cannot reach the cup. `field` from flow_field(spec).
+static func flow_metres(spec: Dictionary, field: PackedFloat64Array, q: Vector3) -> float:
+	var tile := float(spec.get("tile", 3.0))
+	var rows: int = spec.map.size()
+	var cols := 0
+	for r in spec.map:
+		cols = maxi(cols, str(r).length())
+	var c := int(floorf((q.x + cols * tile * 0.5) / tile))
+	var r := int(floorf((q.z + rows * tile) / tile))
+	if c < 0 or r < 0 or c >= cols or r >= rows or field[r * cols + c] < 0.0:
+		return 1e5
+	return field[r * cols + c]
+
+
 ## Grid helper over the tile map (pure).
 class _Map:
 	extends RefCounted
