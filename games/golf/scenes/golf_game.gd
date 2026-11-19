@@ -19,11 +19,6 @@ const SAVE_DEFAULTS := {
 	"difficulty": "medium",
 	"tutorial_seen": false,
 }
-const HOLES := [
-	"res://games/golf/data/mini/meadow_01.json",
-	"res://games/golf/data/mini/meadow_02.json",
-	"res://games/golf/data/mini/meadow_03.json",
-]
 const MAX_SPEED := 13.0  # m/s at a full pull
 const POWER_CURVE := 1.3  # speed = MAX x pull^1.3: the first third of the pull gives fine putts
 const SLOWMO := 0.3  # presentation rate around a great hole-out (physics unchanged)
@@ -45,6 +40,9 @@ const NAMES := {
 static var _warmed := false  # shaders compiled this session (FxWarmup)
 
 var mode: int = Mode.INTRO
+
+## The world being played (meadow until the start screen picks one, step G).
+var _holes: PackedStringArray = GolfWorlds.holes("meadow")
 
 var _save: Dictionary
 var _preset := CoursePreset.new()
@@ -142,7 +140,7 @@ func _ready() -> void:
 	var tier: int = tiers.get(str(Boot.options.get("difficulty", _save["difficulty"])), 1)
 	_rush = GolfRush.new()
 	add_child(_rush)
-	_rush.setup(self, _layer, UiKit.safe_top(self), tier, HOLES.size(), _save)
+	_rush.setup(self, _layer, UiKit.safe_top(self), tier, _holes.size(), _save)
 	_load_hole(_rush.first_hole())
 
 
@@ -155,10 +153,10 @@ func load_hole(i: int) -> void:
 
 
 func _load_hole(i: int) -> void:
-	_index = i % HOLES.size()
+	_index = i % _holes.size()
 	if i > 0 and _index == 0:
 		_total = 0
-	_spec = MiniBaker.load_spec(HOLES[_index])
+	_spec = MiniBaker.load_spec(_holes[_index])
 	_hole = MiniBaker.bake(_spec)
 	_ball = GolfBall.new(_hole, _preset)
 	if _world != null:
@@ -436,7 +434,7 @@ func _flow_dir(from: Vector3) -> Vector3:
 
 
 func _refresh() -> void:
-	var where := _rush.hud_line() if _rush != null else "HOLE %d/%d" % [_index + 1, HOLES.size()]
+	var where := _rush.hud_line() if _rush != null else "HOLE %d/%d" % [_index + 1, _holes.size()]
 	_hud_top.text = ("%s · %s · PAR %d" % [where, str(_spec.get("name", "")).to_upper(), _hole.par])
 	var to_cup := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
 	if _rush != null:

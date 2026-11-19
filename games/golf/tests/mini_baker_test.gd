@@ -1,12 +1,9 @@
 extends GdUnitTestSuite
 ## MiniBaker: tile maps -> walled holes; ramps, jumps, flow field and a scripted solvability check.
 
-const HOLES := [
-	"res://games/golf/data/mini/meadow_01.json",
-	"res://games/golf/data/mini/meadow_02.json",
-	"res://games/golf/data/mini/meadow_03.json",
-]
 const R := 0.021335
+
+var holes := GolfWorlds.all_holes()
 
 
 static func spec(path: String) -> Dictionary:
@@ -20,7 +17,7 @@ static func preset() -> CoursePreset:
 
 
 func test_bakes_are_deterministic_and_tee_cup_placed() -> void:
-	for p in HOLES:
+	for p in holes:
 		var a := MiniBaker.bake(spec(p))
 		var b := MiniBaker.bake(spec(p))
 		(
@@ -33,7 +30,7 @@ func test_bakes_are_deterministic_and_tee_cup_placed() -> void:
 
 
 func test_ramp_heights_and_open_top() -> void:
-	var s := spec(HOLES[1])
+	var s := spec(holes[1])
 	var d := MiniBaker.bake(s)
 	# Ramp tile (row 3, col 2): z from -12 (top, high) to -9 (bottom, low); x centre 0.
 	assert_float(d.height(0.0, -9.05)).is_less(0.05)
@@ -47,7 +44,7 @@ func test_ramp_heights_and_open_top() -> void:
 
 
 func test_a_fast_shot_clears_the_jump_and_a_slow_one_falls_in() -> void:
-	var d := MiniBaker.bake(spec(HOLES[2]))
+	var d := MiniBaker.bake(spec(holes[2]))
 	var fast := GolfBall.new(d, preset())
 	fast.putt(0.0, -4.5, 0.0, -11.0)
 	fast.run_to_rest()
@@ -63,7 +60,7 @@ func test_a_fast_shot_clears_the_jump_and_a_slow_one_falls_in() -> void:
 func test_balls_stay_inside_the_walls() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	for p in HOLES.slice(0, 2):
+	for p in holes.slice(0, 2):
 		var d := MiniBaker.bake(spec(p))
 		for k in 25:
 			var b := GolfBall.new(d, preset())
@@ -77,7 +74,7 @@ func test_balls_stay_inside_the_walls() -> void:
 
 
 func test_flow_field_reaches_the_tee() -> void:
-	for p in HOLES:
+	for p in holes:
 		var s := spec(p)
 		var f := MiniBaker.flow_field(s)
 		var d := MiniBaker.bake(s)
@@ -98,50 +95,41 @@ static func flow_at(s: Dictionary, f: PackedFloat64Array, x: float, z: float) ->
 	return f[r2 * cols + c]
 
 
-## A scripted golfer (greedy on the flow field, then straight at the cup) holes out in par + 2.
-func test_every_hole_is_solvable() -> void:
-	for p in HOLES:
+## Every hole can be played within par: the Hard CPU golfer, with no aim or speed error, holes
+## out in par strokes or fewer (step F gate; tools/golf_validate.gd prints the full table).
+func test_every_hole_is_playable_within_par() -> void:
+	for p in holes:
 		var s := spec(p)
 		var d := MiniBaker.bake(s)
-		var f := MiniBaker.flow_field(s)
-		var at := Vector2(d.tee.x, d.tee.z)
+		var cpu := GolfCpu.new(d, preset(), s)
+		var rng := RandomNumberGenerator.new()
+		var r := GolfBall.new(d, preset()).p.radius
+		var at := d.tee + Vector3(0, r, 0)
 		var strokes := 0
 		var holed := false
-		while strokes < d.par + 2 and not holed:
+		while strokes < d.par and not holed:
 			strokes += 1
-			var best := INF
-			var best_at := at
-			for ai in 48:
-				var a := TAU * ai / 48.0
-				for vi in 10:
-					var v := 1.5 + vi * 1.3
-					var b := GolfBall.new(d, preset())
-					b.putt(at.x, at.y, cos(a) * v, sin(a) * v)
-					b.run_to_rest(1.0 / 60.0)
-					if b.phase == GolfBall.Phase.HOLED:
-						holed = true
-						best = -1.0
-						break
-					if b.phase != GolfBall.Phase.REST:
-						continue
-					var q := b.pos()
-					var fl := flow_at(s, f, q.x, q.z)
-					if fl < 0.0:
-						continue
-					var score := fl + Vector2(q.x - d.pin.x, q.z - d.pin.z).length()
-					if score < best:
-						best = score
-						best_at = Vector2(q.x, q.z)
-				if holed:
-					break
-			at = best_at
-		assert_bool(holed).override_failure_message("%s not holed in %d" % [p, strokes]).is_true()
+			var v := GolfCpu.pick_with(cpu.ranked(at), 1, 0.0, 0.0, rng)
+			var b := GolfBall.new(d, preset())
+			b.putt(at.x, at.z, v.x, v.y)
+			b.run_to_rest()
+			holed = b.phase == GolfBall.Phase.HOLED
+			if b.phase == GolfBall.Phase.REST:
+				at = b.pos()
+			elif b.phase == GolfBall.Phase.WATER:
+				var q := b.last_safe
+				at = Vector3(q.x, d.height(q.x, q.z) + r, q.z)
+		(
+			assert_bool(holed)
+			. override_failure_message("%s not holed within par %d" % [p, d.par])
+			. is_true()
+		)
 
 
 ## Regression (phone feedback "stuck / bad bouncing" on the par 3s): every shot from every tee comes
 ## to rest quickly without chattering.
 func test_every_shot_finishes_without_chatter() -> void:
-	for p in HOLES:
+	for p in holes:
 		var d := MiniBaker.bake(spec(p))
 		for ai in 24:
 			var a := TAU * ai / 24.0
@@ -163,7 +151,7 @@ func test_every_shot_finishes_without_chatter() -> void:
 ## Regression: over the top of the Step Up ramp at speed the ball hops once and lands (it used to
 ## start the hop inside the higher floor and bounce ~70 times in place).
 func test_ramp_crest_hop_lands_cleanly() -> void:
-	var d := MiniBaker.bake(spec(HOLES[1]))
+	var d := MiniBaker.bake(spec(holes[1]))
 	var b := GolfBall.new(d, preset())
 	var a := deg_to_rad(70.0)
 	b.putt(d.tee.x, d.tee.z, cos(a) * 11.4, sin(a) * 11.4)
@@ -173,7 +161,7 @@ func test_ramp_crest_hop_lands_cleanly() -> void:
 
 ## Regression: a ball that stops just inside the cup's pull zone rests (it used to wait forever).
 func test_ball_stopping_near_the_cup_rests_or_drops() -> void:
-	var d := MiniBaker.bake(spec(HOLES[0]))
+	var d := MiniBaker.bake(spec(holes[0]))
 	for r in [0.12, 0.2, 0.3, 0.34]:
 		var b := GolfBall.new(d, preset())
 		b.putt(d.pin.x - r, d.pin.z, 0.0, 0.0)

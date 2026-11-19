@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Fairway Flick step F: Meadow world, 9 holes, validator
+- Six new original holes: Zigzag (S-bend + bumper), Lily Pond (play round the water), Double
+  Decker (ramp up to a raised deck with a bumper, ramp down), Sand Corner (dogleg, sand inside the
+  turn), Hop, Skip (two jumps), Grand Finale (bumper field, ramp to a raised green, water both
+  sides; par 3).
+- GolfWorlds (logic/golf_worlds.gd): the course catalogue every list reads (game, tests, tools).
+- tools/golf_validate.gd: per hole the route length, the Hard CPU's strokes with perfect execution
+  (must be <= par) and a 144-shot tee sweep (all stop, < 20 s, < 15 bounces). Meadow: 9/9 pass;
+  perfect-CPU strokes 2,2,1,2,2,2,3,3,2 against par 2,3,3,3,3,3,3,3,3.
+- The brute-force "solvable in par + 2" test is now "the Hard CPU holes out within par" (stricter,
+  cheaper). 77 golf tests green.
+- Try it: `--game=golf --mode=tour --hole=<1-9>`, or a Rush (3 holes drawn from the 9).
+
 ## 2026-11-19 · Full test pass (all four games) and security check
 - Unit tests: 272 green. QA fuzz (tools/qa_fuzz.gd, now also Break & Bank shots, Fairway Flick
   shots on every hole and Rush rule sequences): 40 seeds, no invariant violations (a pool ball

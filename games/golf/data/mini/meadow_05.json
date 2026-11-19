@@ -1,0 +1,15 @@
+{
+	"id": "meadow_05",
+	"name": "Lily Pond",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		".GHG.",
+		".GGG.",
+		"GGWGG",
+		"GWWWG",
+		"GGWGG",
+		".GGG.",
+		"..T.."
+	]
+}

@@ -2,15 +2,11 @@ extends GdUnitTestSuite
 ## Backdrop placement: the landmark is in front of the tee view and well clear of play; trees
 ## never stand on or beside the course.
 
-const HOLES := [
-	"res://games/golf/data/mini/meadow_01.json",
-	"res://games/golf/data/mini/meadow_02.json",
-	"res://games/golf/data/mini/meadow_03.json",
-]
+var holes := GolfWorlds.all_holes()
 
 
 func test_landmark_is_ahead_of_the_tee_view_and_clear_of_play() -> void:
-	for path in HOLES:
+	for path in holes:
 		var spec := MiniBaker.load_spec(path)
 		var hole := MiniBaker.bake(spec)
 		var view := MiniFraming.tee_view(spec, hole)
@@ -24,14 +20,14 @@ func test_landmark_is_ahead_of_the_tee_view_and_clear_of_play() -> void:
 
 
 func test_corner_tee_view_points_up_its_first_leg() -> void:
-	var spec := MiniBaker.load_spec(HOLES[0])
+	var spec := MiniBaker.load_spec(holes[0])
 	var hole := MiniBaker.bake(spec)
 	var view := MiniFraming.tee_view(spec, hole)
 	assert_float(view.y).is_less(-0.9)  # -z is "up" the map
 
 
 func test_clearance_rejects_the_course_and_accepts_open_lawn() -> void:
-	var hole := MiniBaker.bake(MiniBaker.load_spec(HOLES[1]))
+	var hole := MiniBaker.bake(MiniBaker.load_spec(holes[1]))
 	assert_bool(MiniFraming.clear_of_course(hole, hole.tee.x, hole.tee.z, 1.0)).is_false()
 	assert_bool(MiniFraming.clear_of_course(hole, hole.tee.x + 3.5, hole.tee.z, 6.0)).is_false()
 	assert_bool(MiniFraming.clear_of_course(hole, hole.tee.x + 60.0, hole.tee.z, 6.0)).is_true()
