@@ -1,6 +1,6 @@
 class_name BlocksHowto
 extends RefCounted
-## Stack Drop how-to cards: looping demos on a stylised 6 x 9 mini-well (HowtoDeck design units,
+## Facetfall how-to cards: looping demos on a stylised 6 x 9 mini-well (HowtoDeck design units,
 ## 920 x 920) using the real shard shapes and gem colours. The board reacts on the gesture's beat:
 ## rotate on the tap, one column per drag step, drop on the flick's lift.
 
@@ -214,12 +214,17 @@ static func fade(t: float, g: GestureTimeline) -> float:
 static func _well(c: Control, a: float) -> void:
 	var r := Rect2(well, Vector2(COLS, ROWS) * CELL)
 	c.draw_rect(r.grow(10.0), Color(0.78, 0.76, 0.94, 0.85 * a), false, 8.0)
-	c.draw_rect(r, Color(0.05, 0.06, 0.14, 0.95 * a))
-	var line := Color(0.35, 0.38, 0.6, 0.35 * a)
-	for x in range(1, COLS):
-		c.draw_line(well + Vector2(x * CELL, 0), well + Vector2(x * CELL, ROWS * CELL), line, 2.0)
-	for y in range(1, ROWS):
-		c.draw_line(well + Vector2(0, y * CELL), well + Vector2(COLS * CELL, y * CELL), line, 2.0)
+	c.draw_rect(r, Color(0.06, 0.09, 0.17, 0.95 * a))
+	# Crystal glass like the game's tower (no grid): one soft diagonal reflection.
+	var glint := PackedVector2Array(
+		[
+			well + Vector2(COLS * CELL * 0.55, 0),
+			well + Vector2(COLS * CELL * 0.8, 0),
+			well + Vector2(COLS * CELL * 0.25, ROWS * CELL),
+			well + Vector2(0, ROWS * CELL),
+		]
+	)
+	c.draw_colored_polygon(glint, Color(0.32, 0.42, 0.62, 0.12 * a))
 
 
 ## Settled blocks; `removed` bottom rows already cleared, the rest slide down by `shift` of them.
@@ -244,12 +249,7 @@ static func _cell(p: Vector2) -> Rect2:
 
 
 static func _gem(c: Control, r: Rect2, col: Color, a: float) -> void:
-	c.draw_rect(r, Color(col, a))
-	c.draw_rect(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.18)), Color(1, 1, 1, 0.3 * a))
-	c.draw_rect(
-		Rect2(r.position + Vector2(0, r.size.y * 0.82), Vector2(r.size.x, r.size.y * 0.18)),
-		Color(0, 0, 0, 0.22 * a)
-	)
+	GemArt.draw(c, r, col, a)
 
 
 static func _shard(c: Control, kind: int, rot: int, box: Vector2, a: float, pop: float) -> void:
@@ -347,13 +347,13 @@ static func _cpu_well(c: Control, mw: Rect2, cell: float, rise: float, a: float)
 		for x in 6:
 			if rows[i][x] == 1:
 				var r := Rect2(mw.position + Vector2(x, y) * cell, Vector2(cell - 2, cell - 2))
-				c.draw_rect(r, Color(BlocksView.GEM_COLORS[(x + i * 2) % 7], a))
+				GemArt.draw(c, r, BlocksView.GEM_COLORS[(x + i * 2) % 7], a)
 	if rise > 0.0:
 		for x in 6:
 			if x == 4:
 				continue
 			var r := Rect2(mw.position + Vector2(x, 13 - rise) * cell, Vector2(cell - 2, cell - 2))
-			c.draw_rect(r, Color(BlocksView.GARBAGE_COLOR.lightened(0.2), a))
+			GemArt.draw(c, r, BlocksView.GARBAGE_COLOR.lightened(0.2), a)
 
 
 ## Static poster for the garbage card (reduce motion): two cleared rows and an arrow to a tower.

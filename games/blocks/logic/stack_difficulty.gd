@@ -1,6 +1,6 @@
 class_name StackDifficulty
 extends RefCounted
-## Stack Drop difficulty data (pure): the player's start level and how the CPU plays.
+## Facetfall difficulty data (pure): the player's start level and how the CPU plays.
 ## Tune with tools/stack_selfplay.gd. 12 x 24 board, vs its "average" player profile (2026-11-13):
 ## Easy wins ~27%, Medium ~53%, Hard ~100% (Hard ~35% vs the "good" profile).
 

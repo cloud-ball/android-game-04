@@ -1,6 +1,6 @@
 class_name StackState
 extends RefCounted
-## Complete Stack Drop game state. Plain data: StackLogic.reduce() copies it and returns a new one,
+## Complete Facetfall game state. Plain data: StackLogic.reduce() copies it and returns a new one,
 ## so any game can be replayed bit-exactly from (seed, actions).
 ## Board: W x H cells, row 0 at the top; the top HIDDEN rows are the spawn area (not drawn).
 

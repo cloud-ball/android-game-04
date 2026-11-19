@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Stack Drop CPU: legal placements, takes an obvious multi-line clear, and survives long.
+## Facetfall CPU: legal placements, takes an obvious multi-line clear, and survives long.
 
 const W := StackState.W
 const H := StackState.H

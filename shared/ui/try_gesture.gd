@@ -2,7 +2,7 @@ class_name TryGesture
 extends RefCounted
 ## Recognises the player's own attempt at a how-to card's gesture ("Try it"). Pure: give it the
 ## finger's movement (canvas units), duration and finger count; it names the gesture.
-## Thresholds match the games' own input: Stack Drop flick 110 px at 0.9 px/ms, 26 px tap slop.
+## Thresholds match the games' own input: Facetfall flick 110 px at 0.9 px/ms, 26 px tap slop.
 
 const TAP_PX := 30.0
 const TAP_MS := 350.0

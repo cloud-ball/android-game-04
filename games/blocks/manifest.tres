@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_manifest")
 id = "blocks"
-display_name = "Stack Drop"
-subtitle = "Falling blocks"
+display_name = "Facetfall"
+subtitle = "Gem tower race"
 scene = "res://games/blocks/scenes/blocks_game.tscn"
 min_save_version = 1
 enabled = true

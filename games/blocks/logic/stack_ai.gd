@@ -1,6 +1,6 @@
 class_name StackAI
 extends RefCounted
-## CPU placement search for Stack Drop: tries every rotation and column for the current shard
+## CPU placement search for Facetfall: tries every rotation and column for the current shard
 ## (and the hold/next shard when allowed), drops it straight down, and scores the resulting
 ## board with a classic heuristic (aggregate height, holes, bumpiness, lines cleared).
 ## Difficulty adds random noise / picks among the top few instead of always the best.

@@ -1,8 +1,8 @@
-# Privacy Policy: Pocket Arena 8
+# Privacy Policy: Playjar
 
-_Last updated: 10 November 2026_
+_Last updated: 17 November 2026_
 
-Pocket Arena 8 ("the app") is a collection of single-player games played against the computer.
+Playjar ("the app") is a collection of single-player games played against the computer.
 
 ## What we collect
 Nothing. The app does not collect, transmit, sell or share any personal or usage data. It has no
@@ -24,4 +24,4 @@ If a future version changes any of this (for example by adding optional ads), th
 updated before that version is released, and the date above will change.
 
 ## Contact
-Questions: <SUPPORT EMAIL — same address as in the Play Console listing>
+Questions: cloud198games@gmail.com
