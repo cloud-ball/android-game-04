@@ -1,4 +1,4 @@
-# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank, Fairway Flick)
+# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank, Cup Dash)
 
 Paste these into Play Console → Grow → Store presence → Main store listing.
 Never mention other companies' games or trademarks here or in keywords (see guide p. 5).
@@ -29,7 +29,7 @@ BREAK & BANK: eight-ball billiards against a CPU that thinks like a player
 • Real ball physics: spin, cushion bounces and pockets behave as you expect.
 • Casual 8 rules with ball in hand after a foul. Play a best-of-three match.
 
-FAIRWAY FLICK: mini-golf races against three CPU golfers
+CUP DASH: mini-golf races against three CPU golfers
 • Drag back and let go to putt; an aim guide shows where the ball will go.
 • Rush: everyone plays the same hole at once, and the first ball in the cup wins it.
 • Tour: play nine holes on your own and earn stars for par, birdies and aces.

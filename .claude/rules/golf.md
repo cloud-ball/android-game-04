@@ -2,7 +2,8 @@
 paths:
   - "games/golf/**"
 ---
-- Fairway Flick is ARCADE MINI-GOLF (re-based 2026-11-15, docs/plans/2026-11-15-fairway-flick-minigolf.md):
+- Cup Dash (working name in code, docs and research: Fairway Flick; renamed 2026-11-19 because
+  "Flick Golf!" is an existing golf game) is ARCADE MINI-GOLF (re-based 2026-11-15, docs/plans/2026-11-15-fairway-flick-minigolf.md):
   walled 20-60 m holes, slingshot shot, Rush races vs CPU. Original name / art / courses only.
 - One custom deterministic solver from strike to rest (roll, bounce, walls, bumpers, hops, cup) in pure GDScript under
   games/golf/logic/. No Jolt bodies for gameplay (no determinism guarantee; CPU rollouts must clone state cheaply).

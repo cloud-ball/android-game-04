@@ -30,7 +30,7 @@ func setup(unlocked: Array) -> void:
 	_unlocked = unlocked
 	configure(
 		{
-			"title": "Fairway Flick",
+			"title": "Cup Dash",
 			"accent": ACCENT,
 			"modes": {"rush": "Rush vs CPU", "tour": "Tour"},
 			"blurbs":

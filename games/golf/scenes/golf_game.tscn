@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://games/golf/scenes/golf_game.gd" id="1_game"]
 
-[node name="FairwayFlick" type="Node3D"]
+[node name="CupDash" type="Node3D"]
 script = ExtResource("1_game")

@@ -16,7 +16,7 @@ Two taps from launch to a match; 60–180-second sessions; one soft currency and
 | 1 | Serpent Grid | games/snake | Snake vs CPU | ~1 week |
 | 2 | Carrom Corner | games/carrom | Carrom vs CPU | 2.5–3 weeks (after pool) |
 | 2 | Top Corner | games/penalty | Penalty shootout vs CPU | 2–3 weeks |
-| 3 | Fairway Flick | games/golf | Golf vs CPU | 4–5 weeks |
+| 3 | Cup Dash (was Fairway Flick) | games/golf | Golf vs CPU | 4–5 weeks |
 | 3 | Park & Pass | games/drive | Original city driving & parking missions | 5–7 weeks |
 
 ## Architecture (see .claude/rules/hub.md)
@@ -34,7 +34,7 @@ App < 150 MB, each game's assets < 25 MB. Low-end Android: < 100 draw calls, < 1
 | Tetris | Facetfall (was Stack Drop; emerald-cut gems, jewel palette, no grid since 2026-11-17) | High: trademark + trade dress (brightly coloured blocks, tall rectangular playfield); Tetris Holding v. Xio (D.N.J. 2012) found infringement on look-and-feel |
 | 8 Ball Pool (Miniclip) | Break & Bank (was Cue Club - an existing pool series, renamed 2026-11-14; alt. Corner Pocket 3D) | Medium: '8 BALL POOL' is a registered EU/UK mark; the '8 POOL' flame logo is registered in the US |
 | Dr. Driving (SUD Inc.) | Park & Pass (City Driver Academy, Lane Master) | Medium: the 'Dr.' series is SUD's brand identity across many titles |
-| Carrom, chess, snake, golf, penalties | Carrom Corner, Chess 3D, Serpent Grid, Fairway Flick, Top Corner | Low: generic names |
+| Carrom, chess, snake, golf, penalties | Carrom Corner, Chess 3D, Serpent Grid, Cup Dash, Top Corner | Low: generic names |
 
 ## Phase 1 roadmap (~12 weeks)
 | Week | Deliverable |
@@ -48,4 +48,4 @@ App < 150 MB, each game's assets < 25 MB. Low-end Android: < 100 draw calls, < 1
 | 11 | Economy (coins, cosmetic skins), rewarded ads + interstitial cap, remove-ads IAP, achievements; perf pass on a low-end Android phone. |
 | 12 | Closed test continues; TestFlight beta; store assets; submit v1.0. |
 
-Phase 2 (~6 weeks): Carrom Corner + Top Corner + daily challenges (v1.1). Phase 3 (~10 weeks): Fairway Flick + Park & Pass (v1.2).
+Phase 2 (~6 weeks): Carrom Corner + Top Corner + daily challenges (v1.1). Phase 3 (~10 weeks): Cup Dash + Park & Pass (v1.2).

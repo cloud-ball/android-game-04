@@ -1,12 +1,15 @@
 # Ship Playjar v0.2.0: checklist
 
-Goal: Playjar v0.2.0 (hub + Serpent Grid, Facetfall, Break & Bank, Fairway Flick) live on Google Play
+Goal: Playjar v0.2.0 (hub + Serpent Grid, Facetfall, Break & Bank, Cup Dash) live on Google Play
 **closed testing**, then production. New personal developer accounts must keep 12+ testers opted in
 for 14 days in a row before they can apply for production, so public release is ~2-3 weeks after
-the closed test starts. Fairway Flick and the other games stay hidden as "SOON" cards
+the closed test starts. Unfinished games stay hidden as "SOON" cards
 (enabled=false) and arrive later as updates.
 
 ## Done in the repo (branch release-v0.2, 2026-11-17)
+- [x] Golf renamed Fairway Flick -> **Cup Dash** before the first upload (2026-11-19): "Flick Golf!"
+      is an existing golf game series; no app called "Cup Dash" was found on Google Play or the App
+      Store (nearest: unrelated cup puzzles such as Cup Connect!, Cup Chase).
 - [x] Three games enabled and green: all headless tests pass; build script refuses to build otherwise.
 - [x] Break & Bank ball colours fixed (they rendered darker than designed).
 - [x] Release AAB pipeline verified end to end with a THROWAWAY key (not uploadable; deleted from

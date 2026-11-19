@@ -2,6 +2,14 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Golf renamed Fairway Flick -> Cup Dash (before the first upload)
+- "Flick Golf!" is an existing golf game series; to stay clear of it the golf game ships as
+  **Cup Dash** (no app of that name found on Google Play or the App Store). Changed: hub card
+  (manifest), start screen title, store listing, release notes, checklist, GDD, screenshots
+  (01 hub, 06 / 07 renamed 06_cup_dash_rush / 07_cup_dash_worlds). Code, folders, branch and
+  research docs keep the working name "Fairway Flick" (never shown to players).
+- Try it: the hub card and the golf start screen read CUP DASH.
+
 ## 2026-11-19 · Release build check and phone test of the new worlds
 - scripts/build_release.sh (tests, then signed AAB) works on the release branch with a throwaway
   key: build/playjar-v0.2.0-1.aab, 53 MB. That test AAB was moved out of build/; the real one

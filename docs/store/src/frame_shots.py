@@ -14,8 +14,8 @@ shots = [
     ("st_blocks_2.png", "03_facetfall.png", "Facetfall", "Fill rows with cut gems, race the CPU", (40, 22, 70)),
     ("st_pool_1.png", "04_break_and_bank_break.png", "Break & Bank", "Eight-ball billiards vs a smart CPU", (10, 52, 50)),
     ("st_pool_2.png", "05_break_and_bank_table.png", "Real ball physics", "Spin, cushions and pockets that feel right", (10, 52, 50)),
-    ("st_golfrush_2.png", "06_fairway_flick_rush.png", "Fairway Flick", "Race three CPU golfers to the cup", (20, 60, 70)),
-    ("st_golf_volcanic_0.png", "07_fairway_flick_worlds.png", "Four worlds, 36 holes", "Wind, jumps, lava and more", (70, 34, 40)),
+    ("st_golfrush_2.png", "06_cup_dash_rush.png", "Cup Dash", "Race three CPU golfers to the cup", (20, 60, 70)),
+    ("st_golf_volcanic_0.png", "07_cup_dash_worlds.png", "Four worlds, 36 holes", "Wind, jumps, lava and more", (70, 34, 40)),
     ("st_blocks_3.png", "08_facetfall_race.png", "Three difficulty levels", "Easy, Medium or Hard in every game", (40, 22, 70)),
 ]
 def font(size, weight):

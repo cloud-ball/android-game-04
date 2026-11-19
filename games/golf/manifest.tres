@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_manifest")
 id = "golf"
-display_name = "Fairway Flick"
+display_name = "Cup Dash"
 subtitle = "Mini-golf vs CPU"
 scene = "res://games/golf/scenes/golf_game.tscn"
 min_save_version = 1
