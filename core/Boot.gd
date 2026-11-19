@@ -66,13 +66,19 @@ func _process(_delta: float) -> void:
 		RenderingServer.viewport_set_measure_render_time(rid, true)
 		print(
 			(
-				"[fps] %d  process %.1f ms  render cpu %.1f ms  gpu %.1f ms  draws %d"
+				(
+					"[fps] %d  process %.1f ms  render cpu %.1f ms  gpu %.1f ms  draws %d"
+					+ "  nodes %d  objs %d  mem %.0f MB"
+				)
 				% [
 					Engine.get_frames_per_second(),
 					Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 					RenderingServer.viewport_get_measured_render_time_cpu(rid),
 					RenderingServer.viewport_get_measured_render_time_gpu(rid),
 					Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+					Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+					Performance.get_monitor(Performance.OBJECT_COUNT),
+					Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
 				]
 			)
 		)

@@ -2,6 +2,26 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Full test pass (all four games) and security check
+- Unit tests: 272 green. QA fuzz (tools/qa_fuzz.gd, now also Break & Bank shots, Fairway Flick
+  shots on every hole and Rush rule sequences): 40 seeds, no invariant violations (a pool ball
+  resting in a side pocket's jaws is allowed: the check now knows the pocket mouths).
+- Soak (desktop, bot, 7200 frames at 4x speed per mode): Serpent Grid vs / solo, Facetfall,
+  Break & Bank, golf Rush, golf Tour - no script errors; node and object counts flat.
+- Phone (Vivo V2250, wireless adb), bot runs with --fps (now also nodes / objects / memory):
+  hub 60 fps; Serpent Grid 59; Break & Bank 60; golf Rush / Tour 58 (one hitch per hole change);
+  Facetfall 60 without the bot (54 with it). No errors in the device log.
+- Fixed: Facetfall fell to 44 fps (min 30) on the phone after the gem redesign - each 2D gem was
+  ~11 polygon draw calls (603 per frame). GemArt now sends a gem as one triangle array, and whole
+  sets (CPU mini-board, previews, hub icon) as one batch: 603 -> 37 draws, hub 209 -> 100.
+- Real touch on the phone: golf Rush shots by finger drag, rivals play alongside, hole card;
+  Android back returns to the hub; home + relaunch resumes the same process; Settings and the
+  licence page open and scroll. The licence page is now fully opaque.
+- Security: no network APIs, sockets or external processes; INTERNET permission off (VIBRATE
+  only); allowBackup=false, game activity not exported; dev args file read only in debug builds;
+  tests / tools / gdUnit4 excluded from exports; no keys or passwords in git; CI uses a throwaway
+  debug key. Hardened: wrong-typed save values fall back to defaults (no crash on a damaged save).
+
 ## 2026-11-19 · Fairway Flick Rush (steps E1-E4): CPU golfers, rules, race on screen, tuning
 - E1 GolfCpu: shot search with the real solver (route fan + straight at the cup, refine the best 3,
   risk check of the best 4 played +-3 deg / +-7 % off), tiered aim / speed error. GolfCpuThink runs

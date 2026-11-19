@@ -264,6 +264,7 @@ func _draw_cpu(c: Control) -> void:
 	var cell := minf((c.size.x - 12.0) / StackState.W, (c.size.y - 50.0) / rows)
 	var origin := Vector2((c.size.x - cell * StackState.W) * 0.5, 42)
 	c.draw_rect(Rect2(origin, Vector2(cell * StackState.W, cell * rows)), Color(1, 1, 1, 0.07))
+	var gems := GemArt.Batch.new()  # the whole mini-board in one draw call
 	for y in range(StackState.HIDDEN, StackState.H):
 		for x in StackState.W:
 			var v := _cpu.board[y * StackState.W + x]
@@ -275,7 +276,8 @@ func _draw_cpu(c: Control) -> void:
 				else BlocksView.GEM_COLORS[v - 1]
 			)
 			var pos := origin + Vector2(x, y - StackState.HIDDEN) * cell
-			GemArt.draw(c, Rect2(pos, Vector2(cell - 1, cell - 1)), col)
+			GemArt.add(gems, Rect2(pos, Vector2(cell - 1, cell - 1)), col)
+	GemArt.flush(c, gems)
 	if _cpu.pending_garbage > 0:
 		var h := minf(rows, _cpu.pending_garbage) * cell
 		c.draw_rect(
@@ -299,9 +301,11 @@ static func draw_shard_at(
 	var col: Color = BlocksView.GEM_COLORS[kind]
 	col.a = alpha
 	var gap := maxf(2.0, cell * 0.07)
+	var gems := GemArt.Batch.new()
 	for p in cells:
 		var r := Rect2(origin + Vector2(p - min_c) * cell, Vector2(cell - gap, cell - gap))
-		GemArt.draw(c, r, col)
+		GemArt.add(gems, r, col)
+	GemArt.flush(c, gems)
 
 
 ## Draws a shard fitted into `box` (used by the how-to illustrations).

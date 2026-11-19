@@ -9,7 +9,7 @@ extends CanvasLayer
 func _ready() -> void:
 	layer = 120
 	var bg := ColorRect.new()
-	bg.color = Color(0.05, 0.05, 0.1, 0.98)
+	bg.color = Color(0.05, 0.05, 0.1, 1.0)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	var col := VBoxContainer.new()
