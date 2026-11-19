@@ -11,11 +11,11 @@ extends RefCounted
 
 enum Tier { EASY, MEDIUM, HARD }
 
-const AIM_SIGMA_DEG := [3.5, 2.0, 1.2]
-const SPEED_SIGMA := [0.10, 0.06, 0.035]  # fraction of the planned speed
+const AIM_SIGMA_DEG := [3.5, 2.0, 1.5]
+const SPEED_SIGMA := [0.10, 0.06, 0.045]  # fraction of the planned speed
 const TOP_K := [3, 1, 1]
 ## Seconds a CPU golfer pauses before each shot in Rush, [min, max] per tier.
-const THINK_S := [[2.8, 4.4], [2.3, 3.8], [1.8, 3.0]]  # human pace (self-play)
+const THINK_S := [[2.8, 4.4], [2.3, 3.8], [2.1, 3.4]]  # human pace (self-play)
 const PICK_MARGIN := 2.5  # Easy / Medium only pick among shots this close to the best score
 const PLAN_DT := 1.0 / 120.0
 const PLAN_MAX_T := 8.0

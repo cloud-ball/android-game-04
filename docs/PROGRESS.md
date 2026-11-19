@@ -2,6 +2,29 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Fairway Flick Rush (steps E1-E4): CPU golfers, rules, race on screen, tuning
+- E1 GolfCpu: shot search with the real solver (route fan + straight at the cup, refine the best 3,
+  risk check of the best 4 played +-3 deg / +-7 % off), tiered aim / speed error. GolfCpuThink runs
+  it on ONE background lane: GDScript object calls serialise across threads (measured: 60 rollouts
+  994 ms serial vs 1282 ms as a group task), so parallel rollouts do not help. Tee searches shared.
+- E2 RushMatch (pure, 8 tests): first in wins, same-tick order, water, par+3 cap, 3-hole match,
+  tie-break by strokes, draws.
+- E3 Rush on screen: three CPU golfers (Mira, Otis, Kai) as ghost balls with name tags, stepped in
+  lockstep with your ball; left status strip; hole / match cards with Play again. `--mode=tour`
+  keeps solo play; `--bot` plays your ball with the Hard CPU.
+- E4 tuning (tools/golf_selfplay.gd + golf_selfplay_report.py; 60 plays per hole per golfer; the
+  baseline is a human proxy: same planner, 2 deg / 6 % error, 2.3-3.8 s per shot):
+
+  | tier | CPU wins vs baseline (target) | you win a Rush match vs 3 of them |
+  |---|---|---|
+  | Easy | 21.8 % (25) | 70.7 % |
+  | Medium | 45.9 % (50) | 27.3 % |
+  | Hard | 68.4 % (70) | 6.3 % |
+
+  First run had Easy winning 58 %: CPUs thought 0.6-1.9 s per shot, and in Rush speed wins; now
+  every tier paces like a human (Easy 2.8-4.4 s, Medium 2.3-3.8 s, Hard 2.1-3.4 s).
+- Saves: wrong-typed values fall back to defaults (all games, settings, coins).
+
 ## 2026-11-19 · The app is now "Playjar" (package com.cloud198.playjar) with a new jar icon
 - The user chose Playjar ("a jar full of little games") over Octorival and other checked names (no
   "rival" in the name). Checked on Google Play, the App Store, Steam, itch.io and the web: no exact
