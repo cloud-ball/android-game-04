@@ -10,8 +10,6 @@ extends Node3D
 const NAMES := ["Mira", "Otis", "Kai"]
 ## Bright, distinct ghost colours (top of the value ladder, like the ball): coral, sky, sunflower.
 const COLORS := [Color("#FF7A59"), Color("#5EC8FF"), Color("#FFD84D")]
-## Seconds a rival pauses before each shot, [min, max] per tier (Easy, Medium, Hard).
-const THINK := [[1.1, 1.9], [0.8, 1.5], [0.6, 1.1]]
 
 var rush: RushMatch
 var tier: int = GolfCpu.Tier.MEDIUM
@@ -155,7 +153,7 @@ func _advance(k: int, n: int, delta: float) -> int:
 	if r.think == null:
 		r.think = GolfCpuThink.new(_cpu, r.at, tier, r.rng)
 		r.think.start()
-		var span: Array = THINK[tier]
+		var span: Array = GolfCpu.THINK_S[tier]
 		r.wait = r.rng.randf_range(span[0], span[1])
 		return -1
 	r.wait -= delta
