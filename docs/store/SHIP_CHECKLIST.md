@@ -42,10 +42,11 @@ the closed test starts. Fairway Flick and the other games stay hidden as "SOON" 
 2. **Build**: `export GODOT=/opt/homebrew/bin/godot && scripts/build_release.sh`
    → `build/octorival-v0.2.0-1.aab` (asks for the key password; runs the tests first).
    Version code 1 is right for the very first upload; use `--bump` for every later upload.
-3. **Privacy policy URL**: fill in your support email in docs/store/privacy-policy.md, then publish
-   it somewhere public and permanent (a public GitHub Gist, Google Sites, or GitHub Pages).
+3. ~~Privacy policy URL~~ DONE 2026-11-19: **https://cloud-ball.github.io/privacy.html** (the Cloud198
+   developer site, repo cloud-ball/cloud-ball.github.io; it has an Octorival section; Daily Drift was
+   removed). Support email: cloud198games@gmail.com. Website: https://cloud-ball.github.io/
 4. **Play Console** → Create app: name "Octorival", Game, Free, accept the declarations.
-   - Dashboard → Set up your app: privacy policy URL, app access (all available), ads (No), content
+   - Dashboard → Set up your app: privacy policy URL (above), app access (all available), ads (No), content
      rating (questionnaire answers in listing.md), target audience (13+), data safety (no data
      collected or shared), store listing (listing.md text + icon_512.png + feature graphic +
      the 6 screenshots).

@@ -24,4 +24,4 @@ If a future version changes any of this (for example by adding optional ads), th
 updated before that version is released, and the date above will change.
 
 ## Contact
-Questions: <SUPPORT EMAIL — same address as in the Play Console listing>
+Questions: cloud198games@gmail.com

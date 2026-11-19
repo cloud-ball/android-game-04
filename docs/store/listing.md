@@ -40,6 +40,10 @@ More original games (golf, chess, carrom, penalties and driving) are on the way 
 
 No ads. No in-app purchases. No internet permission. Your progress stays on your phone.
 
+## Contact details (Store settings → Store listing contact details)
+- Email: cloud198games@gmail.com
+- Website: https://cloud-ball.github.io/
+
 ## Category and tags
 - App or game: Game · Category: Arcade
 - Tags: Arcade, Casual, Offline, Single player
@@ -52,7 +56,7 @@ No ads. No in-app purchases. No internet permission. Your progress stays on your
 | Phone screenshots | screenshots/01_hub.png … 06_facetfall_race.png | 1080×1920 (9:16) ✓, 6 shots with captions (min 2, max 8) |
 
 ## App content answers (Policy → App content)
-- **Privacy policy URL**: host docs/store/privacy-policy.md publicly (see SHIP_CHECKLIST.md) and paste the URL.
+- **Privacy policy URL**: https://cloud-ball.github.io/privacy.html
 - **Ads**: No, the app does not contain ads.
 - **App access**: All functionality is available without special access.
 - **Content rating (IARC questionnaire)**: Game; no violence beyond abstract shapes colliding, no fear, sex,
