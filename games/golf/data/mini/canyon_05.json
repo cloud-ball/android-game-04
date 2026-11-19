@@ -1,0 +1,15 @@
+{
+	"id": "canyon_05",
+	"name": "Arch Run",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		"GGHGG",
+		"GB.BG",
+		"GG.GG",
+		"SG.GS",
+		"GG.GG",
+		"GGGGG",
+		"..T.."
+	]
+}

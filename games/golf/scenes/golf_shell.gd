@@ -20,6 +20,7 @@ var card: Label
 var hint: Label
 var map_btn: Button
 var power_ui: Control
+var wind: WindVane
 
 var _unlocked: Array = ["meadow"]
 var _world_buttons: Dictionary = {}
@@ -35,8 +36,9 @@ func setup(unlocked: Array) -> void:
 			"blurbs":
 			{
 				"rush":
-				"Race three CPU golfers on the same hole: first ball in the cup wins. Three holes.",
-				"tour": "Play all nine holes on your own. Par earns a star, birdies more.",
+				"Race three CPU golfers: first ball in the cup wins the hole. Win to open a new world.",
+				"tour":
+				"Play nine holes on your own: par earns a star. Finish to open a new world.",
 			},
 			"howto": GolfHowto.cards(),
 		}
@@ -95,6 +97,9 @@ func _build_hud() -> void:
 	map_btn.size = Vector2(150, 90)
 	map_btn.pressed.connect(func() -> void: map_pressed.emit())
 	hud.add_child(map_btn)
+	wind = WindVane.new()
+	wind.position = Vector2(1080 - 24 - 135, top + 280)
+	hud.add_child(wind)
 	power_ui = Control.new()
 	power_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	power_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -112,7 +117,8 @@ func _outlined(size: int, col: Color, outline: int) -> Label:
 	return l
 
 
-## A row of world buttons under the mode choice; locked worlds are greyed out and say so.
+## A row of world buttons under the mode choice; locked worlds are greyed out (the blurbs say how
+## to open them).
 func _add_world_picker() -> void:
 	var cols := _start.find_children("*", "VBoxContainer", true, false)
 	if cols.is_empty():
@@ -122,8 +128,7 @@ func _add_world_picker() -> void:
 	row.add_theme_constant_override("separation", 12)
 	for w: Dictionary in GolfWorlds.WORLDS:
 		var open: bool = w.id in _unlocked
-		var label: String = w.name if open else "%s · locked" % w.name
-		var b := UiKit.button(label, Color(1, 1, 1, 0.1), Color.WHITE, 32, 90)
+		var b := UiKit.button(w.name, Color(1, 1, 1, 0.1), Color.WHITE, 32, 90)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.disabled = not open
 		var id: String = w.id

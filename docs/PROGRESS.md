@@ -2,6 +2,37 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Fairway Flick step H: Coast, Canyon and Volcano worlds (27 new holes)
+- Every world has its own look (GolfTheme.coastal / canyon / volcanic): carpet, rails, lawn, sky,
+  sun, fog, far hills, trees, bushes, flowers and side scenes all come from the theme.
+  - Coast: teal carpet, driftwood rails, low golden sun, palms, a canoe on the lawn; landmark: a
+    striped lighthouse on a rocky islet with a turning lamp.
+  - Canyon: terracotta carpet, sandstone rails, cacti and tall rocks, fallen columns; landmark: a
+    natural rock arch.
+  - Volcano: violet carpet, basalt rails, dusky orange sky, dark pines, a campfire scene; the
+    water tiles are glowing lava (same rule: +1 stroke and a drop); landmark: a smoking cone with
+    a glowing crater and lava streaks.
+- Landmarks moved to games/golf/scenes/golf_landmarks.gd (the windmill unchanged).
+- Coast twist, wind: a per-hole push on a rolling ball (spec "wind", max 0.12 m/s^2, about a
+  metre of drift on a long putt; never moves a ball at rest). A WIND dial under MAP shows where
+  it blows from the camera's view. The CPU golfers feel it too (same solver). 9 new tests (drift,
+  rest, near the cup, against a rail, 1/120 vs 1/240 s steps, bad specs); physics review clean.
+- IP check clean; "Storm Point" renamed "Gale Point" (also a map name in another game).
+- Known, not new: "2 ObjectDB instances leaked at exit" shows on most quits of golf (also on the
+  previous commit); exit only, to look at before release.
+- Canyon twist: jumps off raised mesas, terraces, a bowl, a stairway. Volcano twist: lava moats,
+  bridges, a crater cup on a mound.
+- All 36 holes pass tools/golf_validate.gd (Hard CPU within par; 144-shot sweep stops cleanly).
+  Two holes are par 4 (Switchback, Obsidian Zigzag).
+- Start screen: world picker shows Meadow / Coast / Canyon / Volcano (locked ones greyed); the
+  mode blurbs say how to open the next world.
+- Tests (291 green): the value-ladder and kit-colour tests now cover every world; a new test checks every
+  world's models exist.
+- CPU retune after the planner speed cap (360 self-play rounds): CPU beats a decent player 25.7 /
+  47.1 / 63.0 % (Easy / Medium / Hard; targets 25 / 50 / 70, all within 10).
+- Try it: `--game=golf --world=coastal --mode=tour --hole=<1-9>` (also canyon, volcanic). On a
+  phone: win a Rush or finish a Tour to open the next world.
+
 ## 2026-11-19 · Fairway Flick step G: in the hub (start screen, Tour, saves, coins, how-to)
 - GolfShell (GameShell + the hole HUD on a layer under the overlays): start screen with Rush vs
   CPU / Tour, a world picker (locked worlds greyed out) and Easy / Medium / Hard; pause button,

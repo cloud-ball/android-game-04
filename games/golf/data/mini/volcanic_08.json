@@ -1,0 +1,15 @@
+{
+	"id": "volcanic_08",
+	"name": "Fire Bridge",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		".GHG.",
+		".GGG.",
+		"WWGWW",
+		"WWGWW",
+		"WWGWW",
+		".GGG.",
+		"..T.."
+	]
+}

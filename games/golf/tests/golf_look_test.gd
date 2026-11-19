@@ -3,17 +3,42 @@ extends GdUnitTestSuite
 ## physics bit-identical.
 
 
-func test_meadow_value_ladder() -> void:
-	var t := GolfTheme.meadow()
+func test_every_world_keeps_the_value_ladder() -> void:
 	var lum := GolfTheme.luminance
-	# Surroundings darkest, then carpet, then rails; ball and cup rim brightest.
-	assert_float(lum.call(t.lawn)).is_less(lum.call(t.carpet))
-	assert_float(lum.call(t.carpet)).is_less(lum.call(t.rail_body))
-	assert_float(lum.call(t.rail_body)).is_less(lum.call(t.ball))
-	assert_float(lum.call(t.rail_cap)).is_less_equal(lum.call(t.ball))
-	# No flower may compete with the ball's white.
-	for f in t.flowers:
-		assert_float(lum.call(f)).is_less(lum.call(t.ball) * 0.75)
+	for id in GolfWorlds.ids():
+		var t := GolfTheme.for_world(id)
+		assert_str(t.name).is_equal(id)
+		# Surroundings darkest, then carpet, then rails; ball and cup rim brightest.
+		assert_float(lum.call(t.lawn)).override_failure_message(id).is_less(lum.call(t.carpet))
+		assert_float(lum.call(t.carpet)).override_failure_message(id).is_less(lum.call(t.rail_body))
+		assert_float(lum.call(t.rail_body)).is_less(lum.call(t.ball))
+		assert_float(lum.call(t.rail_cap)).is_less_equal(lum.call(t.ball))
+		# No flower may compete with the ball's white.
+		for f in t.flowers:
+			assert_float(lum.call(f)).override_failure_message(id).is_less(lum.call(t.ball) * 0.75)
+
+
+func test_every_world_dresses_with_shipped_models() -> void:
+	var dir := "res://games/golf/assets/kenney_nature/"
+	var known := [
+		"logs", "mushrooms", "planters", "rocks", "canoe", "columns", "cactus", "campfire"
+	]
+	for id in GolfWorlds.ids():
+		var t := GolfTheme.for_world(id)
+		var landmarks := ["windmill", "lighthouse", "arch", "volcano"]
+		assert_bool(t.landmark in landmarks).override_failure_message(t.landmark).is_true()
+		var models: Array = t.bushes + t.flower_models
+		for tree: Array in t.trees:
+			models.append(tree[0])
+			assert_float(float(tree[1])).is_less_equal(float(tree[2]))
+		for m: String in models:
+			(
+				assert_bool(ResourceLoader.exists(dir + m + ".glb"))
+				. override_failure_message(m)
+				. is_true()
+			)
+		for v: String in t.vignettes:
+			assert_bool(v in known).override_failure_message(v).is_true()
 
 
 func test_clock_runs_four_substeps_per_tick_at_full_rate() -> void:
@@ -46,7 +71,6 @@ func test_slow_motion_keeps_the_shot_bit_identical() -> void:
 func test_every_kit_material_has_a_theme_colour_below_the_ball() -> void:
 	# Every material name used by the shipped kit props is mapped (no stock colours, no magenta),
 	# and no prop is as bright as the ball; fence / planter wood stays darker than the rails.
-	var t := GolfTheme.meadow()
 	var lum := GolfTheme.luminance
 	var dir := "res://games/golf/assets/kenney_nature/"
 	var names := {}
@@ -60,11 +84,14 @@ func test_every_kit_material_has_a_theme_colour_below_the_ball() -> void:
 				names[mat.resource_name if mat != null else mi.mesh.surface_get_name(i)] = true
 		root.free()
 	assert_int(names.size()).is_greater(5)
-	for n: String in names:
-		var c := t.kit_color(n)
-		assert_bool(c == Color.MAGENTA).override_failure_message("unmapped: " + n).is_false()
-		assert_float(lum.call(c)).is_less(lum.call(t.ball) * 0.75)
-	assert_float(lum.call(t.kit_color("wood"))).is_less(lum.call(t.rail_body))
+	for id in GolfWorlds.ids():
+		var t := GolfTheme.for_world(id)
+		for n: String in names:
+			var c := t.kit_color(n)
+			var msg := "%s: %s" % [id, n]
+			assert_bool(c == Color.MAGENTA).override_failure_message("unmapped " + msg).is_false()
+			assert_float(lum.call(c)).override_failure_message(msg).is_less(lum.call(t.ball) * 0.75)
+		assert_float(lum.call(t.kit_color("wood"))).is_less(lum.call(t.rail_body))
 
 
 func test_forecast_matches_a_full_run_without_a_long_frame() -> void:

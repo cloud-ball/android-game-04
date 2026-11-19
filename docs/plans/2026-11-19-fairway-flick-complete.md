@@ -37,6 +37,7 @@ genre pointers only.
 | H1 | Coastal: theme, landmark (lighthouse on a rock), wind mechanic (pure + tests), 9 holes | Validator + screenshots |
 | H2 | Canyon: theme, landmark (natural arch), 9 holes | Validator + screenshots |
 | H3 | Volcanic: theme, landmark (smoking cone, emissive lava), lava hazard, 9 holes | Validator + screenshots |
+| H notes | Done 2026-11-19: one commit for all three worlds (shared theme / landmark / scenery code). Wind applies to a ball on the ground (max 0.12 m/s^2), not in the air; WIND dial in the HUD. Canyon "big jumps" launch from mesas two levels up. Switchback and Obsidian Zigzag are par 4. | Validator 36/36 |
 | I | Release: merge to the release branch, store listing + screenshots with golf, version bump, IP check, build | Checklist green |
 
 ## Risks

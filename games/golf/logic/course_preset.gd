@@ -26,6 +26,7 @@ func green_decel() -> float:
 
 ## Steepest grade (rise / run) a stopped ball can rest on, for the baker and validators: the
 ## rolling slope pull (5/7) g sin(theta) must stay below GolfSurfaces.STATIC_FACTOR x the roll
-## decel. sin ~ tan at these slopes (< 0.1% error below 10%).
-func max_rest_grade(g := 9.81) -> float:
-	return GolfSurfaces.STATIC_FACTOR * green_decel() / (5.0 / 7.0 * g)
+## decel. sin ~ tan at these slopes (< 0.1% error below 10%). A hole's wind (m/s^2) takes its
+## 5/7 share of that hold first (worst case: wind pushing down the slope).
+func max_rest_grade(g := 9.81, wind := 0.0) -> float:
+	return (GolfSurfaces.STATIC_FACTOR * green_decel() - 5.0 / 7.0 * wind) / (5.0 / 7.0 * g)

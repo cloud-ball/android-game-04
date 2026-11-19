@@ -33,6 +33,10 @@ var cup_r := 0.054
 var cup_pull := 0.0
 ## Round bumpers: 3 floats each (x, z, radius).
 var bumpers := PackedFloat64Array()
+## Coastal wind: a constant horizontal push (m/s^2) on a ball on the ground, set per hole. Kept
+## below the carpet's static grip (MiniBaker.WIND_MAX) so a ball at rest stays put.
+var wind_x := 0.0
+var wind_z := 0.0
 
 
 func setup(origin_x: float, origin_z: float, cell_size: float, cells_x: int, cells_z: int) -> void:

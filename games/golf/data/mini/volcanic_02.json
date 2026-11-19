@@ -1,0 +1,14 @@
+{
+	"id": "volcanic_02",
+	"name": "Magma Moat",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		"GGGGG",
+		"GWHWG",
+		"GWGWG",
+		"GGBGG",
+		"GGGGG",
+		"..T.."
+	]
+}

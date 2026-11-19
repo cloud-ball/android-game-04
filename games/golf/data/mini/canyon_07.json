@@ -1,0 +1,20 @@
+{
+	"id": "canyon_07",
+	"name": "Red Rock Bowl",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		"GGGGG",
+		"G<H>G",
+		"GGvGG",
+		"GGGGG",
+		"..T.."
+	],
+	"levels": [
+		"11111",
+		"10001",
+		"11011",
+		"11111",
+		"11111"
+	]
+}

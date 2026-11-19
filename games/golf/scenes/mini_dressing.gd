@@ -5,7 +5,6 @@ extends RefCounted
 ## from the world's GolfTheme. Split out of golf_game.gd.
 
 const RAIL_BEVEL := 0.045
-const FLOWERS := ["flower_redA", "flower_yellowB", "flower_purpleA"]  # Ring 1 kit flowers
 
 
 ## Rails: one merged mesh for the whole hole - a bevelled wooden profile swept along every wall
@@ -180,13 +179,15 @@ static func decor(world: Node3D, hole: HoleData, theme: GolfTheme, index: int) -
 				if roll < 0.14:  # a low stone
 					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.3), at), false)
 				elif roll < 0.48:  # a bush, about rail height
-					var model := "plant_bush" if roll < 0.36 else "plant_bushLarge"
+					var bushes := theme.bushes
+					var model: String = bushes[0] if roll < 0.36 else bushes[bushes.size() - 1]
 					var sz := rng.randf_range(1.6, 2.0)
 					big.add(model, Transform3D(turn.scaled(Vector3.ONE * sz), at))
 				elif roll < 0.58:  # a grass tuft
 					small.add("grass_large", Transform3D(turn.scaled(Vector3.ONE * 1.3), at))
 				else:  # a cluster of three flowers of one kind
-					var model2: String = FLOWERS[rng.randi_range(0, FLOWERS.size() - 1)]
+					var kinds := theme.flower_models
+					var model2: String = kinds[rng.randi_range(0, kinds.size() - 1)]
 					for k in 3:
 						var fq := (
 							q + Vector2(rng.randf_range(-0.3, 0.3), rng.randf_range(-0.3, 0.3))
