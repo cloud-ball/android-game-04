@@ -610,17 +610,7 @@ func _bot_shot() -> void:
 
 
 func _flow_metres(q: Vector3) -> float:
-	var f := MiniBaker.flow_field(_spec)
-	var tile := float(_spec.get("tile", 3.0))
-	var rows: int = _spec.map.size()
-	var cols := 0
-	for r in _spec.map:
-		cols = maxi(cols, str(r).length())
-	var c := int(floorf((q.x + cols * tile * 0.5) / tile))
-	var r := int(floorf((q.z + rows * tile) / tile))
-	if c < 0 or r < 0 or c >= cols or r >= rows or f[r * cols + c] < 0.0:
-		return 1e5
-	return f[r * cols + c]
+	return MiniBaker.flow_metres(_spec, MiniBaker.flow_field(_spec), q)
 
 
 func _effects() -> void:
