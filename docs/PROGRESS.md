@@ -2,6 +2,26 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Fairway Flick step G: in the hub (start screen, Tour, saves, coins, how-to)
+- GolfShell (GameShell + the hole HUD on a layer under the overlays): start screen with Rush vs
+  CPU / Tour, a world picker (locked worlds greyed out) and Easy / Medium / Hard; pause button,
+  pause menu (resume, restart, how-to, settings, hub); end screen with coins and the daily goal.
+  Android back: settings / how-to / pause / resume / hub, like the other games.
+- Start screen sits over a fly-over of the world's first hole; quick-play / --bot autostart.
+- Tour: all nine holes alone, GolfTourCard (stars 1 par / 2 birdie / 3 better, birdies, aces);
+  end screen ROUND +n or NEW BEST, best per world, stars per hole, next world unlocked.
+- Rush end goes through the same end screen; a win opens the next world.
+- GolfProgress: save schema 2 + migrate from 1 (tested), coins (Rush: 10 per hole won + 40 / 70 /
+  120 for a win; Tour: 25 + 5 per star), four golf daily challenges. Bot runs never pay rewards.
+- How-to cards (GolfHowto): drag back and let go (try it), Rush rule, Tour stars.
+- Fixed (found by the bot): after water the ball came back on the water's edge and every next
+  shot splashed at once (6 strokes lost). HoleData.water_drop() walks back towards the tee until
+  0.3 m of dry course surrounds the ball; used by the player, CPU golfers, validator, self-play;
+  regression test.
+- CPU thinking faster: short putts skip full-power candidates (non-tee searches 1.2 s -> 0.64 s).
+- golf_game.gd split: HUD -> GolfShell, guide + trail -> GolfTrails (969 lines).
+- Golf is enabled in the hub on this branch (PLAY card "Fairway Flick · Mini-golf vs CPU").
+
 ## 2026-11-19 · Fairway Flick step F: Meadow world, 9 holes, validator
 - Six new original holes: Zigzag (S-bend + bumper), Lily Pond (play round the water), Double
   Decker (ramp up to a raised deck with a bumper, ramp down), Sand Corner (dogleg, sand inside the

@@ -138,8 +138,8 @@ func _advance(k: int, n: int, delta: float) -> int:
 					pass  # settled through the drops of this tick
 				GolfBall.Phase.WATER:
 					rush.add_penalty(i)
-					var q := r.ball.last_safe
-					r.at = Vector3(q.x, _hole.height(q.x, q.z) + _radius, q.z)
+					var q := _hole.water_drop(r.ball.last_safe, _hole.tee)
+					r.at = Vector3(q.x, q.y + _radius, q.z)
 					rush.ball_rested(i)
 				GolfBall.Phase.OUT:
 					rush.add_penalty(i)

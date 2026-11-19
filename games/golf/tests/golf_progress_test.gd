@@ -70,3 +70,16 @@ func test_golf_daily_challenges() -> void:
 	assert_bool(DailyChallenge.is_met(by_id["golf_birdies_3"], tour)).is_true()
 	assert_bool(DailyChallenge.is_met(by_id["golf_ace"], tour)).is_true()
 	assert_bool(DailyChallenge.is_met(by_id["golf_win_rush"], tour)).is_false()
+
+
+func test_tour_card_totals() -> void:
+	var card := GolfTourCard.new()
+	assert_int(card.add("m1", 2, 1, true)).is_equal(3)  # ace
+	assert_int(card.add("m2", 3, 2, true)).is_equal(2)  # birdie
+	assert_int(card.add("m3", 3, 6, false)).is_equal(0)  # out of strokes
+	assert_int(card.holes_played()).is_equal(3)
+	assert_int(card.strokes()).is_equal(9)
+	assert_int(card.over_par()).is_equal(1)
+	assert_int(card.stars()).is_equal(5)
+	assert_int(card.birdies()).is_equal(2)  # one under par: the par-2 ace counts too
+	assert_int(card.aces()).is_equal(1)

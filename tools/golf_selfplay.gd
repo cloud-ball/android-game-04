@@ -73,8 +73,8 @@ func _play(
 				return [1, t, strokes]
 			GolfBall.Phase.WATER:
 				strokes += 1
-				var q := b.last_safe
-				at = Vector3(q.x, hole.height(q.x, q.z) + radius, q.z)
+				var q := hole.water_drop(b.last_safe, hole.tee)
+				at = Vector3(q.x, q.y + radius, q.z)
 			GolfBall.Phase.OUT:
 				strokes += 1
 			_:

@@ -79,11 +79,25 @@ func coarse_candidates(from: Vector3) -> Array:
 	var base := atan2(route.z, route.x)
 	var to_pin := Vector2(hole.pin.x - from.x, hole.pin.z - from.z).angle()
 	var out: Array = []
-	for sp in COARSE_SPEEDS:
+	var top := max_useful_speed(from)
+	for k in COARSE_SPEEDS.size():
+		var sp: float = COARSE_SPEEDS[k]
+		if k >= 3 and sp > top:
+			break  # short putts skip the full-power fan (the three softest speeds always stay)
 		for da in COARSE_ANGLES:
 			out.append([base + deg_to_rad(da), sp])
 		out.append([to_pin, sp])
 	return out
+
+
+## Fastest speed worth trying from here: grows with the route left to the cup (banks off rails
+## need some extra), so a 2 m putt does not try full-power shots.
+func max_useful_speed(from: Vector3) -> float:
+	var metres := MiniBaker.flow_metres(spec, field, from)
+	if metres >= 1e5:
+		return MAX_SPEED
+	metres += Vector2(hole.pin.x - from.x, hole.pin.z - from.z).length()
+	return clampf(2.5 + 0.75 * metres, 3.0, MAX_SPEED)
 
 
 ## Stage 2: small angle / speed changes around the three best scored shots (`ranked`, sorted).

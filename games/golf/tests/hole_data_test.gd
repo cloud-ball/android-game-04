@@ -114,3 +114,22 @@ func test_flat_hole_landing_matches_flat_flight() -> void:
 	assert_bool(over.hit).is_true()
 	assert_float((over.pos as Vector3).distance_to(flat.pos)).is_less(0.01)
 	assert_int(over.surface).is_equal(HoleData.Surface.FAIRWAY)
+
+
+## Regression (2026-11-19): after water the ball came back on the water's edge and every next
+## shot splashed at once. The drop is now well clear of water and in play.
+func test_water_drop_is_clear_of_the_water() -> void:
+	var d := MiniBaker.bake(MiniBaker.load_spec("res://games/golf/data/mini/meadow_05.json"))
+	var hits := 0
+	for j in d.nz:
+		for i in d.nx:
+			var x := d.x0 + (i + 0.5) * d.cell
+			var z := d.z0 + (j + 0.5) * d.cell
+			if d.surface_at(x, z) != HoleData.Surface.WATER:
+				continue
+			hits += 1
+			if hits % 37 != 0:
+				continue  # a sample of water cells
+			var p := d.water_drop(Vector3(x, 0.0, z), d.tee)
+			assert_bool(d._dry_around(p.x, p.z, HoleData.DROP_CLEAR)).is_true()
+	assert_int(hits).is_greater(0)

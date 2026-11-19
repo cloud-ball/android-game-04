@@ -117,8 +117,8 @@ func test_every_hole_is_playable_within_par() -> void:
 			if b.phase == GolfBall.Phase.REST:
 				at = b.pos()
 			elif b.phase == GolfBall.Phase.WATER:
-				var q := b.last_safe
-				at = Vector3(q.x, d.height(q.x, q.z) + r, q.z)
+				var q := d.water_drop(b.last_safe, d.tee)
+				at = Vector3(q.x, q.y + r, q.z)
 		(
 			assert_bool(holed)
 			. override_failure_message("%s not holed within par %d" % [p, d.par])

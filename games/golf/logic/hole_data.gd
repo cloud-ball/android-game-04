@@ -9,6 +9,7 @@ extends RefCounted
 
 enum Surface { OUT, TEE, FAIRWAY, ROUGH, FRINGE, GREEN, SAND, WATER, PATH }
 
+const DROP_CLEAR := 0.3  # metres of dry ground around a ball dropped after water
 var x0 := 0.0
 var z0 := 0.0
 var cell := 0.5
@@ -143,6 +144,38 @@ func surface_at(x: float, z: float) -> int:
 	var i := mini(int((x - x0) / cell), nx - 1)
 	var j := mini(int((z - z0) / cell), nz - 1)
 	return surface[j * nx + i]
+
+
+## Where a ball is replaced after going into water: from the spot it entered, walk back towards
+## `back_to` (the tee) until there are DROP_CLEAR metres of dry, in-play surface all round, so the
+## next shot does not start on the water's edge. Falls back to `back_to`. Pure.
+func water_drop(entered: Vector3, back_to: Vector3) -> Vector3:
+	var p := Vector2(entered.x, entered.z)
+	var goal := Vector2(back_to.x, back_to.z)
+	var dist := p.distance_to(goal)
+	if dist > 1e-6:
+		var dir := (goal - p) / dist
+		var t := 0.0
+		while t <= dist:
+			var q := p + dir * t
+			if _dry_around(q.x, q.y, DROP_CLEAR):
+				return Vector3(q.x, height(q.x, q.y), q.y)
+			t += 0.05
+	return Vector3(goal.x, height(goal.x, goal.y), goal.y)
+
+
+func _dry_around(x: float, z: float, r: float) -> bool:
+	for k in 9:
+		var qx := x
+		var qz := z
+		if k > 0:
+			var a := TAU * (k - 1) / 8.0
+			qx += cos(a) * r
+			qz += sin(a) * r
+		var sf := surface_at(qx, qz)
+		if sf == Surface.WATER or sf == Surface.OUT:
+			return false
+	return true
 
 
 ## First time the ball (centre a -> b, radius r) touches the ground, as a fraction of the segment
