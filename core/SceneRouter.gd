@@ -86,7 +86,9 @@ func _go(path: String, title: String) -> void:
 	_overlay.visible = true
 	_fade.modulate.a = 1.0
 	_t_start = Time.get_ticks_msec()
-	var err := ResourceLoader.load_threaded_request(path, "PackedScene", true)
+	# No sub-threads: with them most quits after a game had loaded left a RefCounted behind
+	# ("ObjectDB instance leaked at exit"); load times were the same either way (~165-270 ms).
+	var err := ResourceLoader.load_threaded_request(path, "PackedScene", false)
 	if err != OK:
 		push_error("SceneRouter: cannot load %s (%s)" % [path, error_string(err)])
 		_pending = ""

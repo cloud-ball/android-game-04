@@ -353,6 +353,10 @@ func show_pause(on: bool) -> void:
 		hide_practice()
 
 
+func end_showing() -> bool:
+	return _end.visible
+
+
 func settings_open() -> bool:
 	return _settings.is_open()
 

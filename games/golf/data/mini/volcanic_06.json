@@ -1,0 +1,13 @@
+{
+	"id": "volcanic_06",
+	"name": "Obsidian Zigzag",
+	"par": 4,
+	"tile": 3.0,
+	"map": [
+		"GGH..",
+		"GW...",
+		"GGBGG",
+		"...WG",
+		"..TGG"
+	]
+}

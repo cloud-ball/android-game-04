@@ -8,7 +8,7 @@ const DEFAULTS := {"sound": true, "music": true, "haptics": true, "reduce_motion
 
 func get_value(key: String) -> Variant:
 	var s: Dictionary = SaveService.data["settings"]
-	return s.get(key, DEFAULTS.get(key))
+	return SaveService.coerce(s.get(key, DEFAULTS.get(key)), DEFAULTS.get(key))
 
 
 func set_value(key: String, value: Variant) -> void:

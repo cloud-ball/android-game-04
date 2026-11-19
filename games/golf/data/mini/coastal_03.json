@@ -1,0 +1,18 @@
+{
+	"id": "coastal_03",
+	"name": "Sandbar",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		".GHG.",
+		".GGG.",
+		"WSSSW",
+		"WSSSW",
+		".GGG.",
+		"..T.."
+	],
+	"wind": [
+		0.0,
+		0.06
+	]
+}

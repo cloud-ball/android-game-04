@@ -26,4 +26,4 @@ static func unix_day(unix_time: float) -> int:
 
 
 static func daily_seed(day: int) -> int:
-	return hash("pa8-daily-%d" % day) & 0x7fffffff
+	return hash("playjar-daily-%d" % day) & 0x7fffffff
