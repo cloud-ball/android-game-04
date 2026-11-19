@@ -1,10 +1,9 @@
 class_name RushHud
 extends Control
 ## Rush overlay: a compact strip on the left under the hole panel (one row per golfer: colour dot,
-## name, stroke count, status) and the hole / match result cards. Original layout: no top bar of
+## name, stroke count, status) and the hole result card (the match end is GolfShell's end
+## screen). Original layout: no top bar of
 ## avatars, no chest screens. Colour is never the only cue: every row also has a name and a word.
-
-signal again
 
 const ROW_H := 62.0
 const STRIP_W := 430.0
@@ -13,7 +12,6 @@ var _rows: Array[Dictionary] = []
 var _card: PanelContainer
 var _card_title: Label
 var _card_body: Label
-var _again: Button
 
 
 func build(top: float, names: PackedStringArray, colors: Array) -> void:
@@ -64,9 +62,6 @@ func build(top: float, names: PackedStringArray, colors: Array) -> void:
 	_card_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_card_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_card_body)
-	_again = UiKit.button("Play again", UiKit.GREEN, Color.WHITE, 40, 120)
-	_again.pressed.connect(func() -> void: again.emit())
-	col.add_child(_again)
 
 
 ## Row texts: what each golfer is doing, and their strokes on this hole (right). `thinking(i)`
@@ -103,36 +98,6 @@ func show_hole(rush: RushMatch) -> void:
 	_card_body.text = (
 		"Hole %d of %d · %s" % [rush.hole_number + 1, rush.holes.size(), _score_line(rush)]
 	)
-	_again.visible = false
-	_pop()
-
-
-func show_match(rush: RushMatch) -> void:
-	var w := rush.winner()
-	if w == 0:
-		_card_title.text = "You win the match!"
-	elif w < 0:
-		_card_title.text = "It's a draw"
-	else:
-		_card_title.text = "%s wins the match" % rush.names[w]
-	var lines := PackedStringArray()
-	var place := 1
-	for i in rush.standings():
-		lines.append(
-			(
-				"%d. %s   %d hole%s · %d strokes"
-				% [
-					place,
-					rush.names[i],
-					rush.wins[i],
-					"" if rush.wins[i] == 1 else "s",
-					rush.total[i]
-				]
-			)
-		)
-		place += 1
-	_card_body.text = "\n".join(lines)
-	_again.visible = true
 	_pop()
 
 

@@ -57,8 +57,8 @@ func _cpu_strokes(hole: HoleData, preset: CoursePreset, spec: Dictionary) -> int
 			GolfBall.Phase.HOLED:
 				return s
 			GolfBall.Phase.WATER:
-				var q := b.last_safe
-				at = Vector3(q.x, hole.height(q.x, q.z) + r, q.z)
+				var q := hole.water_drop(b.last_safe, hole.tee)
+				at = Vector3(q.x, q.y + r, q.z)
 			GolfBall.Phase.OUT:
 				pass
 			_:

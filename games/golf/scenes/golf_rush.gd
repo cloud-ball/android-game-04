@@ -5,7 +5,9 @@ extends Node
 ## its own ball (shot taken, how it ended, the substep it dropped in) and asks can_shoot().
 ## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step E3).
 
-enum Phase { PLAYING, HOLE_CARD, MATCH_CARD }
+signal finished(info: Dictionary)  # GolfShell.show_end() info, coins already paid
+
+enum Phase { PLAYING, HOLE_CARD, MATCH_OVER }
 
 const HOLE_CARD_TIME := 2.8
 
@@ -17,27 +19,36 @@ var _game: Node  # GolfGame
 var _save: Dictionary
 var _holes := 1
 var _tier := 1
+var _difficulty := "medium"
+var _world := "meadow"
 var _phase := Phase.PLAYING
 var _t := 0.0
 
 
 func setup(
-	game: Node, layer: CanvasLayer, top: float, tier: int, hole_count: int, save: Dictionary
+	game: Node,
+	parent: Control,
+	top: float,
+	difficulty: String,
+	world_id: String,
+	hole_count: int,
+	save: Dictionary,
 ) -> void:
 	_game = game
 	_save = save
-	_tier = tier
+	_difficulty = difficulty
+	_tier = {"easy": 0, "medium": 1, "hard": 2}.get(difficulty, 1)
+	_world = world_id
 	_holes = hole_count
 	field = RushField.new()
 	add_child(field)
 	hud = RushHud.new()
-	layer.add_child(hud)
+	parent.add_child(hud)
 	var names := PackedStringArray(["You"])
 	names.append_array(PackedStringArray(RushField.NAMES))
 	var colors: Array = [Color.WHITE]
 	colors.append_array(RushField.COLORS)
 	hud.build(top, names, colors)
-	hud.again.connect(new_match)
 	_new_rules(names)
 
 
@@ -117,9 +128,9 @@ func tick(delta: float, steps: int, drop: int) -> void:
 				if rush.next_hole():
 					_game.load_hole(rush.holes[rush.hole_number])
 				else:
-					_phase = Phase.MATCH_CARD
-					_record()
-					hud.show_match(rush)
+					_phase = Phase.MATCH_OVER
+					hud.hide_card()
+					finished.emit(_record())
 
 
 func hud_line() -> String:
@@ -134,10 +145,50 @@ func _new_rules(names: PackedStringArray) -> void:
 	_phase = Phase.PLAYING
 
 
-func _record() -> void:
-	_save["played"] = int(_save.get("played", 0)) + 1
-	if rush.winner() == 0:
-		_save["wins"] = int(_save.get("wins", 0)) + 1
-	else:
-		_save["losses"] = int(_save.get("losses", 0)) + 1
-	SaveService.save()
+## Saves the result, pays coins (+ today's challenge), opens the next world on a win; returns
+## the end screen's info.
+func _record() -> Dictionary:
+	var w := rush.winner()
+	var won := w == 0
+	var coins := 0
+	var daily := 0
+	var opened := ""
+	if not Boot.bot:
+		_save["played"] = int(_save.get("played", 0)) + 1
+		_save["wins" if won else "losses"] = int(_save.get("wins" if won else "losses", 0)) + 1
+		_save["tutorial_seen"] = true
+		if won:
+			opened = GolfProgress.unlock_next(_save, _world)
+		coins = GolfProgress.rush_coins(_difficulty, rush.wins[0], won)
+		var stats := GolfProgress.daily_stats("rush", _difficulty, won, 0, 0)
+		daily = DailyChallenge.report(SaveService.data["profile"], DailyChallenge.today(), stats)
+		SaveService.save()
+		Economy.add_coins(coins + daily)
+	var lines := PackedStringArray()
+	var place := 1
+	for i in rush.standings():
+		lines.append(
+			(
+				"%d. %s  %d hole%s · %d strokes"
+				% [
+					place,
+					rush.names[i],
+					rush.wins[i],
+					"" if rush.wins[i] == 1 else "s",
+					rush.total[i]
+				]
+			)
+		)
+		place += 1
+	var title := "YOU WIN!" if won else ("DRAW" if w < 0 else "%s WINS" % rush.names[w].to_upper())
+	var cause := "Rush · %s · %s" % [GolfWorlds.world(_world).name, _difficulty.capitalize()]
+	if opened != "":
+		cause += "\n%s is now open!" % GolfWorlds.world(opened).name
+	return {
+		"title": title,
+		"cause": cause,
+		"color": UiKit.GOLD if won else Color(1.0, 0.5, 0.55),
+		"stats": "\n".join(lines),
+		"coins": coins + daily,
+		"daily": "Daily challenge complete! +%d" % daily if daily > 0 else "",
+	}

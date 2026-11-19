@@ -35,10 +35,10 @@ func test_lift_is_continuous_and_unclamped() -> void:
 
 
 func test_save_without_golf_key_loads_with_defaults() -> void:
-	var game_script: GDScript = load("res://games/golf/scenes/golf_game.gd")
+	# The save rules moved to GolfProgress (schema 2) in step G.
 	var g := SaveService.prepare_namespace(
-		null, game_script.SAVE_SCHEMA, game_script.SAVE_DEFAULTS, game_script.migrate_save
+		null, GolfProgress.SCHEMA, GolfProgress.DEFAULTS, GolfProgress.migrate
 	)
-	assert_int(int(g["schema"])).is_equal(1)
+	assert_int(int(g["schema"])).is_equal(GolfProgress.SCHEMA)
 	assert_int(int(g["played"])).is_equal(0)
 	assert_str(str(g["difficulty"])).is_equal("medium")

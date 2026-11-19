@@ -1,24 +1,15 @@
 class_name GolfGame
 extends Node3D
-## Fairway Flick - arcade mini-golf (step D of docs/plans/2026-11-15-fairway-flick-minigolf.md),
-## still behind enabled = false. Plays World 1's holes (games/golf/data/mini/*.json) in a row, solo.
+## Fairway Flick - arcade mini-golf: the hole screen. Start screen (world, Rush / Tour, difficulty)
+## and the other overlays come from GolfShell; Rush lives in GolfRush; Tour scoring in GolfTourCard.
 ## Shot: press anywhere above the HUD, drag back like a slingshot and release - the ball goes the
 ## opposite way, power = drag length. A dotted guide shows the ball's real path (the same solver,
 ## up to the first wall bounce and a bit). Drag back under the dead zone to cancel. The camera sits
 ## low behind the ball and does not move while you drag (aiming stays stable).
 ## Nodes move in _process from interpolated solver states, so root interpolation is OFF.
 
-enum Mode { INTRO, AIM, DRAG, MOVING, RESULT, WATCH }  # WATCH: Rush, your hole is done
+enum Mode { INTRO, AIM, DRAG, MOVING, RESULT, WATCH, MENU }  # WATCH: Rush, your hole is done
 
-const SAVE_SCHEMA := 1
-const SAVE_DEFAULTS := {
-	"played": 0,
-	"wins": 0,
-	"losses": 0,
-	"best_score": 0,
-	"difficulty": "medium",
-	"tutorial_seen": false,
-}
 const MAX_SPEED := 13.0  # m/s at a full pull
 const POWER_CURVE := 1.3  # speed = MAX x pull^1.3: the first third of the pull gives fine putts
 const SLOWMO := 0.3  # presentation rate around a great hole-out (physics unchanged)
@@ -96,10 +87,7 @@ var _trauma := 0.0  # screen shake 0..1 (hole-in-one), decays
 var _squash := 0.0  # seconds of ball squash left after a rail hit
 var _last_tick := 0  # power tick haptics: last 10% band and time
 var _last_tick_ms := 0
-var _trail_pts := PackedVector3Array()
-var _trail_speed := PackedFloat32Array()
-var _trail_head := 0
-var _trail_n := 0
+var _trails := GolfTrails.new()  # speed trail ring buffer
 var _trail: ImmediateMesh
 var _fx_mat: Material  # guide and trail (vertex colours), for the warm-up
 var _flag_cloth: MeshInstance3D
@@ -110,21 +98,23 @@ var _banner: Label
 var _hint: Label
 var _card: Label
 var _power_ui: Control
-var _layer: CanvasLayer
+var _shell: GolfShell
+var _paused := false
+var _difficulty := "medium"
+var _world_id := "meadow"
+var _tour: GolfTourCard  # null in Rush
+var _holed_now := false  # this hole ended in the cup (Tour scoring)
 var _rush: GolfRush  # null in Tour (solo) play
 var _bot_cpu: GolfCpu  # --bot plays the player's ball with the Hard CPU golfer
 var _bot_think: GolfCpuThink
 var _bot_rng := Rng.make(0xb07)
 
 
-## Schema history: 1 = first version. Bump SAVE_SCHEMA and handle `from` here on any change.
-static func migrate_save(old: Dictionary, _from: int, _to: int) -> Dictionary:
-	return old
-
-
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see the project rules
-	_save = SaveService.game("golf", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
+	_save = SaveService.game(
+		"golf", GolfProgress.SCHEMA, GolfProgress.DEFAULTS, GolfProgress.migrate
+	)
 	_preset.stimp = 9.0
 	_cam = Camera3D.new()
 	_cam.keep_aspect = Camera3D.KEEP_WIDTH
@@ -132,16 +122,141 @@ func _ready() -> void:
 	_cam.far = 1500.0
 	add_child(_cam)
 	_cam.make_current()
-	_build_ui()
-	if str(Boot.options.get("mode", "rush")) == "tour":
+	_shell = GolfShell.new()
+	add_child(_shell)
+	_shell.setup(_save["unlocked"])
+	_hud_top = _shell.hud_top
+	_hud_info = _shell.hud_info
+	_banner = _shell.shot_banner
+	_stars = _shell.stars
+	_card = _shell.card
+	_hint = _shell.hint
+	_map_btn = _shell.map_btn
+	_power_ui = _shell.power_ui
+	_power_ui.draw.connect(_draw_power)
+	_shell.map_pressed.connect(_toggle_map)
+	_shell.play_requested.connect(_on_play)
+	_shell.rematch_requested.connect(_start_match)
+	_shell.exit_requested.connect(func() -> void: SceneRouter.back_to_hub())
+	_shell.pause_requested.connect(_pause)
+	_shell.resume_requested.connect(_resume)
+	_shell.howto_closed.connect(_on_howto_closed)
+	_shell.world_changed.connect(_on_world)
+	_shell.mode_changed.connect(func(_m: String) -> void: _shell.set_start_stats(_stats_text()))
+	_difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))
+	var m := str(SceneRouter.params.get("mode", _save["mode"]))
+	_world_id = (
+		str(_save["world"]) if GolfProgress.is_unlocked(_save, str(_save["world"])) else "meadow"
+	)
+	_shell.set_difficulty(_difficulty)
+	_shell.set_mode(m if m in ["rush", "tour"] else "rush")
+	_shell.set_world(_world_id)
+	_holes = GolfWorlds.holes(_world_id)
+	_show_menu()
+	if SceneRouter.params.get("autostart", false):
+		_on_play(_difficulty, _shell.mode)
+	elif not bool(_save["tutorial_seen"]):
+		_shell.show_howto()
+	else:
+		_shell.show_start(_stats_text())
+
+
+## The start screen over a fly-over of the world's first hole.
+func _show_menu() -> void:
+	_shell.show_hud(false)
+	_load_hole(0)
+	mode = Mode.MENU
+	_card.text = ""
+	_hint.text = ""
+
+
+func _on_world(id: String) -> void:
+	_world_id = id
+	_holes = GolfWorlds.holes(id)
+	_load_hole(0)
+	mode = Mode.MENU
+	_card.text = ""
+	_shell.set_start_stats(_stats_text())
+
+
+func _on_play(d: String, m: String) -> void:
+	_difficulty = d
+	_save["difficulty"] = d
+	_save["mode"] = m
+	_save["world"] = _world_id
+	SaveService.save()
+	_start_match()
+
+
+## A new Rush match or Tour in the chosen world (also Play again / Restart).
+func _start_match() -> void:
+	_shell.hide_panels()
+	_shell.show_hud(true)
+	_paused = false
+	_holes = GolfWorlds.holes(_world_id)
+	if _rush != null:
+		_rush.field.stop()
+		_rush.hud.queue_free()
+		_rush.queue_free()
+		_rush = null
+	_tour = null
+	if _shell.mode == "tour":
+		_tour = GolfTourCard.new()
+		_total = 0
 		_load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
 		return
-	var tiers := {"easy": 0, "medium": 1, "hard": 2}
-	var tier: int = tiers.get(str(Boot.options.get("difficulty", _save["difficulty"])), 1)
 	_rush = GolfRush.new()
 	add_child(_rush)
-	_rush.setup(self, _layer, UiKit.safe_top(self), tier, _holes.size(), _save)
+	_rush.setup(
+		self, _shell.hud, UiKit.safe_top(self), _difficulty, _world_id, _holes.size(), _save
+	)
+	_rush.finished.connect(_on_finished)
 	_load_hole(_rush.first_hole())
+
+
+func _on_finished(info: Dictionary) -> void:
+	mode = Mode.WATCH
+	_shell.show_end(info)
+	AudioService.play("win" if info.color == UiKit.GOLD else "lose")
+	if Boot.bot:  # soak runs keep playing
+		get_tree().create_timer(3.0).timeout.connect(_start_match)
+
+
+func _on_howto_closed() -> void:
+	_save["tutorial_seen"] = true
+	SaveService.save()
+	if mode == Mode.MENU:
+		_shell.show_start(_stats_text())
+
+
+func _pause() -> void:
+	if mode != Mode.MENU and not _paused:
+		_paused = true
+		_shell.show_pause(true)
+
+
+func _resume() -> void:
+	if _paused:
+		_paused = false
+		_shell.show_pause(false)
+
+
+func _toggle_map() -> void:
+	if mode == Mode.AIM:
+		_overview = not _overview
+		_map_btn.text = "BACK" if _overview else "MAP"
+		AudioService.play("tap")
+
+
+func _stats_text() -> String:
+	if _shell.mode == "tour":
+		var best: Variant = (_save["tour_best"] as Dictionary).get(_world_id)
+		var par_line := "no Tour yet" if best == null else "best %+d" % int(best)
+		var got := 0
+		for h in GolfWorlds.world(_world_id).holes:
+			got += int((_save["stars"] as Dictionary).get(str(h), 0))
+		return "%s  ·  %d of %d stars" % [par_line, got, _holes.size() * 3]
+	return "Rush wins %d of %d" % [int(_save["wins"]), int(_save["played"])]
 
 
 ## World hole `i` (GolfRush moves the match on with this).
@@ -232,9 +347,7 @@ func _load_hole(i: int) -> void:
 	tr.material_override = gm
 	tr.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_world.add_child(tr)
-	_trail_pts.resize(20)
-	_trail_speed.resize(20)
-	_trail_n = 0
+	_trails.reset()
 	_start_hole()
 
 
@@ -295,67 +408,6 @@ func _particles(n: int, life: float, speed: Vector2, size: float) -> CPUParticle
 # --- UI ------------------------------------------------------------------------------------------
 
 
-func _outlined(text: String, size: int, col: Color, weight: int, outline: int) -> Label:
-	var l := UiKit.label(text, size, col, weight)
-	l.add_theme_constant_override("outline_size", outline)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	return l
-
-
-func _build_ui() -> void:
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	_layer = layer
-	var top := UiKit.safe_top(layer)
-	var panel := Panel.new()
-	panel.add_theme_stylebox_override("panel", UiKit.box(Color(0.03, 0.12, 0.08, 0.66), 26))
-	panel.position = Vector2(24, top + 10)
-	panel.size = Vector2(1032, 140)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(panel)
-	_hud_top = UiKit.label("", 42, Color.WHITE, 900)
-	_hud_top.position = Vector2(28, 10)
-	panel.add_child(_hud_top)
-	_hud_info = UiKit.label("", 32, Color(1, 1, 1, 0.85), 700)
-	_hud_info.position = Vector2(28, 76)
-	panel.add_child(_hud_info)
-	_banner = _outlined("", 88, UiKit.GOLD, 900, 18)
-	_banner.position = Vector2(0, 560)
-	_banner.size = Vector2(1080, 260)
-	layer.add_child(_banner)
-	_stars = _outlined("", 96, UiKit.GOLD, 900, 16)
-	_stars.position = Vector2(0, 830)
-	_stars.size = Vector2(1080, 140)
-	layer.add_child(_stars)
-	_card = _outlined("", 76, Color.WHITE, 900, 18)
-	_card.position = Vector2(0, 480)
-	_card.size = Vector2(1080, 420)
-	layer.add_child(_card)
-	var h := get_viewport().get_visible_rect().size.y
-	_hint = _outlined("", 32, Color.WHITE, 700, 10)
-	_hint.position = Vector2(40, h - 230)
-	_hint.size = Vector2(1000, 100)
-	layer.add_child(_hint)
-	_map_btn = UiKit.button("MAP", Color(0, 0, 0, 0.5), Color.WHITE, 30, 90)
-	_map_btn.position = Vector2(1080 - 24 - 150, top + 166)
-	_map_btn.size = Vector2(150, 90)
-	_map_btn.pressed.connect(
-		func() -> void:
-			if mode == Mode.AIM:
-				_overview = not _overview
-				_map_btn.text = "BACK" if _overview else "MAP"
-				AudioService.play("tap")
-	)
-	layer.add_child(_map_btn)
-	_power_ui = Control.new()
-	_power_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_power_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_power_ui.draw.connect(_draw_power)
-	layer.add_child(_power_ui)
-
-
 ## The pull: a line from where the finger went down to where it is, and a power ring.
 func _draw_power() -> void:
 	if mode != Mode.DRAG:
@@ -377,6 +429,7 @@ func _draw_power() -> void:
 func _start_hole() -> void:
 	_strokes = 0
 	_hole_over = false
+	_holed_now = false
 	if _rush != null:
 		_rush.begin_hole(_hole, _spec, _preset, _world)
 	_bot_cpu = GolfCpu.new(_hole, _preset, _spec) if Boot.bot else null
@@ -434,7 +487,9 @@ func _flow_dir(from: Vector3) -> Vector3:
 
 
 func _refresh() -> void:
-	var where := _rush.hud_line() if _rush != null else "HOLE %d/%d" % [_index + 1, _holes.size()]
+	var where := (
+		_rush.hud_line() if _rush != null else "TOUR · HOLE %d/%d" % [_index + 1, _holes.size()]
+	)
 	_hud_top.text = ("%s · %s · PAR %d" % [where, str(_spec.get("name", "")).to_upper(), _hole.par])
 	var to_cup := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
 	if _rush != null:
@@ -476,7 +531,7 @@ func _shoot() -> void:
 	var dist := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
 	_slow_ok = _strokes == 1 or _strokes < _hole.par or dist > 6.0
 	_clock.reset()
-	_trail_n = 0
+	_trails.reset()
 	AudioService.play("clack", 0.65 + 0.3 * _power, -6.0 + 6.0 * _power)
 	AudioService.buzz(int(8 + 10 * _power))
 	if not _reduce_motion():
@@ -501,12 +556,11 @@ func _shot_over() -> void:
 			_total += diff
 			_hole_out(name, diff)
 			_hole_over = true
-			_save["played"] = int(_save["played"]) + 1
-			SaveService.save()
+			_holed_now = true
 		GolfBall.Phase.WATER:
 			_strokes += 1
 			_banner.text = "Splash!\n+1 stroke"
-			_ball_at = _safe_spot(_ball.last_safe)
+			_ball_at = _safe_spot(_hole.water_drop(_ball.last_safe, _hole.tee))
 		GolfBall.Phase.OUT:
 			_strokes += 1
 			_banner.text = "Out!\n+1 stroke · try again"
@@ -514,9 +568,9 @@ func _shot_over() -> void:
 		_:
 			_ball_at = _ball.pos()
 			_banner.text = ""
-	if not _hole_over and _strokes >= _hole.par + 4:
-		_banner.text = "Out of strokes\n+%d" % (_strokes + 1 - _hole.par)
-		_total += _strokes + 1 - _hole.par
+	if not _hole_over and _strokes >= _hole.par + RushMatch.CAP_OVER_PAR:
+		_banner.text = "Out of strokes\n+%d" % (_strokes - _hole.par)
+		_total += _strokes - _hole.par
 		_hole_over = true
 	_banner.modulate.a = 1.0
 
@@ -531,7 +585,7 @@ func _rush_shot_over() -> void:
 		var diff := _strokes - _hole.par
 		_hole_out("HOLE IN ONE!" if _strokes == 1 else NAMES.get(diff, "+%d" % diff), diff)
 	elif ph == GolfBall.Phase.WATER:
-		_ball_at = _safe_spot(_ball.last_safe)
+		_ball_at = _safe_spot(_hole.water_drop(_ball.last_safe, _hole.tee))
 	elif ph == GolfBall.Phase.OUT:
 		AudioService.play("foul", 1.0, -4.0)
 	else:
@@ -592,6 +646,8 @@ func _safe_spot(p: Vector3) -> Vector3:
 
 
 func _physics_process(delta: float) -> void:
+	if _paused or mode == Mode.MENU:
+		return
 	var steps := PresentationClock.SUBSTEPS_PER_TICK  # rivals keep this pace while you aim
 	var drop := -1  # substep your ball dropped in, this tick
 	match mode:
@@ -623,7 +679,7 @@ func _physics_process(delta: float) -> void:
 						drop = i
 					break
 			_cur = _ball.pos()
-			_trail_push(_cur, _ball.roll_speed())
+			_trails.push(_cur, _ball.roll_speed())
 			_effects()
 			if _ball.done():
 				_shot_over()
@@ -633,7 +689,7 @@ func _physics_process(delta: float) -> void:
 			_banner.modulate.a = clampf((hold + 0.2 - _result_t) * 3.0, 0.0, 1.0)
 			if _result_t > hold:
 				if _hole_over:
-					_load_hole(_index + 1)
+					_tour_hole_done()
 				else:
 					_new_shot()
 	if _rush != null and mode != Mode.INTRO:
@@ -720,87 +776,19 @@ func _process(delta: float) -> void:
 	var panel := _hud_top.get_parent() as Control
 	var hud_a := 0.35 if mode == Mode.DRAG else 1.0
 	panel.modulate.a = lerpf(panel.modulate.a, hud_a, 1.0 - exp(-12.0 * delta))
-	_draw_trail()
+	_trails.draw(_trail, _shot_dir, mode == Mode.MOVING)
 	if mode == Mode.DRAG:
 		_power_ui.queue_redraw()
 
 
 ## Speed trail: a 20-point ring buffer (preallocated), pushed while the ball moves fast.
-func _trail_push(p: Vector3, speed: float) -> void:
-	if speed < 1.0:
-		_trail_n = maxi(0, _trail_n - 1)
-		return
-	_trail_head = (_trail_head + 1) % _trail_pts.size()
-	_trail_pts[_trail_head] = p + Vector3(0, 0.03, 0)
-	_trail_speed[_trail_head] = speed
-	_trail_n = mini(_trail_n + 1, _trail_pts.size())
-
-
-func _draw_trail() -> void:
-	_trail.clear_surfaces()
-	if _trail_n < 2 or mode != Mode.MOVING:
-		return
-	_trail.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
-	var size := _trail_pts.size()
-	for k in _trail_n:
-		var idx := (_trail_head - k + size) % size
-		var nxt := (_trail_head - mini(k + 1, _trail_n - 1) + size) % size
-		var q := _trail_pts[idx]
-		var d := q - _trail_pts[nxt]
-		if d.length() < 1e-4:
-			d = _shot_dir
-		var side := Vector3(-d.z, 0.0, d.x).normalized()
-		var w := clampf(_trail_speed[idx] * 0.006, 0.01, 0.05) * (1.0 - float(k) / _trail_n)
-		var a := 0.55 * (1.0 - float(k) / _trail_n)
-		_trail.surface_set_color(Color(1, 1, 1, a))
-		_trail.surface_add_vertex(q - side * w)
-		_trail.surface_set_color(Color(1, 1, 1, a))
-		_trail.surface_add_vertex(q + side * w)
-	_trail.surface_end()
-
-
-## Dotted guide: the ball's real path for the first GUIDE_TIME seconds (same solver).
 func _draw_guide() -> void:
-	_guide.clear_surfaces()
 	if mode != Mode.DRAG or _power <= 0.0:
+		_guide.clear_surfaces()
 		return
-	var b := GolfBall.new(_hole, _preset, _ball.p)
-	var v := _shot_dir * _speed(_power)
-	b.putt(_ball_at.x, _ball_at.z, v.x, v.z)
-	var pts := PackedVector3Array()
-	var t := 0.0
-	var walls := 0
-	while t < GUIDE_TIME and not b.done():
-		b.substep(1.0 / 120.0)
-		t += 1.0 / 120.0
-		if int(t * 120.0) % 4 == 0:
-			pts.append(b.pos())
-		if b.events.count(GolfBall.Ev.WALL) > walls:
-			walls = b.events.count(GolfBall.Ev.WALL)
-			if walls >= 2:
-				break
-	if pts.size() < 2:
-		return
-	_guide.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-	for k in pts.size():
-		if k % 2 == 1:
-			continue
-		var q := pts[k] + Vector3(0, 0.03, 0)
-		var a := 1.0 - float(k) / pts.size()
-		var w := 0.035
-		var side := Vector3(-_shot_dir.z, 0.0, _shot_dir.x) * w
-		var fwd := _shot_dir * w
-		for vtx in [
-			q - side - fwd,
-			q + side - fwd,
-			q + side + fwd,
-			q - side - fwd,
-			q + side + fwd,
-			q - side + fwd
-		]:
-			_guide.surface_set_color(Color(1, 1, 1, 0.9 * a))
-			_guide.surface_add_vertex(vtx)
-	_guide.surface_end()
+	GolfTrails.draw_guide(
+		_guide, _hole, _preset, _ball.p, _ball_at, _shot_dir, _speed(_power), GUIDE_TIME
+	)
 
 
 ## Intro: open on the landmark over the course, then glide down to the aiming view.
@@ -828,7 +816,7 @@ func _place_camera(delta: float, ball: Vector3) -> void:
 		want = high.lerp(want, t)
 		look = _landmark.lerp(look, t)
 		rate = 60.0
-	elif _overview and mode == Mode.AIM:
+	elif (_overview and mode == Mode.AIM) or mode == Mode.MENU:
 		var c := _hole_centre()
 		want = c + Vector3(0, _hole_span() * 1.15, _hole_span() * 0.25)
 		look = c
@@ -870,6 +858,8 @@ func _hole_span() -> float:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _paused or mode == Mode.MENU:
+		return
 	var mb := event as InputEventMouseButton
 	if mb != null and mb.button_index == MOUSE_BUTTON_LEFT:
 		if mb.pressed:
@@ -917,5 +907,63 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		SceneRouter.back_to_hub()
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
+			_pause()
+		NOTIFICATION_WM_GO_BACK_REQUEST:
+			if _shell.settings_open():
+				_shell.close_settings()
+			elif _shell.howto_open():
+				_shell.close_howto()
+			elif _paused:
+				_resume()
+			elif mode != Mode.MENU and not _shell.end_showing():
+				_pause()
+			else:
+				SceneRouter.back_to_hub()
+
+
+## Tour: score the hole, then the next one or the end of the round.
+func _tour_hole_done() -> void:
+	if _tour == null:
+		_load_hole(_index + 1)
+		return
+	var hole_id := _holes[_index].get_file().get_basename()
+	var got := _tour.add(hole_id, _hole.par, _strokes, _holed_now)
+	if not Boot.bot:
+		GolfProgress.record_stars(_save, hole_id, got)
+	if _index + 1 < _holes.size():
+		_load_hole(_index + 1)
+		return
+	mode = Mode.WATCH
+	var over := _tour.over_par()
+	var coins := 0
+	var daily := 0
+	var best := false
+	var opened := ""
+	if not Boot.bot:
+		best = GolfProgress.record_tour(_save, _world_id, over)
+		opened = GolfProgress.unlock_next(_save, _world_id)
+		_save["aces"] = int(_save["aces"]) + _tour.aces()
+		_save["tutorial_seen"] = true
+		coins = GolfProgress.tour_coins(_tour.stars())
+		var stats := GolfProgress.daily_stats(
+			"tour", _difficulty, false, _tour.birdies(), _tour.aces()
+		)
+		daily = DailyChallenge.report(SaveService.data["profile"], DailyChallenge.today(), stats)
+		SaveService.save()
+		Economy.add_coins(coins + daily)
+	var cause := "Tour · %s · %d strokes" % [GolfWorlds.world(_world_id).name, _tour.strokes()]
+	if opened != "":
+		cause += "\n%s is now open!" % GolfWorlds.world(opened).name
+	_on_finished(
+		{
+			"title": ("NEW BEST %+d" if best else "ROUND %+d") % over,
+			"cause": cause,
+			"color": UiKit.GOLD if best or over <= 0 else Color.WHITE,
+			"stats":
+			"%d stars · %d birdies · %d aces" % [_tour.stars(), _tour.birdies(), _tour.aces()],
+			"coins": coins + daily,
+			"daily": "Daily challenge complete! +%d" % daily if daily > 0 else "",
+		}
+	)
