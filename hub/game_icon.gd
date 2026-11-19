@@ -65,15 +65,17 @@ func _pool(c: Vector2, u: float) -> void:
 
 
 func _blocks(c: Vector2, u: float) -> void:
-	draw_rect(Rect2(c - Vector2(2.5, 3.6) * u, Vector2(5, 7.2) * u), Color(1, 1, 1, 0.12))
-	var tones := [accent, accent.darkened(0.25), Color(0.3, 0.55, 1.0), Color(0.95, 0.7, 0.3)]
-	for y in 3:
-		for x in 5:
-			if (x + y * 2) % 7 != 0:
-				var r := Rect2(c + Vector2(x - 2.5, 2.6 - y) * u, Vector2(0.92, 0.92) * u)
-				draw_rect(r, tones[(x + y) % tones.size()])
-	for p in [Vector2(-0.5, -1.4), Vector2(0.5, -1.4), Vector2(0.5, -2.4), Vector2(0.5, -0.4)]:
-		draw_rect(Rect2(c + p * u, Vector2(0.92, 0.92) * u), accent.lightened(0.2))
+	# A small crystal tower holding emerald-cut gems (GemArt): jewels, not flat tiles.
+	draw_rect(Rect2(c - Vector2(2.6, 3.6) * u, Vector2(5.2, 7.2) * u), Color(0.55, 0.7, 1.0, 0.14))
+	draw_line(c + Vector2(-2.6, -3.6) * u, c + Vector2(-0.6, -3.6) * u, Color(1, 1, 1, 0.25), 2.0)
+	var jewels := [Color("#8E2340"), Color("#2F55C4"), Color("#178060"), Color("#9A6BE0")]
+	jewels.append_array([Color("#D9799E"), Color("#E2A840"), Color("#9FE6DC")])
+	var cells := [Vector2(-2.5, 2.4), Vector2(-1.5, 2.4), Vector2(-0.5, 2.4), Vector2(1.5, 2.4)]
+	cells.append_array([Vector2(-2.5, 1.4), Vector2(0.5, 1.4), Vector2(1.5, 1.4)])
+	for i in cells.size():
+		GemArt.draw(self, Rect2(c + cells[i] * u, Vector2(0.96, 0.96) * u), jewels[i % 7])
+	for p in [Vector2(-0.5, -1.6), Vector2(0.5, -1.6), Vector2(0.5, -0.6)]:
+		GemArt.draw(self, Rect2(c + p * u, Vector2(0.96, 0.96) * u), jewels[3])
 
 
 func _chess(c: Vector2, u: float) -> void:

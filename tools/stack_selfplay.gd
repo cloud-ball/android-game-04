@@ -1,5 +1,5 @@
 extends SceneTree
-## Headless self-play for Stack Drop difficulty tuning (vs CPU matches, fixed 60 Hz steps).
+## Headless self-play for Facetfall difficulty tuning (vs CPU matches, fixed 60 Hz steps).
 ## Each difficulty's CPU (StackDifficulty) plays simulated
 ## human profiles. Reports CPU win rate, match length, lines and the AI's planning cost.
 ## Run: godot --headless --path . -s res://tools/stack_selfplay.gd -- [matches]

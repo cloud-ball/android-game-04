@@ -1,6 +1,6 @@
 class_name StackLogic
 extends RefCounted
-## Pure Stack Drop rules: reduce(state, action) -> new state. Never mutates its input.
+## Pure Facetfall rules: reduce(state, action) -> new state. Never mutates its input.
 ## Actions are Dictionaries:
 ##   {type: "left"|"right"|"cw"|"ccw"|"soft"|"hard"|"hold"}
 ##   {type: "tick", dt: float}          gravity + lock delay (call with a fixed step)
