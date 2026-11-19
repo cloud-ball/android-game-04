@@ -12,11 +12,8 @@ extends SceneTree
 const BASE_AIM_DEG := 2.0
 const BASE_SPEED_SIGMA := 0.06
 const BASE_PAUSE := [2.3, 3.8]  # seconds between the ball stopping and the next shot
-const HOLES := [
-	"res://games/golf/data/mini/meadow_01.json",
-	"res://games/golf/data/mini/meadow_02.json",
-	"res://games/golf/data/mini/meadow_03.json",
-]
+
+var holes := GolfWorlds.all_holes()
 
 
 func _init() -> void:
@@ -29,8 +26,8 @@ func _init() -> void:
 	var preset := CoursePreset.new()
 	preset.stimp = 9.0
 	var t0 := Time.get_ticks_msec()
-	for h in HOLES.size():
-		var spec := MiniBaker.load_spec(HOLES[h])
+	for h in holes.size():
+		var spec := MiniBaker.load_spec(holes[h])
 		var hole := MiniBaker.bake(spec)
 		var cpu := GolfCpu.new(hole, preset, spec)
 		for run in plays:
