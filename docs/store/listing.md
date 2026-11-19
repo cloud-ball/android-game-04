@@ -1,4 +1,4 @@
-# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank)
+# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank, Fairway Flick)
 
 Paste these into Play Console → Grow → Store presence → Main store listing.
 Never mention other companies' games or trademarks here or in keywords (see guide p. 5).
@@ -7,12 +7,12 @@ Never mention other companies' games or trademarks here or in keywords (see guid
 Playjar
 
 ## Short description (≤ 80)
-Snake, pool and gem races vs a smart CPU. Original 3D games, offline, no ads.
+Snake, pool, mini-golf and gem races vs a smart CPU. Offline, no ads.
 
 ## Full description (≤ 4000)
 Playjar is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
 
-Three games are ready today:
+Four games are ready today:
 
 SERPENT GRID: a head-to-head snake duel on a floating neon grid
 • Swipe anywhere to turn; quick double swipes make tight U-turns.
@@ -29,6 +29,12 @@ BREAK & BANK: eight-ball billiards against a CPU that thinks like a player
 • Real ball physics: spin, cushion bounces and pockets behave as you expect.
 • Casual 8 rules with ball in hand after a foul. Play a best-of-three match.
 
+FAIRWAY FLICK: mini-golf races against three CPU golfers
+• Drag back and let go to putt; an aim guide shows where the ball will go.
+• Rush: everyone plays the same hole at once, and the first ball in the cup wins it.
+• Tour: play nine holes on your own and earn stars for par, birdies and aces.
+• Four worlds and 36 holes: a meadow, a windy coast, a canyon of big jumps and a volcano with lava.
+
 In every game
 • Three difficulty levels: Easy, Medium and Hard.
 • Matches take a few minutes, so they fit any break.
@@ -36,7 +42,7 @@ In every game
 • Short how-to-play cards the first time you open a game.
 • Original music and sound, with separate switches for music, sound effects and vibration.
 
-More original games (golf, chess, carrom, penalties and driving) are on the way in free updates.
+More original games (chess, carrom, penalties and driving) are on the way in free updates.
 
 No ads. No in-app purchases. No internet permission. Your progress stays on your phone.
 
@@ -53,7 +59,7 @@ No ads. No in-app purchases. No internet permission. Your progress stays on your
 |---|---|---|
 | App icon | icon_512.png | 512×512 PNG, no alpha ✓ |
 | Feature graphic | feature_graphic_1024x500.png | 1024×500 ✓ |
-| Phone screenshots | screenshots/01_hub.png … 06_facetfall_race.png | 1080×1920 (9:16) ✓, 6 shots with captions (min 2, max 8) |
+| Phone screenshots | screenshots/01_hub.png … 08_facetfall_race.png | 1080×1920 (9:16) ✓, 8 shots with captions (min 2, max 8) |
 
 ## App content answers (Policy → App content)
 - **Privacy policy URL**: https://cloud-ball.github.io/privacy.html

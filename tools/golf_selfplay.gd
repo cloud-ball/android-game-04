@@ -6,7 +6,7 @@ extends SceneTree
 ## apart and combined afterwards (tools/golf_selfplay_report.py: head-to-head and Rush matches).
 ## Same solver, rules and planner as the game (GolfBall, RushMatch cap, GolfCpu).
 ## Run: godot --headless --path . -s res://tools/golf_selfplay.gd -- <easy|medium|hard|baseline>
-##      <plays per hole> <out.csv>
+##      <plays per hole> <out.csv> [aim=<deg>,speed=<frac>,k=<top k>] (tier knob overrides, tuning)
 
 ## The human proxy: a decent player who plans well but aims by hand (slower, less exact).
 const BASE_AIM_DEG := 2.0
@@ -14,6 +14,7 @@ const BASE_SPEED_SIGMA := 0.06
 const BASE_PAUSE := [2.3, 3.8]  # seconds between the ball stopping and the next shot
 
 var holes := GolfWorlds.all_holes()
+var knobs := {}  # tuning overrides for a CPU tier: aim (deg), speed (fraction), k (top k)
 
 
 func _init() -> void:
@@ -21,6 +22,10 @@ func _init() -> void:
 	var who := args[0] if args.size() > 0 else "medium"
 	var plays := int(args[1]) if args.size() > 1 else 20
 	var out_path := args[2] if args.size() > 2 else "user://golf_selfplay_%s.csv" % who
+	if args.size() > 3:
+		for kv in args[3].split(",", false):
+			var pair := kv.split("=")
+			knobs[pair[0]] = float(pair[1])
 	var f := FileAccess.open(out_path, FileAccess.WRITE)
 	f.store_line("who,hole,run,holed,time,strokes")
 	var preset := CoursePreset.new()
@@ -62,7 +67,10 @@ func _play(
 			var tier: int = tiers[who]
 			var span: Array = GolfCpu.THINK_S[tier]
 			t += rng.randf_range(span[0], span[1])
-			v = cpu.choose(at, tier, rng)
+			var aim: float = knobs.get("aim", GolfCpu.AIM_SIGMA_DEG[tier])
+			var sp: float = knobs.get("speed", GolfCpu.SPEED_SIGMA[tier])
+			var k := int(knobs.get("k", GolfCpu.TOP_K[tier]))
+			v = GolfCpu.pick_with(cpu.ranked(at), k, aim, sp, rng)
 		strokes += 1
 		var b := GolfBall.new(hole, preset)
 		b.putt(at.x, at.z, v.x, v.y)

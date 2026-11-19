@@ -1,6 +1,6 @@
 # Ship Playjar v0.2.0: checklist
 
-Goal: Playjar v0.2.0 (hub + Serpent Grid, Facetfall, Break & Bank) live on Google Play
+Goal: Playjar v0.2.0 (hub + Serpent Grid, Facetfall, Break & Bank, Fairway Flick) live on Google Play
 **closed testing**, then production. New personal developer accounts must keep 12+ testers opted in
 for 14 days in a row before they can apply for production, so public release is ~2-3 weeks after
 the closed test starts. Fairway Flick and the other games stay hidden as "SOON" cards

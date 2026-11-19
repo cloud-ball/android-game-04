@@ -2,6 +2,17 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Golf CPU retuned on all 36 holes; store material with Fairway Flick
+- Self-play (tools/golf_selfplay.gd, now with knob overrides for tuning; 432 plays per golfer
+  type on all four worlds): Easy 27.2 % / Medium 51.7 % / Hard 65.7 % CPU wins against the
+  decent-player baseline. Hard tightened (aim 1.5 -> 1.0 deg, speed 4.5 -> 3 %): 73.0 %.
+  Targets 25 / 50 / 70; Easy and Medium unchanged.
+- Store: 8 screenshots (new hub shot with the golf card, 06 Fairway Flick Rush on the coast,
+  07 "Four worlds, 36 holes" in the volcano; Facetfall race moved to 08); listing, short
+  description, release notes and checklist name Fairway Flick. Version stays 0.2.0 (code 1):
+  nothing has been uploaded yet.
+- Try it: play a Rush on Hard; the CPU golfers should now win most holes against a steady player.
+
 ## 2026-11-19 · Fixed "ObjectDB instance leaked at exit" on quit (all games)
 - Two causes, found by switching parts off one at a time (6-10 quits per test):
   - SceneRouter's threaded load used sub-threads; after any game had loaded, most quits left a
