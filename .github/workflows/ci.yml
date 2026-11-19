@@ -52,11 +52,11 @@ jobs:
           export/android/debug_keystore_pass = "android"
           EOF
           mkdir -p build
-          godot --headless --path . --export-debug "Android APK" build/octorival-debug.apk
-          test -s build/octorival-debug.apk
+          godot --headless --path . --export-debug "Android APK" build/playjar-debug.apk
+          test -s build/playjar-debug.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: octorival-debug-apk
-          path: build/octorival-debug.apk
+          name: playjar-debug-apk
+          path: build/playjar-debug.apk
           retention-days: 7
