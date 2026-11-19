@@ -1,6 +1,6 @@
 class_name MiniDressing
 extends RefCounted
-## Fairway Flick mini-golf course dressing (render only, built once per hole): the merged bevelled
+## Cup Dash mini-golf course dressing (render only, built once per hole): the merged bevelled
 ## rail mesh, bumpers, the outlined ball, and flower beds / bushes outside the rails. Colours come
 ## from the world's GolfTheme. Split out of golf_game.gd.
 

@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Fairway Flick progression: save migration 1 -> 2, stars, unlocks, records, coins, daily goals.
+## Cup Dash progression: save migration 1 -> 2, stars, unlocks, records, coins, daily goals.
 
 
 func test_schema_1_save_migrates_and_keeps_its_stats() -> void:

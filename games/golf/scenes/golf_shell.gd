@@ -1,6 +1,6 @@
 class_name GolfShell
 extends GameShell
-## Fairway Flick screens: the shared GameShell (start with mode + difficulty, how-to, pause, end)
+## Cup Dash screens: the shared GameShell (start with mode + difficulty, how-to, pause, end)
 ## plus the hole HUD (top panel, banners, aim hint, MAP, pause, power ring) on a layer under the
 ## overlays, and a world picker on the start screen (locked worlds greyed out).
 

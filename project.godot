@@ -1,5 +1,5 @@
 ; Engine configuration file.
-; Settings follow docs/design/PocketArena8_Build_Guide.pdf p. 6.
+; Settings follow docs/design/Playjar_Build_Guide.pdf p. 6.
 
 config_version=5
 

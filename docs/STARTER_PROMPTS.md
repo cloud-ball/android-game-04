@@ -9,7 +9,7 @@ Read CLAUDE.md and docs/PROGRESS.md, then continue with the next starter prompt 
 
 ## 0. Kickoff (sent automatically by scripts/start_project.sh)
 ```
-You're starting Pocket Arena 8: an original 3D mini-game hub for iOS and Android built in Godot 4.7 (GDScript, Jolt). Read CLAUDE.md and docs/GDD.md, and look at docs/refs/hub/keyframe_1.png, keyframe_2.png and docs/refs/pool/keyframe_2.png (visual targets; the docs/refs/*/prototype.html files are throwaway three.js mocks, so never port their code). The full guide is docs/design/PocketArena8_Build_Guide.pdf: engine settings p. 6, architecture pp. 7-8, Claude Code setup pp. 25-26, roadmap p. 28. Then: 1) check my toolchain (Godot 4.7 on PATH or $GODOT, export templates, JDK 17 + Android SDK, gdtoolkit, jq, poppler) and list what's missing with install commands; 2) ask me up to 8 questions about anything unclear, in one round; 3) write docs/plans/week-1.md for roadmap week 1, including how you will verify each step headlessly. Don't write game code yet.
+You're starting Playjar: an original 3D mini-game hub for iOS and Android built in Godot 4.7 (GDScript, Jolt). Read CLAUDE.md and docs/GDD.md, and look at docs/refs/hub/keyframe_1.png, keyframe_2.png and docs/refs/pool/keyframe_2.png (visual targets; the docs/refs/*/prototype.html files are throwaway three.js mocks, so never port their code). The full guide is docs/design/Playjar_Build_Guide.pdf: engine settings p. 6, architecture pp. 7-8, Claude Code setup pp. 25-26, roadmap p. 28. Then: 1) check my toolchain (Godot 4.7 on PATH or $GODOT, export templates, JDK 17 + Android SDK, gdtoolkit, jq, poppler) and list what's missing with install commands; 2) ask me up to 8 questions about anything unclear, in one round; 3) write docs/plans/week-1.md for roadmap week 1, including how you will verify each step headlessly. Don't write game code yet.
 ```
 
 ## Phase 1 — hub
@@ -174,7 +174,7 @@ Alternating shoot/keep rounds + sudden death; /shot penalty.
 
 ## Phase 3
 
-### v1.2 · Fairway Flick (games/golf) — details in docs/games/golf.md
+### v1.2 · Cup Dash (games/golf) — details in docs/games/golf.md
 
 1.
 ```

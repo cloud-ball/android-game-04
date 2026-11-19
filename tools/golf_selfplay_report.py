@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fairway Flick Rush tuning report from tools/golf_selfplay.gd CSVs (one per golfer type).
+"""Cup Dash Rush tuning report from tools/golf_selfplay.gd CSVs (one per golfer type).
 
 Head-to-head: every pairing of a CPU tier's plays with the baseline's plays on the same hole; the
 first ball in wins (then fewer strokes), neither in = no winner. Rush: bootstrapped 3-hole matches,

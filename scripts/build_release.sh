@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Build the signed release AAB for Google Play: runs the headless tests first, then exports.
-# Needs PA8_KEYSTORE (from scripts/make_upload_key.sh). The password is prompted for, or read
-# from PA8_KEYSTORE_PASS. Nothing secret is written to the repo.
+# Needs PLAYJAR_KEYSTORE (from scripts/make_upload_key.sh). The password is prompted for, or read
+# from PLAYJAR_KEYSTORE_PASS. Nothing secret is written to the repo.
 # Usage: scripts/build_release.sh [--bump]   (--bump increments version/code before building)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 GODOT="${GODOT:-$(command -v godot || true)}"
 [ -x "$GODOT" ] || { echo "Set GODOT to the Godot 4.7 binary."; exit 1; }
-: "${PA8_KEYSTORE:?Set PA8_KEYSTORE to your upload keystore (run scripts/make_upload_key.sh first)}"
-[ -f "$PA8_KEYSTORE" ] || { echo "No keystore at $PA8_KEYSTORE"; exit 1; }
-if [ -z "${PA8_KEYSTORE_PASS:-}" ]; then
-  read -rsp "Upload keystore password: " PA8_KEYSTORE_PASS
+: "${PLAYJAR_KEYSTORE:?Set PLAYJAR_KEYSTORE to your upload keystore (run scripts/make_upload_key.sh first)}"
+[ -f "$PLAYJAR_KEYSTORE" ] || { echo "No keystore at $PLAYJAR_KEYSTORE"; exit 1; }
+if [ -z "${PLAYJAR_KEYSTORE_PASS:-}" ]; then
+  read -rsp "Upload keystore password: " PLAYJAR_KEYSTORE_PASS
   echo
 fi
 
@@ -37,9 +37,9 @@ rm -f "$log"
 mkdir -p build
 out="build/playjar-v${name}-${code}.aab"
 echo "Exporting $out ..."
-GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$PA8_KEYSTORE" \
-GODOT_ANDROID_KEYSTORE_RELEASE_USER="${PA8_KEY_ALIAS:-upload}" \
-GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$PA8_KEYSTORE_PASS" \
+GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$PLAYJAR_KEYSTORE" \
+GODOT_ANDROID_KEYSTORE_RELEASE_USER="${PLAYJAR_KEY_ALIAS:-upload}" \
+GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$PLAYJAR_KEYSTORE_PASS" \
   "$GODOT" --headless --path . --install-android-build-template --export-release "Android" "$out" \
   >build/export.log 2>&1 || { tail -n 30 build/export.log; echo "Export failed."; exit 1; }
 [ -s "$out" ] || { tail -n 30 build/export.log; echo "Export produced no file."; exit 1; }

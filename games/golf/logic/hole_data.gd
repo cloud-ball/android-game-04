@@ -1,7 +1,7 @@
 class_name HoleData
 extends RefCounted
 ## One hole's terrain as data (pure; no nodes): a vertex height grid plus one surface type per cell.
-## Research: docs/research/Fairway Flick golf game design.md (Godot implementation notes) - holes
+## Research: docs/research/Cup Dash golf game design.md (Godot implementation notes) - holes
 ## are authored from tiles, then baked into this grid; physics, rendering and the minimap read it.
 ## Frame: x right, y up, z towards the player (downrange is -z). Cell (i, j) spans
 ## x0 + i*cell .. +cell and z0 + j*cell .. +cell. Each cell is two triangles split along the

@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 ## Cue solver physics: closed-form phases, collisions, cushions, pockets, determinism, energy.
-## Expected values from docs/research/Cue Club pool game design.md (computed from the cited
+## Expected values from docs/research/Break and Bank pool game design.md (computed from the cited
 ## equations).
 
 const G := 9.81

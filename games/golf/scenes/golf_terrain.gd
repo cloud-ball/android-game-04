@@ -4,7 +4,7 @@ extends Node3D
 ## `STEP`-th vertex (1 m) with the same triangle split as the physics grid; one terrain shader
 ## colours each cell from an R8 surface texture (what you see is what the ball feels), with mowing
 ## stripes on fairway and green. Trees and the rest of the dressing live in GolfScenery.
-## Research: docs/research/Fairway Flick courses and maps.md (themes and Mobile-renderer budget).
+## Research: docs/research/Cup Dash courses and maps.md (themes and Mobile-renderer budget).
 
 const STEP := 2  # render every 2nd physics vertex (0.5 m grid -> 1 m mesh)
 const CHUNK := 48  # render cells per chunk side

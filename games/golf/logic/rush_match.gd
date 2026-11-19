@@ -6,7 +6,7 @@ extends RefCounted
 ## nobody can play on (everyone holed or out). Water costs a stroke. Reaching par + CAP_OVER_PAR
 ## strokes without holing takes a player out of that hole. A match is HOLES holes: most holes won
 ## takes it, ties go to the fewest total strokes, and an exact tie is a draw (winner -1).
-## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step E2).
+## Plan: docs/plans/2026-11-19-cup-dash-complete.md (step E2).
 
 enum State { READY, MOVING, HOLED, OUT }
 

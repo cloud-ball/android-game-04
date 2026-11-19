@@ -7,7 +7,7 @@ extends RefCounted
 ## best (sooner is better), water / out is worst, otherwise route metres left to the cup plus a
 ## little straight-line distance. Tiers differ in aim / speed error and, on Easy, in which of the
 ## top shots they pick. Safe to run on a worker thread (HoleData is only read).
-## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step E1).
+## Plan: docs/plans/2026-11-19-cup-dash-complete.md (step E1).
 
 enum Tier { EASY, MEDIUM, HARD }
 

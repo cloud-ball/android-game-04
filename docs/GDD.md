@@ -2,7 +2,7 @@
 
 > One mobile app (iOS + Android), eight ORIGINAL 3D mini-games, all played solo or against the computer, shipped in three phases.
 
-Source: docs/design/PocketArena8_Build_Guide.pdf. Visual targets: docs/refs/<id>/*.png and docs/refs/hub/*.png.
+Source: docs/design/Playjar_Build_Guide.pdf. Visual targets: docs/refs/<id>/*.png and docs/refs/hub/*.png.
 
 ## Player promise
 Two taps from launch to a match; 60–180-second sessions; one soft currency and cosmetics that carry across games; daily challenges rotating across games. Offline, no servers.

@@ -27,8 +27,8 @@ var _hold_draw: Control
 var _cpu_panel: Panel
 var _cpu_draw: Control
 var _pause_btn: Button
-var _player: StackState
-var _cpu: StackState
+var _player: BlocksState
+var _cpu: BlocksState
 
 
 func _ready() -> void:
@@ -219,7 +219,7 @@ func show_end(info: Dictionary) -> void:
 
 
 ## Push the latest states in; the panels redraw themselves.
-func update_states(player: StackState, cpu: StackState) -> void:
+func update_states(player: BlocksState, cpu: BlocksState) -> void:
 	_player = player
 	_cpu = cpu
 	_score.text = UiKit.format_int(player.score)
@@ -260,22 +260,22 @@ func _draw_hold(c: Control) -> void:
 func _draw_cpu(c: Control) -> void:
 	if _cpu == null:
 		return
-	var rows := StackState.H - StackState.HIDDEN
-	var cell := minf((c.size.x - 12.0) / StackState.W, (c.size.y - 50.0) / rows)
-	var origin := Vector2((c.size.x - cell * StackState.W) * 0.5, 42)
-	c.draw_rect(Rect2(origin, Vector2(cell * StackState.W, cell * rows)), Color(1, 1, 1, 0.07))
+	var rows := BlocksState.H - BlocksState.HIDDEN
+	var cell := minf((c.size.x - 12.0) / BlocksState.W, (c.size.y - 50.0) / rows)
+	var origin := Vector2((c.size.x - cell * BlocksState.W) * 0.5, 42)
+	c.draw_rect(Rect2(origin, Vector2(cell * BlocksState.W, cell * rows)), Color(1, 1, 1, 0.07))
 	var gems := GemArt.Batch.new()  # the whole mini-board in one draw call
-	for y in range(StackState.HIDDEN, StackState.H):
-		for x in StackState.W:
-			var v := _cpu.board[y * StackState.W + x]
+	for y in range(BlocksState.HIDDEN, BlocksState.H):
+		for x in BlocksState.W:
+			var v := _cpu.board[y * BlocksState.W + x]
 			if v == 0:
 				continue
 			var col := (
 				BlocksView.GARBAGE_COLOR
-				if v == StackState.GARBAGE
+				if v == BlocksState.GARBAGE
 				else BlocksView.GEM_COLORS[v - 1]
 			)
-			var pos := origin + Vector2(x, y - StackState.HIDDEN) * cell
+			var pos := origin + Vector2(x, y - BlocksState.HIDDEN) * cell
 			GemArt.add(gems, Rect2(pos, Vector2(cell - 1, cell - 1)), col)
 	GemArt.flush(c, gems)
 	if _cpu.pending_garbage > 0:

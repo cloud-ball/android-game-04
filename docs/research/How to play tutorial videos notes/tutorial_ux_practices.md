@@ -1,6 +1,6 @@
 # How-to-Play Tutorial UX in Casual/Puzzle Mobile Games: Video Loops vs Live In-Engine Demos vs Interactive First Play
 
-Scope: evidence and conventions for teaching controls and rules in casual/puzzle/arcade mobile games, applied to Pocket Arena 8's "Serpent Grid" (swipe to turn, wrap edges, eat orbs, make the CPU crash) and "Stack Drop" (tap rotate, drag move, flick hard-drop, HOLD / two-finger tap, clear rows to send garbage). Today's baseline is a static 4-row icon + title + subtitle panel. Research date: 2026-11-13. Source dates are noted inline. Mechanics and genre conventions only. No specific commercial product's look is described or recommended.
+Scope: evidence and conventions for teaching controls and rules in casual/puzzle/arcade mobile games, applied to Playjar's "Serpent Grid" (swipe to turn, wrap edges, eat orbs, make the CPU crash) and "Facetfall" (tap rotate, drag move, flick hard-drop, HOLD / two-finger tap, clear rows to send garbage). Today's baseline is a static 4-row icon + title + subtitle panel. Research date: 2026-11-13. Source dates are noted inline. Mechanics and genre conventions only. No specific commercial product's look is described or recommended.
 
 ## 1. Evidence on tutorial formats (passive video/animation vs interactive "learn by doing" vs text): effects on retention, completion, skip rates
 
@@ -41,7 +41,7 @@ The best controlled evidence (Andersen et al., CHI 2012, n > 45,000) says tutori
 
 ### Inferences
 - Serpent Grid is simple and genre-typical, close to Andersen's "Refraction/Hello Worlds" case. Heavy tutorialisation is unlikely to move retention, and a forced or blocking tutorial could hurt it. A very short, optional demo plus learning by playing fits the evidence best.
-- Stack Drop has more verbs (tap, drag-step, flick, HOLD, two-finger tap) plus a non-obvious rule (rows send garbage to the CPU). It sits between the two cases. The gesture *mapping* is the unconventional part, so that is where in-context teaching has the most value.
+- Facetfall has more verbs (tap, drag-step, flick, HOLD, two-finger tap) plus a non-obvious rule (rows send garbage to the CPU). It sits between the two cases. The gesture *mapping* is the unconventional part, so that is where in-context teaching has the most value.
 - Kao's "All Help < single good format" result argues against stacking a video carousel, coach marks and a help button all at once. Pick one primary channel, with an optional replay.
 - Video/animation is a defensible second-best to interactive, and far better than text-only. Moving from the static icon panel to animated demos is supported. Making the first match itself teach (interactive) is the strongest option where feasible.
 - Andersen's help-button harm result is a caution that a prominent "How to play" button during play may cost something. Keep it available but low-key (pause menu / start overlay), not a persistent in-game "?" badge.
@@ -68,7 +68,7 @@ The dominant convention is to teach *one verb at a time, by doing it*. A stylise
 ### Inferences
 Generic conventions, mapped to the two games. These are my synthesis, not sourced:
 - **Swipe-to-turn (Serpent Grid):** an animated hand swipes in a direction, and the snake turns at the same moment, so the cause-effect link is visible within about 0.3 s. Show "anywhere on screen" by starting the swipe away from the snake. **Wrap edges:** show the head exiting one edge and re-entering the opposite edge with a brief highlight on both edges. A rule like this is much clearer animated than in text. **Win condition:** show the CPU snake hitting the player's body, with a big "+1" or crash burst.
-- **Falling-block verbs (Stack Drop):** demonstrate each gesture in isolation over a real board with one piece. Tap → rotate. Drag → column-by-column step, with a ghost/landing indicator moving. Quick downward flick → instant drop with a trail. HOLD → piece swaps into the hold slot (point at the actual HOLD button, which is real UI). **Garbage rule:** a row clears, then an arrow or particles fly to the CPU's well and grey rows rise there. Like wrap edges, this is a "relationship" that is far more legible in motion.
+- **Falling-block verbs (Facetfall):** demonstrate each gesture in isolation over a real board with one piece. Tap → rotate. Drag → column-by-column step, with a ghost/landing indicator moving. Quick downward flick → instant drop with a trail. HOLD → piece swaps into the hold slot (point at the actual HOLD button, which is real UI). **Garbage rule:** a row clears, then an arrow or particles fly to the CPU's well and grey rows rise there. Like wrap edges, this is a "relationship" that is far more legible in motion.
 - Prefer an *in-engine* replay over pre-rendered video. It shares the real board's look, scales crisply on every DPI, respects theme/skin, localises without re-rendering, costs near-zero APK size, and stays in sync if visuals change. It can also be driven by a deterministic scripted input sequence through the same pure logic classes, which fits the project's seeded-Rng, fixed-timestep architecture.
 - Avoid adopting any particular commercial game's hand-icon art, colours or panel layout. The "pointing hand + path" idea is a generic convention, and the art should be original.
 
@@ -93,7 +93,7 @@ Evidence points to *few* steps (minimize cards, one concept each), very short te
 
 ### Inferences
 Proposed spec, my synthesis grounded in the above:
-- **Steps:** Serpent Grid 3-4 (swipe to turn · wrap edges · eat orbs to grow · make the CPU crash). Stack Drop 4-5 (tap rotate · drag move · flick drop · HOLD · clear rows → garbage). This matches the existing 4-row panel's content, so the change is about *format*, not adding content.
+- **Steps:** Serpent Grid 3-4 (swipe to turn · wrap edges · eat orbs to grow · make the CPU crash). Facetfall 4-5 (tap rotate · drag move · flick drop · HOLD · clear rows → garbage). This matches the existing 4-row panel's content, so the change is about *format*, not adding content.
 - **Clip length:** about 2-4 s per gesture loop (gesture ~0.4-0.6 s, result ~0.5-1 s, hold the end state ~0.5-1 s, ~0.3 s reset/fade). Each loop should replay 1-2 times before an auto-advance, giving ~4-6 s per step. A full auto-advancing tour then lands at ~15-25 s, under the point where attention drops off.
 - **Auto-advance:** yes, with step dots and tap/swipe to go forward/back. Pause auto-advance when the user touches. Always show a Skip / "Play" button (≥48 dp) from the first frame. Because a carousel that auto-advances >5 s counts as auto-starting motion, WCAG 2.2.2 implies a pause affordance (tap-and-hold to pause, or a pause icon). This applies unless the tour was explicitly opened by the user tapping "How to play", which the exception covers.
 - **Captions:** a verb-first title of 1-3 words ("Swipe to turn", "Flick to drop") plus an optional ≤8-word subtitle. Never put essential info in text alone (the animation carries it).
@@ -126,9 +126,9 @@ Pros and cons (synthesis):
   - Pros: big, clear, fits the "beautiful how-to videos" ask, and works as a reference.
   - Cons: up-front and out of context, the weakest evidence-backed format. It adds a gate before play, and drop-off concentrates at the first transitions. Best kept as the "How to play" button target, not a forced first-launch gate. If shown at first launch, Skip must be prominent.
 - **Ghost hand over the real board in the first match**
-  - Pros: in context. Teaches at the moment of need. Learn-by-doing (strongest per Kao). Can verify the player did the gesture. Good for Stack Drop's multi-gesture set and the garbage rule (show it when the first row clears).
+  - Pros: in context. Teaches at the moment of need. Learn-by-doing (strongest per Kao). Can verify the player did the gesture. Good for Facetfall's multi-gesture set and the garbage rule (show it when the first row clears).
   - Cons: needs game-state hooks (pause or slow-time while hinting, or a gentle first-match CPU). Risks feeling patronising if it repeats, so show each hint only until performed once. Forcing a wait for the gesture (blocking) didn't help in Andersen, so prefer non-blocking hints with a slowed/gentle opening, or a short "practice" mode.
-- **Practice-without-failure option:** a "Practice" toggle in which the CPU doesn't attack (Stack Drop) or crashes are forgiven (Serpent Grid) satisfies the accessibility guideline and gives a safe sandbox.
+- **Practice-without-failure option:** a "Practice" toggle in which the CPU doesn't attack (Facetfall) or crashes are forgiven (Serpent Grid) satisfies the accessibility guideline and gives a safe sandbox.
 - **Video files vs in-engine:** pre-rendered MP4/WebM loops add APK size and need re-rendering per language, theme or visual change. In-engine demos stay pixel-consistent with the real board. Godot's VideoStreamPlayer supports Ogg Theora natively. That is general platform knowledge and not verified in this research.
 
 ### Gaps
@@ -179,8 +179,8 @@ The recurring failures are front-loading instruction out of context, offering no
 - **Not measuring:** instrument per-step funnels (pass, skip, quit), segment by device/version, and recheck after every update — [Game Developer 2017](https://www.gamedeveloper.com/business/how-to-optimize-the-tutorial-for-your-game); [devtodev FTUE metrics 2020](https://www.devtodev.com/resources/articles/main-metrics-ftue)
 
 ### Inferences
-- Pocket Arena 8 is offline, with no analytics backend implied. Local, privacy-safe counters in SaveService (tour shown/skipped/completed, per-verb first-performed timestamps, first-match result) would let playtests on the test phone answer "did they learn the gesture?" without telemetry.
-- Specific risks for these games: (a) Stack Drop's drag-steps-one-column-per-short-step behaviour is unconventional. If the demo doesn't show the step timing, players may think drag is broken, so the demo should visibly show discrete column steps. (b) The two-finger-tap HOLD shortcut is undiscoverable, so mention it as a secondary tip after the HOLD button, not as a primary step. (c) Serpent Grid's wrap edges contradict the classic genre expectation of deadly walls. That is the single rule most worth animating.
+- Playjar is offline, with no analytics backend implied. Local, privacy-safe counters in SaveService (tour shown/skipped/completed, per-verb first-performed timestamps, first-match result) would let playtests on the test phone answer "did they learn the gesture?" without telemetry.
+- Specific risks for these games: (a) Facetfall's drag-steps-one-column-per-short-step behaviour is unconventional. If the demo doesn't show the step timing, players may think drag is broken, so the demo should visibly show discrete column steps. (b) The two-finger-tap HOLD shortcut is undiscoverable, so mention it as a secondary tip after the HOLD button, not as a primary step. (c) Serpent Grid's wrap edges contradict the classic genre expectation of deadly walls. That is the single rule most worth animating.
 - Don't stack a tour, an overlay demo, ghost hands *and* a help button all in the first session. Per Kao, pick a primary channel (overlay demo + contextual first-match hints), with the full tour available on demand.
 
 ### Gaps

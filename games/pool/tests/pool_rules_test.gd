@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Casual 8 rules: the research's 40 fixtures (docs/research/Cue Club pool game design notes/
+## Casual 8 rules: the research's 40 fixtures (docs/research/Break and Bank pool game design notes/
 ## eight_ball_rules.md), as hand-built shots plus a few built from real solver shots.
 
 const SOLIDS := PoolState.Group.SOLIDS

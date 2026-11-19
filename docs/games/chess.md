@@ -1,7 +1,7 @@
 # Chess 3D — Chess vs CPU (Phase 1)
 
 Folder: games/chess/ · rules: .claude/rules/chess.md · build estimate: 2–3 weeks · risk: Low physics · licence care
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 13-14. Visual target: docs/refs/chess/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 13-14. Visual target: docs/refs/chess/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
 No physics. Bitboard or 0x88 move generator in GDScript (castling, en passant, promotion, threefold repetition, 50-move rule).

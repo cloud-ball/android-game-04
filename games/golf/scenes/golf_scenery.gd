@@ -5,7 +5,7 @@ extends Node3D
 ## spec's water stamps, CC0 kit trees kept clear of play, a park fence and a few small scenes beside
 ## the play view (KitBatch, recoloured by GolfTheme). The landmark stands straight ahead of the tee
 ## view (MiniFraming) so the portrait camera sees it. Original low-poly look; seeded.
-## Research: docs/research/Fairway Flick courses and maps.md ("Themes are physics presets plus a
+## Research: docs/research/Cup Dash courses and maps.md ("Themes are physics presets plus a
 ## fifteen-mesh visual kit").
 
 const WATER_SHADER := """

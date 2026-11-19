@@ -1,10 +1,10 @@
 # Break & Bank — 8-ball pool vs CPU (Phase 1)
 
 Folder: games/pool/ · rules: .claude/rules/cue-sim.md · build estimate: 4–5 weeks · risk: Medium–High (custom physics)
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 9-10. Visual target: docs/refs/pool/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 9-10. Visual target: docs/refs/pool/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
-Custom deterministic solver (shared/cue_sim): balls move in the table plane with 3D spin; fixed 1/240 s substeps; closed-form sliding / rolling / spinning / stationary phases (friction never depends on step size); swept-circle (time-of-impact) events in time order, ties by ball index, max 64 per substep. State in PackedFloat64Array (Godot vectors are 32-bit); no sin/cos/exp in the hot path. Jolt is not used for ball motion; pockets are cushions (rails, facings, jaw points) plus a capture circle. Research: docs/research/Cue Club pool game design.md (updated 2026-11-13).
+Custom deterministic solver (shared/cue_sim): balls move in the table plane with 3D spin; fixed 1/240 s substeps; closed-form sliding / rolling / spinning / stationary phases (friction never depends on step size); swept-circle (time-of-impact) events in time order, ties by ball index, max 64 per substep. State in PackedFloat64Array (Godot vectors are 32-bit); no sin/cos/exp in the hot path. Jolt is not used for ball motion; pockets are cushions (rails, facings, jaw points) plus a capture circle. Research: docs/research/Break and Bank pool game design.md (updated 2026-11-13).
 
 ## Tuning starting points
 | Parameter | Value |

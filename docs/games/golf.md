@@ -1,11 +1,11 @@
-# Fairway Flick — arcade mini-golf vs CPU rivals (Phase 3)
+# Cup Dash — arcade mini-golf vs CPU rivals (Phase 3)
 
 > Re-based 2026-11-15 (user feedback after the first long hole): the game is arcade MINI-golf, not
-> full-course golf. Plan: docs/plans/2026-11-15-fairway-flick-minigolf.md. The long-course notes
+> full-course golf. Plan: docs/plans/2026-11-15-cup-dash-minigolf.md. The long-course notes
 > below are kept for the physics they still use; clubs and swings are dropped.
 
 Folder: games/golf/ · rules: .claude/rules/golf.md · risk: Medium (walls + race AI)
-Research: docs/research/Fairway Flick golf game design.md (physics, CPU), Fairway Flick courses and
+Research: docs/research/Cup Dash golf game design.md (physics, CPU), Cup Dash courses and
 maps.md (themes, progression, pipeline).
 
 ## The game

@@ -1,8 +1,8 @@
 class_name GolfProgress
 extends RefCounted
-## Fairway Flick progression and rewards (pure): the save namespace (schema 2 + migrate), stars
+## Cup Dash progression and rewards (pure): the save namespace (schema 2 + migrate), stars
 ## per hole, world unlocks, coins, and the stats handed to DailyChallenge.
-## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step G).
+## Plan: docs/plans/2026-11-19-cup-dash-complete.md (step G).
 
 const SCHEMA := 2
 const DEFAULTS := {

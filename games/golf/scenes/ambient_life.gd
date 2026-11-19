@@ -4,8 +4,8 @@ extends Node3D
 ## flower spots beside play, a small flock of birds circling high around the landmark, plus the
 ## shared wind shaders for foliage (KitBatch) and the flag. Paths are pure functions of time and a
 ## seed (`butterfly_at`, `bird_at`), updated in _process with value types only (no allocations).
-## Reduce motion in Settings turns all of it off. Research: docs/research/Fairway Flick mini golf
-## visuals.md (plan row 6); plan: docs/plans/2026-11-15-fairway-flick-ambient.md.
+## Reduce motion in Settings turns all of it off. Research: docs/research/Cup Dash mini golf
+## visuals.md (plan row 6); plan: docs/plans/2026-11-15-cup-dash-ambient.md.
 
 const FOLIAGE_SHADER := """
 shader_type spatial;

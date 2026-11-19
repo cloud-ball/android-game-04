@@ -1,7 +1,7 @@
 # Carrom Corner — Carrom vs CPU (Phase 2)
 
 Folder: games/carrom/ · rules: .claude/rules/cue-sim.md · build estimate: 2.5–3 weeks (after pool) · risk: Medium (reuses pool core)
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 17-18. Visual target: docs/refs/carrom/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 17-18. Visual target: docs/refs/carrom/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
 Reuses shared/cue_sim in 'disc mode': discs slide and don't roll (kinetic friction only), small yaw spin for visuals.

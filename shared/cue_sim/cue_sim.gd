@@ -10,7 +10,7 @@ extends RefCounted
 ## every ball analytically to it and resolves it. Ties: transitions, then balls, cushions, points,
 ## pockets, each by index. At most MAX_EVENTS per substep. Only + - * / sqrt in the hot path
 ## (no trig / exp), all state in 64-bit packed arrays, so a shot replays bit-exactly.
-## Design + sources: docs/games/pool.md, docs/research/Cue Club pool game design.md.
+## Design + sources: docs/games/pool.md, docs/research/Break and Bank pool game design.md.
 
 enum { STATIONARY, SPINNING, ROLLING, SLIDING, POCKETED }
 ## Shot log entries (triples): kind, a, b. BALL_HIT (ball, ball); CUSHION (ball, 0 = a new

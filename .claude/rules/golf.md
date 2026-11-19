@@ -2,12 +2,12 @@
 paths:
   - "games/golf/**"
 ---
-- Cup Dash (working name in code, docs and research: Fairway Flick; renamed 2026-11-19 because
-  "Flick Golf!" is an existing golf game) is ARCADE MINI-GOLF (re-based 2026-11-15, docs/plans/2026-11-15-fairway-flick-minigolf.md):
+- Cup Dash (was Fairway Flick until 2026-11-19; renamed because "Flick Golf!" is an existing golf
+  game) is ARCADE MINI-GOLF (re-based 2026-11-15, docs/plans/2026-11-15-cup-dash-minigolf.md):
   walled 20-60 m holes, slingshot shot, Rush races vs CPU. Original name / art / courses only.
 - One custom deterministic solver from strike to rest (roll, bounce, walls, bumpers, hops, cup) in pure GDScript under
   games/golf/logic/. No Jolt bodies for gameplay (no determinism guarantee; CPU rollouts must clone state cheaply).
-  Research: docs/research/Fairway Flick golf game design.md (2026-11-14; replaces the old Cd-step / Cl-clamp /
+  Research: docs/research/Cup Dash golf game design.md (2026-11-14; replaces the old Cd-step / Cl-clamp /
   Jolt hand-off plan).
 - Ball 42.67 mm / 45.93 g, rho 1.225. Cd = 0.225 + 0.275 * crisis(Re) + 0.18 * (1 - e^-3S^2), crisis = the research logistic (centre Re 8e4)
   tabulated every 5e3;

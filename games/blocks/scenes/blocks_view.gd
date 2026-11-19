@@ -1,7 +1,7 @@
 class_name BlocksView
 extends Node3D
-## 3D crystal tower for Facetfall. Reads a StackState every frame and draws it; never owns game
-## state. Design notes: docs/research/Stack Drop board redesign.md.
+## 3D crystal tower for Facetfall. Reads a BlocksState every frame and draws it; never owns game
+## state. Design notes: docs/research/Facetfall board redesign.md.
 ## - Orthographic camera locked to the canvas width, pitched 9 deg: 1 world unit = 1 cell =
 ##   BoardLayout.cell canvas units, identical at the top and bottom of the tower.
 ## - Cut-gem slabs (0.93 x 0.93 face, 0.55 deep): a table facet, four lit bevels and a glyph per
@@ -192,13 +192,13 @@ func setup(board_layout: BoardLayout) -> void:
 	_add_environment()
 	_add_tower()
 	var gem := _material(GEM_SHADER)
-	_locked = _multimesh(StackState.W * StackState.H, gem, true)
+	_locked = _multimesh(BlocksState.W * BlocksState.H, gem, true)
 	_active = _multimesh(4, gem, true)
 	_ghost = _multimesh(4, _material(GHOST_SHADER), false)
 	for i in 4:
 		var flash := MeshInstance3D.new()
 		var box := BoxMesh.new()
-		box.size = Vector3(StackState.W, 1.0, DEPTH + 0.1)
+		box.size = Vector3(BlocksState.W, 1.0, DEPTH + 0.1)
 		flash.mesh = box
 		flash.material_override = _flat(Color(1, 1, 1), 2.2)
 		flash.visible = false
@@ -229,7 +229,7 @@ func apply_layout(board_layout: BoardLayout) -> void:
 	layout = board_layout
 	camera.size = layout.canvas.x / layout.cell
 	_cam_base = camera_transform(layout)
-	_pivot = Vector3(0, (StackState.H - StackState.HIDDEN) * 0.5, 0)
+	_pivot = Vector3(0, (BlocksState.H - BlocksState.HIDDEN) * 0.5, 0)
 	camera.transform = _cam_base
 
 
@@ -238,7 +238,7 @@ static func camera_transform(l: BoardLayout) -> Transform3D:
 	var pitch := deg_to_rad(PITCH_DEG)
 	var fwd := Vector3(0, -sin(pitch), -cos(pitch))
 	var up := Vector3(0, cos(pitch), -sin(pitch))
-	var centre := Vector3(0, (StackState.H - StackState.HIDDEN) * 0.5, 0)
+	var centre := Vector3(0, (BlocksState.H - BlocksState.HIDDEN) * 0.5, 0)
 	# Canvas y grows downwards; shift so the well centre lands on the layout's well centre.
 	var m := (l.canvas.y * 0.5 - l.well.get_center().y) / l.cell
 	var pos := centre - fwd * CAMERA_DISTANCE - up * m
@@ -247,15 +247,15 @@ static func camera_transform(l: BoardLayout) -> Transform3D:
 
 ## World centre of board cell (x, y); row 0 is the top hidden row, the floor is at y = 0.
 static func cell_pos(x: float, y: float) -> Vector3:
-	return Vector3(x - (StackState.W - 1) * 0.5, (StackState.H - 1 - y) + 0.5, 0.0)
+	return Vector3(x - (BlocksState.W - 1) * 0.5, (BlocksState.H - 1 - y) + 0.5, 0.0)
 
 
-func render(s: StackState, delta: float) -> void:
+func render(s: BlocksState, delta: float) -> void:
 	_time += delta
 	var n := 0
-	for y in range(StackState.HIDDEN, StackState.H):
-		for x in StackState.W:
-			var v := s.board[y * StackState.W + x]
+	for y in range(BlocksState.HIDDEN, BlocksState.H):
+		for x in BlocksState.W:
+			var v := s.board[y * BlocksState.W + x]
 			if v == 0:
 				continue
 			_put(_locked, n, cell_pos(x, y), v, 0.0)
@@ -274,7 +274,7 @@ func render(s: StackState, delta: float) -> void:
 
 func _put(mm: MultiMesh, i: int, p: Vector3, value: int, lift: float) -> void:
 	mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3(FACE, FACE, DEPTH)), p))
-	var garbage := value == StackState.GARBAGE
+	var garbage := value == BlocksState.GARBAGE
 	# Instance colours reach the shader as-is; the palette is sRGB, ALBEDO expects linear.
 	var col := GARBAGE_COLOR if garbage else GEM_COLORS[value - 1]
 	mm.set_instance_color(i, col.srgb_to_linear())
@@ -282,7 +282,7 @@ func _put(mm: MultiMesh, i: int, p: Vector3, value: int, lift: float) -> void:
 	mm.set_instance_custom_data(i, Color(glyph / 8.0, lift, 0, 0))
 
 
-func _render_active(s: StackState, delta: float) -> void:
+func _render_active(s: BlocksState, delta: float) -> void:
 	if s.kind < 0 or s.over:
 		_active.visible_instance_count = 0
 		_ghost.visible_instance_count = 0
@@ -295,15 +295,15 @@ func _render_active(s: StackState, delta: float) -> void:
 	else:
 		_active_visual = _active_visual.lerp(target, 1.0 - exp(-delta * 28.0))
 	var cells := ShardData.cells(s.kind, s.rot)
-	var gy := StackLogic.ghost_y(s)
+	var gy := BlocksLogic.ghost_y(s)
 	var shown := 0
 	var ghosts := 0
 	for c in cells:
 		var cy: float = _active_visual.y + c.y
-		if cy >= StackState.HIDDEN - 0.5:
+		if cy >= BlocksState.HIDDEN - 0.5:
 			_put(_active, shown, cell_pos(_active_visual.x + c.x, cy), s.kind + 1, 1.0)
 			shown += 1
-		if gy > s.py and gy + c.y >= StackState.HIDDEN:
+		if gy > s.py and gy + c.y >= BlocksState.HIDDEN:
 			var gp := cell_pos(s.px + c.x, gy + c.y)
 			_ghost.set_instance_transform(
 				ghosts, Transform3D(Basis.from_scale(Vector3(FACE, FACE, DEPTH)), gp)
@@ -319,7 +319,7 @@ func _render_garbage(pending: int) -> void:
 	_garbage_bar.visible = pending > 0
 	if pending <= 0:
 		return
-	var h := float(mini(pending, StackState.H - StackState.HIDDEN))
+	var h := float(mini(pending, BlocksState.H - BlocksState.HIDDEN))
 	var x := (layout.garbage.get_center().x - layout.canvas.x * 0.5) / layout.cell
 	var w := layout.garbage.size.x / layout.cell
 	_garbage_bar.scale = Vector3(w, h, 1)
@@ -338,7 +338,7 @@ func _render_garbage(pending: int) -> void:
 func clear_fx(rows: PackedInt32Array) -> void:
 	for i in mini(rows.size(), _flash_rows.size()):
 		var f := _flash_rows[i]
-		f.position = cell_pos((StackState.W - 1) * 0.5, rows[i])
+		f.position = cell_pos((BlocksState.W - 1) * 0.5, rows[i])
 		f.visible = true
 		f.scale = Vector3.ONE
 		var tw := f.create_tween()
@@ -423,8 +423,8 @@ static func _gradient_rect(colors: Array, radial: bool) -> TextureRect:
 
 
 func _add_tower() -> void:
-	var w := float(StackState.W)
-	var h := float(StackState.H - StackState.HIDDEN)
+	var w := float(BlocksState.W)
+	var h := float(BlocksState.H - BlocksState.HIDDEN)
 	var pane := MeshInstance3D.new()
 	var quad := QuadMesh.new()
 	quad.size = Vector2(w, h)
@@ -485,7 +485,7 @@ func _make_burst() -> CPUParticles3D:
 	p.explosiveness = 0.95
 	p.emitting = false
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	p.emission_box_extents = Vector3(StackState.W * 0.5, 0.35, 0.2)
+	p.emission_box_extents = Vector3(BlocksState.W * 0.5, 0.35, 0.2)
 	var shard := PrismMesh.new()
 	shard.size = Vector3(0.18, 0.24, 0.08)
 	p.mesh = shard

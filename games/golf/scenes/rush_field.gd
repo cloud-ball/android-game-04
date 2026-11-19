@@ -5,7 +5,7 @@ extends Node3D
 ## fixed substeps per tick, so "first in the cup" is fair even in slow motion), a ghost ball (no
 ## collisions) with a floating name tag, and a think timer: it plans on the shared background lane
 ## (GolfCpuThink) and shoots after a short, seeded pause. Player index 0 is "You"; rivals are 1..3.
-## Plan: docs/plans/2026-11-19-fairway-flick-complete.md (step E3).
+## Plan: docs/plans/2026-11-19-cup-dash-complete.md (step E3).
 
 const NAMES := ["Mira", "Otis", "Kai"]
 ## Bright, distinct ghost colours (top of the value ladder, like the ball): coral, sky, sunflower.

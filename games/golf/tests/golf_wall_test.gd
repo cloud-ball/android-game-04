@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Mini-golf walls, bumpers and hops (docs/plans/2026-11-15-fairway-flick-minigolf.md, step B).
+## Mini-golf walls, bumpers and hops (docs/plans/2026-11-15-cup-dash-minigolf.md, step B).
 
 const R := 0.021335
 const GOLDEN := "res://games/golf/data/golden_minigolf.json"

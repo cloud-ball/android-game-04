@@ -1,7 +1,7 @@
 # Park & Pass — Original city driving & parking missions (Phase 3)
 
 Folder: games/drive/ · rules: .claude/rules/drive.md · build estimate: 5–7 weeks · risk: High (vehicle feel + content)
-Guide pages: docs/design/PocketArena8_Build_Guide.pdf pp. 23-24. Visual target: docs/refs/drive/keyframe_1..3.png (+ clip.mp4).
+Guide pages: docs/design/Playjar_Build_Guide.pdf pp. 23-24. Visual target: docs/refs/drive/keyframe_1..3.png (+ clip.mp4).
 
 ## Physics approach
 Start with Godot's VehicleBody3D + 4× VehicleWheel3D (raycast vehicle). Plan to move to a custom raycast car (spring-damper per wheel, slip-based lateral grip) if handling feels floaty.

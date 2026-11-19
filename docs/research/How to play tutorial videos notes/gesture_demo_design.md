@@ -1,6 +1,6 @@
 # Visual and Motion Design of Animated Gesture Demos ("ghost hand") and Tutorial Cards for Mobile Games
 
-Context assumed throughout: Pocket Arena 8, Godot 4.7, portrait 1080 px wide canvas. On a 420 dp wide phone, 1 dp is about 2.57 canvas px, so 8 dp is about 21 px, 36 dp is about 93 px and 48 dp is about 123 px. These conversions are my own arithmetic, not sourced.
+Context assumed throughout: Playjar, Godot 4.7, portrait 1080 px wide canvas. On a 420 dp wide phone, 1 dp is about 2.57 canvas px, so 8 dp is about 21 px, 36 dp is about 93 px and 48 dp is about 123 px. These conversions are my own arithmetic, not sourced.
 
 ## 1. Depicting touch gestures clearly (glyph choice, tap ripple, press/hold, swipe trails, flick vs drag, two-finger tap, timings)
 
@@ -29,9 +29,9 @@ No study compares a hand glyph with an abstract touch dot. Practitioner notation
 ### Inferences
 - **Glyph:** use a stylised, original fingertip or hand silhouette (line or flat neon outline in the game's purple palette, about 60-70% opacity) that carries a bright contact dot. The hand gives orientation (which way the finger travels). The dot gives precision (where the touch lands) and stays readable when the demo is small. In very small demo areas (under about 200 dp tall), drop the hand and keep the dot plus trail.
 - **Tap:** finger descends (anticipation: a small 4-6% scale-down, about 100 ms), then contact. The dot appears, a ring expands from about 0.3x to 1.0x of its final radius over about 225 ms, and the ring fades out over about 150 ms, mirroring the Compose ripple numbers. A final ring diameter of about 48 dp (about 123 canvas px) matches a touch-target scale. The finger lifts about 100 ms after contact, which is consistent with a 100 ms tap timeout.
-- **Press/hold:** keep the dot and show a steady ring (Hoober's "ringed dot") that fills around its circumference as a progress arc over about 400 ms (the long-press default), then pulses once on recognition. Stack Drop has no long-press, so do not draw a hold state there. Its absence then visually separates "tap = rotate" from any hold.
+- **Press/hold:** keep the dot and show a steady ring (Hoober's "ringed dot") that fills around its circumference as a progress arc over about 400 ms (the long-press default), then pulses once on recognition. Facetfall has no long-press, so do not draw a hold state there. Its absence then visually separates "tap = rotate" from any hold.
 - **Swipe (Serpent Grid turn):** the dot moves 60-120 dp with an ease-out curve over about 150-250 ms. It leaves a tapered trail (thick at the head, transparent at the tail) about 40-60% of the stroke length that fades over about 200-300 ms after lift. A chevron at the trail head shows direction. The world reacts on the same beat (the snake turns), so cause and effect are paired, as the Material guidance suggests.
-- **Drag (Stack Drop column move):** move slowly and in steps. The finger travels 36 dp per column with a short dwell (about 80-120 ms) at each step, and the piece snaps one column per step in sync. Show tick marks or ghost column outlines at each 36 dp step, and do not use a streak trail. Slow, stepped and tied to the grid reads as "drag".
+- **Drag (Facetfall column move):** move slowly and in steps. The finger travels 36 dp per column with a short dwell (about 80-120 ms) at each step, and the piece snaps one column per step in sync. Show tick marks or ghost column outlines at each 36 dp step, and do not use a streak trail. Slow, stepped and tied to the grid reads as "drag".
 - **Flick (hard drop):** make it short and fast. About 100-150 ms of travel with ease-in (it accelerates and leaves the touch), a long speed-streak trail plus 2-3 motion-blur ghost copies, then an immediate impact flash on the piece landing. To the eye, the duration ratio (flick about 3-5x faster than one drag step) does the explaining. Above about 50 dp/s counts as a fling to Android by default, so a 120 ms, 80 dp flick (about 670 dp/s) is safely in "fling" territory.
 - **Two-finger tap (HOLD alternative):** two contact dots land at the same moment (within about 40 ms of each other, so they read as simultaneous), each with its own ripple. Join them with a faint bracket or a small "x2" badge so the count does not depend on noticing two dots. Show the HOLD button highlight pulsing at the same moment, so both routes to the same action appear in one frame.
 
@@ -79,7 +79,7 @@ Research favours very few, very short, visual, skippable and revisitable instruc
 - Android accessibility guidance specifies touch targets of at least 48x48 dp. — [Android: Make apps more accessible](https://developer.android.com/guide/topics/ui/accessibility/apps)
 
 ### Inferences
-- **Card count:** about 3-4 cards per game, one gesture per card. Serpent Grid could use Swipe to turn, Edges wrap, Make the CPU crash. Stack Drop could use Tap rotate, Drag move, Flick drop, HOLD plus Clear rows sends garbage. Merge or cut any card that does not teach a non-obvious interaction (NN/g: skip the self-explanatory).
+- **Card count:** about 3-4 cards per game, one gesture per card. Serpent Grid could use Swipe to turn, Edges wrap, Make the CPU crash. Facetfall could use Tap rotate, Drag move, Flick drop, HOLD plus Clear rows sends garbage. Merge or cut any card that does not teach a non-obvious interaction (NN/g: skip the self-explanatory).
 - **Portrait layout on the 1080 canvas:** demo area about 80-88% of width (about 860-950 px). A 4:5 or 1:1 aspect fits portrait without crowding, so about 950x950 to 950x1190 px. Caption below the demo, centred, 1-2 lines, about 3-8 words (for example "Swipe anywhere to turn"), at 40-48 px for the headline and 32-36 px for an optional sub-line. Place the caption near the demo so the eye does not have to move across the screen.
 - **Step indicator:** dots under the caption. The active dot is elongated or filled and the others are outlined, so state is not shown by colour alone (see section 4). Dots are not tap targets unless padded to 48 dp.
 - **Buttons:** primary "Next" / final "Got it" bottom-right or full-width at the bottom (thumb zone), at least 48 dp tall (about 123 canvas px). "Skip" top-right as a text button. "Back" bottom-left, or rely on swipe-back. Horizontal swipe between cards should also work.
@@ -118,7 +118,7 @@ Respect Android "Remove animations" by reading `Settings.Global.ANIMATOR_DURATIO
 ## 5. Keeping visuals original (avoid imitating specific products)
 
 ### Takeaway
-Base every demo glyph and scene on the game's own art (Serpent Grid's neon snake and orbs, Stack Drop's own block style and well), draw a custom hand or fingertip glyph, and follow generic notation conventions (dot, ring, arrow), which are common vocabulary rather than any product's trade dress.
+Base every demo glyph and scene on the game's own art (Serpent Grid's neon snake and orbs, Facetfall's own block style and well), draw a custom hand or fingertip glyph, and follow generic notation conventions (dot, ring, arrow), which are common vocabulary rather than any product's trade dress.
 
 ### Cited Findings
 - Hoober's notation (dot = touch, ring = press/hold, arrows = direction, simplified hand) is presented as a general-purpose design language, not one product's UI. — [UXmatters, Hoober 2019](https://www.uxmatters.com/mt/archives/2019/05/a-design-language-for-touch-gesture-and-motion.php)

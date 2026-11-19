@@ -1,7 +1,8 @@
 class_name PoolPlanner
 extends RefCounted
 ## Simulation-based Break & Bank CPU (pure; safe to run on a worker thread with its own copies).
-## Research: docs/research/Cue Club pool game design.md (CPU) and ... versus mobile pool games.md.
+## Research: docs/research/Break and Bank pool game design.md (CPU) and Break and Bank versus
+## mobile pool games.md.
 ##   1. Every (legal ball, pocket) pair -> ghost-ball aim + an analytic pot chance under the CPU's
 ##      own aim noise (cut, distances, pocket window). Prune to the best TOP_K.
 ##   2. Each survivor x speed/spin variants is simulated (1/120 s planning step) and judged by the

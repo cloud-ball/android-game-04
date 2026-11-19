@@ -1,6 +1,6 @@
 class_name GolfGame
 extends Node3D
-## Fairway Flick - arcade mini-golf: the hole screen. Start screen (world, Rush / Tour, difficulty)
+## Cup Dash - arcade mini-golf: the hole screen. Start screen (world, Rush / Tour, difficulty)
 ## and the other overlays come from GolfShell; Rush lives in GolfRush; Tour scoring in GolfTourCard.
 ## Shot: press anywhere above the HUD, drag back like a slingshot and release - the ball goes the
 ## opposite way, power = drag length. A dotted guide shows the ball's real path (the same solver,
