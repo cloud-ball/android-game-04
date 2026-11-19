@@ -22,7 +22,7 @@ func _notification(what: int) -> void:
 		if _settings != null and _settings.is_open():
 			_settings.close()
 		elif Time.get_ticks_msec() - _last_back_ms < 2000:
-			get_tree().quit()
+			AudioService.quit_app()
 		else:
 			_last_back_ms = Time.get_ticks_msec()
 			_show_toast("Press back again to exit")

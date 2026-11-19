@@ -88,8 +88,8 @@ func _process(_delta: float) -> void:
 		var count := int(options.get("shot-count", 1))
 		if _shots_taken < count and _frame >= at and (_frame - at) % every == 0:
 			_save_shot(str(options["shot"]))
-	if options.has("quit-after") and _frame >= int(options["quit-after"]):
-		get_tree().quit()
+	if options.has("quit-after") and _frame == int(options["quit-after"]):
+		AudioService.quit_app()
 
 
 func _save_shot(pattern: String) -> void:

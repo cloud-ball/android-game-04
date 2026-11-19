@@ -58,6 +58,25 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if _render_task != -1:
 		WorkerThreadPool.wait_for_task_completion(_render_task)
+	_release()
+
+
+## Quits the app once the audio has let go of its streams. A stream still playing at quit left
+## its playback object behind ("ObjectDB instance leaked at exit" on most quits); the audio
+## thread frees a stopped playback on its next mix, so wait a moment before quitting.
+func quit_app() -> void:
+	_release()
+	await get_tree().create_timer(0.1, true).timeout
+	get_tree().quit()
+
+
+func _release() -> void:
+	_music_wanted = ""
+	_music.stop()
+	_music.stream = null
+	for p in _players:
+		p.stop()
+		p.stream = null
 
 
 ## "hub" or "game"; "" stops the music. Starts as soon as the loop has been rendered.

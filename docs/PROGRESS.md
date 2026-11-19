@@ -2,6 +2,17 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Fixed "ObjectDB instance leaked at exit" on quit (all games)
+- Two causes, found by switching parts off one at a time (6-10 quits per test):
+  - SceneRouter's threaded load used sub-threads; after any game had loaded, most quits left a
+    RefCounted behind. Now loads without sub-threads; load times unchanged (golf 263 -> 270 ms,
+    pool 213 -> 203, blocks 164 -> 166, desktop).
+  - Music still playing at quit left its playback behind (hub-only quits). AudioService now
+    stops every stream on exit, and AudioService.quit_app() (hub double-back, --quit-after) stops
+    them and waits 0.1 s for the audio thread before quitting.
+- After: 0 leaks in 42 quits (hub, all four games, a golf Tour and a Rush mid-match).
+- Try it on a phone: nothing visible; press back twice in the hub to quit as before.
+
 ## 2026-11-19 · Fairway Flick step H: Coast, Canyon and Volcano worlds (27 new holes)
 - Every world has its own look (GolfTheme.coastal / canyon / volcanic): carpet, rails, lawn, sky,
   sun, fog, far hills, trees, bushes, flowers and side scenes all come from the theme.
@@ -18,8 +29,6 @@ Newest first. Claude appends: date · what changed · how to try it on a phone �
   it blows from the camera's view. The CPU golfers feel it too (same solver). 9 new tests (drift,
   rest, near the cup, against a rail, 1/120 vs 1/240 s steps, bad specs); physics review clean.
 - IP check clean; "Storm Point" renamed "Gale Point" (also a map name in another game).
-- Known, not new: "2 ObjectDB instances leaked at exit" shows on most quits of golf (also on the
-  previous commit); exit only, to look at before release.
 - Canyon twist: jumps off raised mesas, terraces, a bowl, a stairway. Volcano twist: lava moats,
   bridges, a crater cup on a mound.
 - All 36 holes pass tools/golf_validate.gd (Hard CPU within par; 144-shot sweep stops cleanly).
