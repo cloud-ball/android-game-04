@@ -104,7 +104,7 @@ static func _lighthouse(base: Node3D, theme: GolfTheme) -> Dictionary:
 	dark.append_from(door, 0, Transform3D(Basis(), Vector3(0, foot + 1.0, 2.5)))
 	_merged(base, dark, theme.landmark_wood)
 	var lamp := _part(base, _cyl(1.2, 1.2, 1.7, 12), theme.glow, Vector3(0, top + 1.15, 0))
-	_glow(lamp, theme.glow, 2.5)
+	glow(lamp, theme.glow, 2.5)
 	var head := Node3D.new()
 	head.position = Vector3(0, top + 1.15, 0)
 	base.add_child(head)
@@ -168,7 +168,7 @@ static func _volcano(base: Node3D, theme: GolfTheme) -> Dictionary:
 	_part(base, _cyl(3.2, 15.0, 13.0, 10), theme.landmark_wall, Vector3(0, 6.0, 0))
 	_part(base, _cyl(2.2, 3.4, 1.4, 10), theme.landmark_roof, Vector3(0, 12.9, 0))
 	var crater := _part(base, _cyl(2.6, 2.6, 0.2, 10), theme.glow, Vector3(0, 13.5, 0))
-	_glow(crater, theme.glow, 3.0)
+	glow(crater, theme.glow, 3.0)
 	var streaks := SurfaceTool.new()
 	streaks.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var strip := BoxMesh.new()
@@ -184,9 +184,9 @@ static func _volcano(base: Node3D, theme: GolfTheme) -> Dictionary:
 		var mid := dir * (15.0 - (mid_y + 0.5) / 13.0 * 11.8 + 0.1) + Vector3(0, mid_y, 0)
 		streaks.append_from(strip, 0, Transform3D(Basis(bx, up_slope, out), mid))
 	var lava := _merged(base, streaks, theme.glow)
-	_glow(lava, theme.glow, 1.6)
+	glow(lava, theme.glow, 1.6)
 	var smoke := CPUParticles3D.new()
-	smoke.amount = 18
+	smoke.amount = 10  # big alpha puffs: overdraw on the phone
 	smoke.lifetime = 7.0
 	smoke.preprocess = 7.0
 	smoke.position = Vector3(0, 14.0, 0)
@@ -195,8 +195,8 @@ static func _volcano(base: Node3D, theme: GolfTheme) -> Dictionary:
 	smoke.gravity = Vector3(0.4, 0.35, 0)
 	smoke.initial_velocity_min = 0.6
 	smoke.initial_velocity_max = 1.2
-	smoke.scale_amount_min = 1.6
-	smoke.scale_amount_max = 3.2
+	smoke.scale_amount_min = 1.8
+	smoke.scale_amount_max = 3.4
 	var puff := SphereMesh.new()
 	puff.radius = 0.5
 	puff.height = 1.0
@@ -255,7 +255,7 @@ static func _part(parent: Node3D, mesh: Mesh, col: Color, at: Vector3) -> MeshIn
 	return mi
 
 
-static func _glow(mi: MeshInstance3D, col: Color, energy: float) -> void:
+static func glow(mi: MeshInstance3D, col: Color, energy: float) -> void:
 	var m := mi.material_override as StandardMaterial3D
 	m.emission_enabled = true
 	m.emission = col

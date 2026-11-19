@@ -442,7 +442,7 @@ func _multi(
 
 ## One small scene: logs (pile and stumps), mushrooms (in tall grass), planters (with flowers),
 ## rocks (a rock garden), canoe (pulled up with a log), columns (fallen ruins), cactus (a cluster
-## with rocks), campfire (stones and logs, a warm glow).
+## with rocks), campfire (stones and logs round glowing embers).
 func _vignette(
 	kind: String,
 	big: KitBatch,
@@ -495,9 +495,16 @@ func _vignette(
 			big.add("campfire_stones", Transform3D(sc.call(2.4), at.call(0, 0)), false)
 			big.add("log", Transform3D(sc.call(1.8), at.call(1.5, 0.3)))
 			big.add("log", Transform3D(sc.call(1.8), at.call(-1.3, 0.9)))
-			var ember := OmniLight3D.new()
-			ember.light_color = _theme.glow
-			ember.light_energy = 1.2
-			ember.omni_range = 3.0
-			ember.position = at.call(0, 0) + Vector3(0, 0.6, 0)
+			# Glowing embers, not a light (phone, volcano: GPU 13.3-16.5 -> 11.4-12.3 ms with the
+			# smoke thinned too).
+			var ember := MeshInstance3D.new()
+			var coal := SphereMesh.new()
+			coal.radius = 0.35
+			coal.height = 0.3
+			coal.radial_segments = 6
+			coal.rings = 2
+			ember.mesh = coal
+			ember.material_override = GolfLandmarks.mat(_theme.glow)
+			GolfLandmarks.glow(ember, _theme.glow, 2.0)
+			ember.position = at.call(0, 0) + Vector3(0, 0.12, 0)
 			add_child(ember)
