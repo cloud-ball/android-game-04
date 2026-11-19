@@ -2,6 +2,16 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · Release build check and phone test of the new worlds
+- scripts/build_release.sh (tests, then signed AAB) works on the release branch with a throwaway
+  key: build/playjar-v0.2.0-1.aab, 53 MB. That test AAB was moved out of build/; the real one
+  needs the upload key (scripts/make_upload_key.sh).
+- Phone (Vivo V2250, debug build, bot on hole 5 of each new world): Coast and Canyon hold 60 fps
+  (GPU ~11-12 ms). The volcano dipped to 45-55 fps (GPU 13.3-16.5 ms); the campfire's point light
+  is now glowing ember meshes and the volcano smoke has 10 puffs (was 18): GPU 11.4-12.3 ms,
+  56-60 fps. The usual one-second hitch when the next hole loads is still there.
+- Try it: Tour in the Volcano world; play should stay smooth next to the campfire scenes.
+
 ## 2026-11-19 · Golf CPU retuned on all 36 holes; store material with Fairway Flick
 - Self-play (tools/golf_selfplay.gd, now with knob overrides for tuning; 432 plays per golfer
   type on all four worlds): Easy 27.2 % / Medium 51.7 % / Hard 65.7 % CPU wins against the
