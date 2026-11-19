@@ -1,8 +1,8 @@
-# Privacy Policy: Octorival
+# Privacy Policy: Playjar
 
 _Last updated: 17 November 2026_
 
-Octorival ("the app") is a collection of single-player games played against the computer.
+Playjar ("the app") is a collection of single-player games played against the computer.
 
 ## What we collect
 Nothing. The app does not collect, transmit, sell or share any personal or usage data. It has no

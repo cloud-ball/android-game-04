@@ -2,6 +2,19 @@
 
 Newest first. Claude appends: date · what changed · how to try it on a phone · open questions.
 
+## 2026-11-19 · The app is now "Playjar" (package com.cloud198.playjar) with a new jar icon
+- The user chose Playjar ("a jar full of little games") over Octorival and other checked names (no
+  "rival" in the name). Checked on Google Play, the App Store, Steam, itch.io and the web: no exact
+  match (nearest: JarPlay, a J2ME emulator; CookieJar). Package id com.cloud198.playjar (nothing
+  uploaded yet). Hub title PLAYJAR ("JAR" in gold).
+- New original icon: a glass jar with a gold lid holding a snake, a cut gem and a blue billiard
+  ball (no black 8-ball). Sources docs/store/src/icon_*.svg + icon.svg; PNGs rendered with headless
+  Chrome. Found and fixed while checking the bundle: the Android 13+ themed (monochrome) icon was
+  still Godot's default logo; it is now a jar silhouette (assets/icons/adaptive_mono_432.png).
+- Store screenshot 01, the feature graphic, listing, privacy policy, tester invite, checklist, CI
+  artifact and the upload key's default file (~/.android-keys/playjar-upload.jks) renamed.
+- 192 tests green; release bundle verified (id, app name, all four launcher icons).
+
 ## 2026-11-17 · Package id is now com.cloud198.octorival
 - Changed before the first upload (Play never allows a change afterwards), so the store URL matches
   the app's name. Dev args on a device: `adb shell run-as com.cloud198.octorival sh -c '...'`.

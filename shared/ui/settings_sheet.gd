@@ -198,7 +198,7 @@ func _about() -> Control:
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
-	text.add_child(UiKit.label("Octorival · v%s" % version, 34, Color.WHITE, 700))
+	text.add_child(UiKit.label("Playjar · v%s" % version, 34, Color.WHITE, 700))
 	var note := UiKit.label(
 		"Plays offline. No account, no ads, no data collected.", 28, UiKit.MUTED, 500
 	)

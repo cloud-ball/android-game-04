@@ -41,7 +41,7 @@ func _ready() -> void:
 ## The full notice text: the app's own line, Godot's licence, then every bundled component.
 static func notices() -> String:
 	var out := PackedStringArray()
-	out.append("Octorival is made with the Godot Engine (godotengine.org).")
+	out.append("Playjar is made with the Godot Engine (godotengine.org).")
 	out.append("")
 	out.append(Engine.get_license_text())
 	out.append("")

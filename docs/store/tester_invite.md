@@ -5,13 +5,13 @@ Invite 15-20 people; some always drop out. Send the message below by WhatsApp, e
 
 ---
 
-Hi! I've made a small Android game collection, **Octorival**: snake, pool and a falling-gem
+Hi! I've made a small Android game collection, **Playjar**: snake, pool and a falling-gem
 race against the computer. It's free, offline, has no ads and collects no data.
 
 Could you help me test it? It takes 2 minutes to join:
 1. Join the tester group: <GOOGLE GROUP LINK>   (skip this step if I added your email directly)
 2. Open this link on your Android phone and tap "Become a tester": <PLAY OPT-IN LINK>
-3. Install Octorival from the Play Store page that opens.
+3. Install Playjar from the Play Store page that opens.
 
 Please **keep it installed for at least 14 days** (Google counts testers day by day) and play a
 few matches when you have a minute. Any feedback is welcome, especially anything confusing or slow.

@@ -1,16 +1,16 @@
-# Google Play listing: Octorival v0.2.0 (Serpent Grid, Facetfall, Break & Bank)
+# Google Play listing: Playjar v0.2.0 (Serpent Grid, Facetfall, Break & Bank)
 
 Paste these into Play Console → Grow → Store presence → Main store listing.
 Never mention other companies' games or trademarks here or in keywords (see guide p. 5).
 
 ## App name (≤ 30)
-Octorival
+Playjar
 
 ## Short description (≤ 80)
 Snake, pool and gem races vs a smart CPU. Original 3D games, offline, no ads.
 
 ## Full description (≤ 4000)
-Octorival is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
+Playjar is a growing collection of original 3D mini-games you play against the computer: offline, with no ads and no account.
 
 Three games are ready today:
 

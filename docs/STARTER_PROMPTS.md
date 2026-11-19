@@ -1,4 +1,4 @@
-# Octorival (formerly Pocket Arena 8) — starter prompts for Claude Code
+# Playjar (formerly Pocket Arena 8) — starter prompts for Claude Code
 
 Run **one prompt per session**, in plan mode (Shift+Tab or `claude --permission-mode plan`) for anything touching more than 3 files; approve the plan, then let Claude implement.
 

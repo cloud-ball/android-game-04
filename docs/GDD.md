@@ -1,4 +1,4 @@
-# Octorival (formerly Pocket Arena 8) — Game Design Document (hub, v0.1)
+# Playjar (formerly Pocket Arena 8) — Game Design Document (hub, v0.1)
 
 > One mobile app (iOS + Android), eight ORIGINAL 3D mini-games, all played solo or against the computer, shipped in three phases.
 
