@@ -61,11 +61,28 @@ static func prepare_namespace(
 	else:
 		g = {"schema": schema}
 	for k in defaults.keys():
-		if not g.has(k):
-			var v: Variant = defaults[k]
-			# Containers are copied: defaults are often consts (read-only) and must not be shared.
-			g[k] = v.duplicate(true) if v is Dictionary or v is Array else v
+		# Missing keys get the default; a value of the wrong type (a damaged or hand-edited save)
+		# is replaced too, so game code can trust the types it reads.
+		g[k] = coerce(g.get(k), defaults[k]) if g.has(k) else _copy(defaults[k])
 	return g
+
+
+## `value` if it has the same kind of type as `default` (any number for a number), else a copy of
+## `default`. Guards everything read from the save file against wrong types.
+static func coerce(value: Variant, default: Variant) -> Variant:
+	var want := typeof(default)
+	var have := typeof(value)
+	var numeric := [TYPE_INT, TYPE_FLOAT]
+	if want in numeric:
+		return value if have in numeric else default
+	if want == TYPE_NIL or have == want:
+		return value
+	return _copy(default)
+
+
+## Containers are copied: defaults are often consts (read-only) and must not be shared.
+static func _copy(v: Variant) -> Variant:
+	return v.duplicate(true) if v is Dictionary or v is Array else v
 
 
 func save() -> Error:
