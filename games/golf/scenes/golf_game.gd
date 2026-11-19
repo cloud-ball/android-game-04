@@ -1,3 +1,4 @@
+class_name GolfGame
 extends Node3D
 ## Fairway Flick - arcade mini-golf (step D of docs/plans/2026-11-15-fairway-flick-minigolf.md),
 ## still behind enabled = false. Plays World 1's holes (games/golf/data/mini/*.json) in a row, solo.
@@ -7,7 +8,7 @@ extends Node3D
 ## low behind the ball and does not move while you drag (aiming stays stable).
 ## Nodes move in _process from interpolated solver states, so root interpolation is OFF.
 
-enum Mode { INTRO, AIM, DRAG, MOVING, RESULT }
+enum Mode { INTRO, AIM, DRAG, MOVING, RESULT, WATCH }  # WATCH: Rush, your hole is done
 
 const SAVE_SCHEMA := 1
 const SAVE_DEFAULTS := {
@@ -111,6 +112,11 @@ var _banner: Label
 var _hint: Label
 var _card: Label
 var _power_ui: Control
+var _layer: CanvasLayer
+var _rush: GolfRush  # null in Tour (solo) play
+var _bot_cpu: GolfCpu  # --bot plays the player's ball with the Hard CPU golfer
+var _bot_think: GolfCpuThink
+var _bot_rng := Rng.make(0xb07)
 
 
 ## Schema history: 1 = first version. Bump SAVE_SCHEMA and handle `from` here on any change.
@@ -129,7 +135,20 @@ func _ready() -> void:
 	add_child(_cam)
 	_cam.make_current()
 	_build_ui()
-	_load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
+	if str(Boot.options.get("mode", "rush")) == "tour":
+		_load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
+		return
+	var tiers := {"easy": 0, "medium": 1, "hard": 2}
+	var tier: int = tiers.get(str(Boot.options.get("difficulty", _save["difficulty"])), 1)
+	_rush = GolfRush.new()
+	add_child(_rush)
+	_rush.setup(self, _layer, UiKit.safe_top(self), tier, HOLES.size(), _save)
+	_load_hole(_rush.first_hole())
+
+
+## World hole `i` (GolfRush moves the match on with this).
+func load_hole(i: int) -> void:
+	_load_hole(i)
 
 
 # --- world ---------------------------------------------------------------------------------------
@@ -290,6 +309,7 @@ func _outlined(text: String, size: int, col: Color, weight: int, outline: int) -
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
+	_layer = layer
 	var top := UiKit.safe_top(layer)
 	var panel := Panel.new()
 	panel.add_theme_stylebox_override("panel", UiKit.box(Color(0.03, 0.12, 0.08, 0.66), 26))
@@ -359,6 +379,10 @@ func _draw_power() -> void:
 func _start_hole() -> void:
 	_strokes = 0
 	_hole_over = false
+	if _rush != null:
+		_rush.begin_hole(_hole, _spec, _preset, _world)
+	_bot_cpu = GolfCpu.new(_hole, _preset, _spec) if Boot.bot else null
+	_bot_think = null
 	_ball_at = _hole.tee + Vector3(0, _ball.p.radius, 0)
 	_cur = _ball_at
 	_prev = _ball_at
@@ -390,6 +414,11 @@ func _start_hole() -> void:
 
 func _new_shot() -> void:
 	mode = Mode.AIM
+	_bot_t = 0.0
+	if _rush != null:
+		_rush.go()
+		if not _rush.can_shoot():
+			mode = Mode.WATCH
 	_banner.text = ""
 	_banner.scale = Vector2.ONE
 	_stars.text = ""
@@ -407,18 +436,21 @@ func _flow_dir(from: Vector3) -> Vector3:
 
 
 func _refresh() -> void:
-	_hud_top.text = (
-		"HOLE %d/%d · %s · PAR %d"
-		% [_index + 1, HOLES.size(), str(_spec.get("name", "")).to_upper(), _hole.par]
-	)
+	var where := _rush.hud_line() if _rush != null else "HOLE %d/%d" % [_index + 1, HOLES.size()]
+	_hud_top.text = ("%s · %s · PAR %d" % [where, str(_spec.get("name", "")).to_upper(), _hole.par])
 	var to_cup := Vector2(_hole.pin.x - _ball_at.x, _hole.pin.z - _ball_at.z).length()
-	_hud_info.text = ("Stroke %d · %.1f m to the cup · total %+d" % [_strokes + 1, to_cup, _total])
+	if _rush != null:
+		_hud_info.text = "Stroke %d · %.1f m to the cup · first in wins" % [_strokes + 1, to_cup]
+	else:
+		_hud_info.text = (
+			"Stroke %d · %.1f m to the cup · total %+d" % [_strokes + 1, to_cup, _total]
+		)
 	if mode == Mode.AIM:
 		_hint.text = "Drag back from anywhere and let go"
 	elif mode == Mode.DRAG:
 		_hint.text = "Slide back to the start to cancel"
 	elif mode != Mode.INTRO:
-		_hint.text = ""
+		_hint.text = ""  # also WATCH
 
 
 ## Ball speed for a pull fraction: eased so short pulls give fine putts.
@@ -431,7 +463,7 @@ func _reduce_motion() -> bool:
 
 
 func _shoot() -> void:
-	_strokes += 1
+	_strokes = _rush.shot_taken() if _rush != null else _strokes + 1
 	_events_seen = 0
 	_ball = GolfBall.new(_hole, _preset, _ball.p)
 	var v := _shot_dir * _speed(_power)
@@ -457,6 +489,9 @@ func _shoot() -> void:
 
 
 func _shot_over() -> void:
+	if _rush != null:
+		_rush_shot_over()
+		return
 	mode = Mode.RESULT
 	_result_t = 0.0
 	match _ball.phase:
@@ -485,6 +520,28 @@ func _shot_over() -> void:
 		_banner.text = "Out of strokes\n+%d" % (_strokes + 1 - _hole.par)
 		_total += _strokes + 1 - _hole.par
 		_hole_over = true
+	_banner.modulate.a = 1.0
+
+
+## Rush: the hole ends when GolfRush says so; this only places the ball and shows the line.
+func _rush_shot_over() -> void:
+	mode = Mode.RESULT
+	_result_t = 0.0
+	_hole_over = false
+	var ph := _ball.phase
+	if ph == GolfBall.Phase.HOLED:
+		var diff := _strokes - _hole.par
+		_hole_out("HOLE IN ONE!" if _strokes == 1 else NAMES.get(diff, "+%d" % diff), diff)
+	elif ph == GolfBall.Phase.WATER:
+		_ball_at = _safe_spot(_ball.last_safe)
+	elif ph == GolfBall.Phase.OUT:
+		AudioService.play("foul", 1.0, -4.0)
+	else:
+		_ball_at = _ball.pos()
+	var line := _rush.shot_over(ph)
+	if ph != GolfBall.Phase.HOLED:
+		_banner.text = line
+	_strokes = _rush.strokes()
 	_banner.modulate.a = 1.0
 
 
@@ -537,6 +594,8 @@ func _safe_spot(p: Vector3) -> Vector3:
 
 
 func _physics_process(delta: float) -> void:
+	var steps := PresentationClock.SUBSTEPS_PER_TICK  # rivals keep this pace while you aim
+	var drop := -1  # substep your ball dropped in, this tick
 	match mode:
 		Mode.INTRO:
 			_intro_t += minf(delta, 1.0 / 30.0)  # a warm-up hitch must not skip the fly-in
@@ -545,9 +604,8 @@ func _physics_process(delta: float) -> void:
 		Mode.AIM:
 			if Boot.bot:
 				_bot_t += delta
-				if _bot_t > 1.0:
-					_bot_t = 0.0
-					_bot_shot()
+				if _bot_t > 0.6:
+					_bot_play()
 		Mode.MOVING:
 			_prev = _cur
 			# Slow motion only changes how many fixed substeps run per tick (PresentationClock):
@@ -559,9 +617,12 @@ func _physics_process(delta: float) -> void:
 					_slowmo = _hole_at > 0.0 and _slow_ok
 			var slow := _slowmo and _ball.time > _hole_at - 0.6 and _ball.time < _hole_at + 0.15
 			_clock.rate = SLOWMO if slow else 1.0
-			for i in _clock.take():
+			steps = _clock.take()
+			for i in steps:
 				_ball.substep()
 				if _ball.done():
+					if _ball.phase == GolfBall.Phase.HOLED:
+						drop = i
 					break
 			_cur = _ball.pos()
 			_trail_push(_cur, _ball.roll_speed())
@@ -577,40 +638,27 @@ func _physics_process(delta: float) -> void:
 					_load_hole(_index + 1)
 				else:
 					_new_shot()
+	if _rush != null and mode != Mode.INTRO:
+		_rush.tick(delta, steps, drop)
+		if (mode == Mode.AIM or mode == Mode.DRAG) and not _rush.can_shoot():
+			mode = Mode.WATCH  # someone else won the hole while you were aiming
+			_guide.clear_surfaces()
+			_power_ui.queue_redraw()
+			_refresh()
 
 
 ## Smoke runs / screenshots: aim along the flow at a power that reaches about the next bend.
-func _bot_shot() -> void:
-	var best := INF
-	var best_dir := _aim
-	var best_p := 0.5
-	for ai in 36:
-		var a := TAU * ai / 36.0
-		var dir := Vector3(cos(a), 0.0, sin(a))
-		for pi in 10:
-			var p := 0.03 + pi * 0.09 * pi / 9.0  # finer at the soft end (tap-ins)
-			var b := GolfBall.new(_hole, _preset, _ball.p)
-			b.putt(_ball_at.x, _ball_at.z, dir.x * _speed(p), dir.z * _speed(p))
-			b.run_to_rest(1.0 / 60.0)
-			var score := 1e6
-			if b.phase == GolfBall.Phase.HOLED:
-				score = -1.0
-			elif b.phase == GolfBall.Phase.REST:
-				var q := b.pos()
-				score = (
-					Vector2(q.x - _hole.pin.x, q.z - _hole.pin.z).length() * 0.2 + _flow_metres(q)
-				)
-			if score < best:
-				best = score
-				best_dir = dir
-				best_p = p
-	_shot_dir = best_dir
-	_power = best_p
-	_shoot()
-
-
-func _flow_metres(q: Vector3) -> float:
-	return MiniBaker.flow_metres(_spec, MiniBaker.flow_field(_spec), q)
+## --bot: the player's ball is played by the Hard CPU golfer (on the background lane).
+func _bot_play() -> void:
+	if _bot_think == null:
+		_bot_think = GolfCpuThink.new(_bot_cpu, _ball_at, GolfCpu.Tier.HARD, _bot_rng)
+		_bot_think.start()
+	elif _bot_think.poll():
+		var v := _bot_think.shot
+		_bot_think = null
+		_shot_dir = Vector3(v.x, 0.0, v.y).normalized()
+		_power = pow(v.length() / MAX_SPEED, 1.0 / POWER_CURVE)
+		_shoot()
 
 
 func _effects() -> void:
@@ -650,6 +698,8 @@ func _process(delta: float) -> void:
 	var f := Engine.get_physics_interpolation_fraction() if mode == Mode.MOVING else 1.0
 	var p := _prev.lerp(_cur, f)
 	_place_camera(delta, p)
+	if _rush != null:
+		_rush.field.update_visuals(_cam.position)
 	var r := _ball.p.radius
 	var s := clampf(p.distance_to(_cam.position) * 0.006 / r, 2.0, 12.0)
 	_squash = maxf(0.0, _squash - delta)
