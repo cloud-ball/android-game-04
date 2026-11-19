@@ -148,6 +148,7 @@ func _ready() -> void:
 	_world_id = (
 		str(_save["world"]) if GolfProgress.is_unlocked(_save, str(_save["world"])) else "meadow"
 	)
+	_world_id = str(Boot.options.get("world", _world_id))  # --world=<id> for screenshots
 	_shell.set_difficulty(_difficulty)
 	_shell.set_mode(m if m in ["rush", "tour"] else "rush")
 	_shell.set_world(_world_id)
@@ -271,9 +272,11 @@ func _load_hole(i: int) -> void:
 	_index = i % _holes.size()
 	if i > 0 and _index == 0:
 		_total = 0
+	_theme = GolfTheme.for_world(_world_id)
 	_spec = MiniBaker.load_spec(_holes[_index])
 	_hole = MiniBaker.bake(_spec)
 	_ball = GolfBall.new(_hole, _preset)
+	_shell.wind.set_wind(_hole.wind_x, _hole.wind_z)
 	if _world != null:
 		_world.queue_free()
 	_world = Node3D.new()
@@ -752,6 +755,7 @@ func _process(delta: float) -> void:
 	var f := Engine.get_physics_interpolation_fraction() if mode == Mode.MOVING else 1.0
 	var p := _prev.lerp(_cur, f)
 	_place_camera(delta, p)
+	_shell.wind.face(_cam_dir)
 	if _rush != null:
 		_rush.field.update_visuals(_cam.position)
 	var r := _ball.p.radius

@@ -11,6 +11,8 @@ extends RefCounted
 ##     H  cup (green)    B  green with a bumper         S  sand            W  water
 ##     ^ v < >  ramp rising one level in the arrow direction (^ = towards -z, the far end)
 ##   levels: optional rows of digits (same shape); floor height = level x LEVEL_H
+##   wind: optional [x, z] push on a rolling ball in m/s^2 (+x right, -z towards the far end),
+##     clamped to WIND_MAX in length
 ## Walls stand on every edge between floor and nothing, and between floor tiles whose heights do not
 ## meet (a ramp's high side meeting the next level up is open). A ramp whose high side faces nothing
 ## is a JUMP: that edge, and the landing tile's edge across the gap, stay open. Collinear wall
@@ -28,6 +30,9 @@ const BUMPER_R := 0.45
 ## Arcade cup: 75 mm radius (regulation 54) and a gentle pull for slow balls close by.
 const CUP_R := 0.075
 const CUP_PULL := 1.6  # beats the carpet's grip within ~18 cm of the cup
+## Strongest wind: a rolling ball feels 5/7 of it, well under the carpet's static hold, so a ball
+## at rest never creeps; over a 3 s roll it drifts a ball about a metre.
+const WIND_MAX := 0.12
 const FLOOR := "GTHBSW^v<>"
 ## Direction each ramp rises towards (its high edge).
 const RAMP_UP := {
@@ -52,6 +57,14 @@ static func bake(spec: Dictionary) -> HoleData:
 	d.wall_half = WALL_HALF
 	d.cup_r = CUP_R
 	d.cup_pull = CUP_PULL
+	var wind: Variant = spec.get("wind", [])
+	var two: bool = wind is Array and (wind as Array).size() >= 2
+	var wx := float(wind[0]) if two else 0.0  # a malformed "wind" is calm
+	var wz := float(wind[1]) if two else 0.0
+	var wl := sqrt(wx * wx + wz * wz)  # 64-bit (a Vector2 would round to 32)
+	var k := WIND_MAX / wl if wl > WIND_MAX else 1.0
+	d.wind_x = wx * k
+	d.wind_z = wz * k
 	for j in d.nz + 1:
 		for i in d.nx + 1:
 			d.heights[j * (d.nx + 1) + i] = m.height(x0 + i * CELL, z0 + j * CELL)

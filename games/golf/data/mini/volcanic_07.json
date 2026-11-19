@@ -1,0 +1,14 @@
+{
+	"id": "volcanic_07",
+	"name": "Ember Fork",
+	"par": 3,
+	"tile": 3.0,
+	"map": [
+		"GGHGG",
+		"S.G.G",
+		"S.W.B",
+		"G.G.G",
+		"GGGGG",
+		"..T.."
+	]
+}

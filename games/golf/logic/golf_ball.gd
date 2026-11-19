@@ -7,7 +7,8 @@ extends RefCounted
 ## - After the last bounce the ball skids: friction (mu g) moves its velocity V and its "rolling
 ##   velocity" W = -r * backspin towards each other (dV = -mu g s dt, dW = +5/2 mu g s dt, slip
 ##   s = V - W), so backspin can stop the ball or pull it back. Then it rolls: constant
-##   deceleration per surface plus (5/7) g along the slope; it rests below a speed / slope limit.
+##   deceleration per surface plus (5/7) g along the slope and 5/7 of the hole's wind (coastal
+##   holes); it rests below a speed / pull limit.
 ## - Cup: captured if the ball's path crosses the cup with speed <= 1.24 x the free-fall limit
 ##   (2 sqrt(R^2 - b^2) - r) sqrt(g / 2r) for offset b (1.31 m/s centred, 1.63 with rim help);
 ##   faster balls lip out, deflected away and slowed.
@@ -295,9 +296,10 @@ func _roll(dt: float) -> void:
 	var g := p.g
 	hole.grad_into(_x, _z, _g)
 	var l2 := 1.0 + _g[0] * _g[0] + _g[1] * _g[1]
-	# Horizontal pull of gravity along the surface (full for a sliding ball).
-	var ax := -g * _g[0] / l2
-	var az := -g * _g[1] / l2
+	# Horizontal pull of gravity along the surface (full for a sliding ball), plus the hole's wind
+	# (a rolling ball feels 5/7 of both, like any push through its centre).
+	var ax := -g * _g[0] / l2 + hole.wind_x
+	var az := -g * _g[1] / l2 + hole.wind_z
 	var px := _x
 	var pz := _z
 	var sx := _vx - _wx

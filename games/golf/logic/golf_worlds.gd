@@ -22,6 +22,54 @@ const WORLDS := [
 			"meadow_09",
 		],
 	},
+	{
+		"id": "coastal",
+		"name": "Coast",
+		"holes":
+		[
+			"coastal_01",
+			"coastal_02",
+			"coastal_03",
+			"coastal_04",
+			"coastal_05",
+			"coastal_06",
+			"coastal_07",
+			"coastal_08",
+			"coastal_09",
+		],
+	},
+	{
+		"id": "canyon",
+		"name": "Canyon",
+		"holes":
+		[
+			"canyon_01",
+			"canyon_02",
+			"canyon_03",
+			"canyon_04",
+			"canyon_05",
+			"canyon_06",
+			"canyon_07",
+			"canyon_08",
+			"canyon_09",
+		],
+	},
+	{
+		"id": "volcanic",
+		"name": "Volcano",
+		"holes":
+		[
+			"volcanic_01",
+			"volcanic_02",
+			"volcanic_03",
+			"volcanic_04",
+			"volcanic_05",
+			"volcanic_06",
+			"volcanic_07",
+			"volcanic_08",
+			"volcanic_09",
+		],
+	},
 ]
 
 

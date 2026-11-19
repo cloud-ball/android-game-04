@@ -1,0 +1,18 @@
+{
+	"id": "coastal_01",
+	"name": "Breakwater",
+	"par": 2,
+	"tile": 3.0,
+	"map": [
+		".H.",
+		".G.",
+		"WGW",
+		"WGW",
+		".G.",
+		".T."
+	],
+	"wind": [
+		0.06,
+		0.0
+	]
+}

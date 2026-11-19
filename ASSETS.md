@@ -32,3 +32,14 @@ Every file under games/*/assets and hub/ must be listed. The ip-checker and asse
 | Roboto font, used only inside the store images' captions (not shipped in the app) | https://github.com/google/fonts/tree/main/ofl/roboto | The Roboto Project Authors | SIL OFL 1.1 | No (OFL allows use in images) |
 | docs/store/src/raw/*.jpg (captures behind the feature graphic), docs/store/src/icon_*.svg, icon.html | (own work) | Playjar project | Original, all rights reserved | No |
 | docs/refs/*/keyframe_*.png, clip.mp4, prototype.html (design references, never shipped) | origin not recorded: concept images made for the original build guide | Playjar project (to confirm) | Not for distribution | n/a |
+| games/golf/assets/kenney_nature/tree_palmTall.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_palmBend.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/tree_palmShort.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/cactus_tall.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/cactus_short.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/rock_tallA.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/rock_tallC.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/canoe.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/statue_column.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/campfire_stones.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |
+| games/golf/assets/kenney_nature/log.glb | https://kenney.nl/assets/nature-kit | Kenney (Nature Kit 2.1) | CC0 1.0 | No |

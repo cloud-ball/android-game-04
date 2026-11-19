@@ -13,6 +13,7 @@ shader_type spatial;
 render_mode diffuse_lambert, specular_schlick_ggx, cull_disabled;
 uniform vec3 deep : source_color = vec3(0.08, 0.27, 0.42);
 uniform vec3 shallow : source_color = vec3(0.2, 0.5, 0.62);
+uniform float glow = 0.0;  // lava: emissive, slow churn, opaque
 varying vec3 wpos;
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -21,27 +22,22 @@ void fragment() {
 	float r = length(UV - 0.5) * 2.0;
 	float t = TIME * 0.6;
 	float ripple = sin(wpos.x * 1.7 + t) * sin(wpos.z * 1.3 - t * 0.8) * 0.5 + 0.5;
-	ALBEDO = mix(deep, shallow, smoothstep(0.55, 1.0, r)) + vec3(0.06) * ripple;
-	ROUGHNESS = 0.15;
+	vec3 col = mix(deep, shallow, smoothstep(0.55, 1.0, r)) + vec3(0.06) * ripple;
+	ALBEDO = col;
+	EMISSION = col * glow * (0.7 + 0.6 * ripple);
+	ROUGHNESS = mix(0.15, 0.85, step(0.5, glow));
 	METALLIC = 0.0;
-	ALPHA = 0.92;
+	ALPHA = mix(0.92, 1.0, step(0.5, glow));
 }
 """
 
-## Kit trees (Kenney Nature, recoloured): [model, min height, max height] in metres.
-const TREES := [
-	["tree_oak", 6.0, 8.0],
-	["tree_default", 7.0, 9.5],
-	["tree_pineRoundC", 6.5, 9.0],
-	["tree_pineTallA", 8.0, 11.0],
-]
 const LANDMARK_SCALE := 0.8  # ~14 m tall: fills the top third of the play view, not more
 const GROUND_Y := MiniBaker.LAWN  # the terrain's apron level outside the baked grid
 
 ## Where the landmark's top half is, for the intro's establishing shot.
 var landmark := Vector3.ZERO
 
-var _blades: Node3D
+var _spin: Dictionary = {}  # the landmark part that turns (GolfLandmarks.build)
 var _theme: GolfTheme
 var _hole: HoleData
 
@@ -71,7 +67,8 @@ func build(hole: HoleData, spec: Dictionary, seed_value := 1, theme: GolfTheme =
 	_fence(hole, spot)
 	_vignettes(hole, seed_value, spot)
 	_life(hole, seed_value)
-	_windmill(Vector3(spot.x, GROUND_Y, spot.y), view)
+	var at := Vector3(spot.x, GROUND_Y, spot.y)
+	_spin = GolfLandmarks.build(_theme.landmark, self, at, view, LANDMARK_SCALE, _theme)
 	landmark = Vector3(spot.x, GROUND_Y + 11.0 * LANDMARK_SCALE, spot.y)
 
 
@@ -81,16 +78,16 @@ func _ground_y(x: float, z: float) -> float:
 
 
 func _process(delta: float) -> void:
-	if _blades != null:
-		_blades.rotate_object_local(Vector3.FORWARD, delta * 0.6)
+	if not _spin.is_empty():
+		_spin.spin.rotate_object_local(_spin.axis, delta * float(_spin.speed))
 
 
 func _environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
 	sky_mat.sky_top_color = _theme.sky_top
 	sky_mat.sky_horizon_color = _theme.sky_horizon
-	sky_mat.ground_bottom_color = Color(0.2, 0.32, 0.18)
-	sky_mat.ground_horizon_color = Color(0.62, 0.74, 0.7)
+	sky_mat.ground_bottom_color = _theme.ground_bottom
+	sky_mat.ground_horizon_color = _theme.ground_horizon
 	sky_mat.sun_angle_max = 20.0
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
@@ -108,7 +105,7 @@ func _environment() -> void:
 	env.adjustment_saturation = 1.1
 	env.adjustment_contrast = 1.04
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.7, 0.82, 0.92)
+	env.fog_light_color = _theme.fog_color
 	# ~6% at the course, ~25% on the mid skyline, most of the far ring: backdrop recedes.
 	env.fog_density = 0.0028
 	env.fog_sky_affect = 0.0
@@ -126,8 +123,8 @@ func _environment() -> void:
 	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(_theme.sun_pitch, _theme.sun_yaw, 0)
-	sun.light_energy = 1.05
-	sun.light_color = Color(1.0, 0.97, 0.9)
+	sun.light_energy = _theme.sun_energy
+	sun.light_color = _theme.sun_color
 	# Real shadows near the camera (walls, trees, the ball): the biggest single step in richness.
 	sun.shadow_enabled = not flags.has("noshadow")
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
@@ -159,7 +156,7 @@ func _hills(centre: Vector3, seed_value: int) -> void:
 		var q0 := centre + Vector3(cos(a0) * r_out, h0, sin(a0) * r_out)
 		var q1 := centre + Vector3(cos(a1) * r_out, h1, sin(a1) * r_out)
 		verts.append_array([p0, q0, q1, p0, q1, p1])
-		var c := Color(0.27, 0.42, 0.3)
+		var c := _theme.hills
 		cols.append_array([c, c.lightened(0.15), c.lightened(0.15), c, c.lightened(0.15), c])
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -183,6 +180,10 @@ func _water(hole: HoleData, spec: Dictionary) -> void:
 	var sh := Shader.new()
 	sh.code = WATER_SHADER
 	mat.shader = sh
+	if _theme.lava:
+		mat.set_shader_parameter("deep", _theme.water)
+		mat.set_shader_parameter("shallow", _theme.glow)
+		mat.set_shader_parameter("glow", 1.4)
 	for st in spec.get("stamps", []):
 		if st.type != "water":
 			continue
@@ -271,7 +272,8 @@ func _skyline(centre: Vector3, seed_value: int) -> void:
 	crown.height = 1.0
 	crown.radial_segments = 7
 	crown.rings = 3
-	_multi(crown, _theme.bush.lerp(_theme.lawn, 0.2), crowns, Vector3.ZERO, false)
+	if _theme.skyline_trees:
+		_multi(crown, _theme.bush.lerp(_theme.lawn, 0.2), crowns, Vector3.ZERO, false)
 
 
 ## Kit trees (TREES) on open lawn around play. They keep MiniFraming.TREE_CLEAR from the course
@@ -289,7 +291,7 @@ func _trees(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 		while x < hole.x0 + hole.nx * hole.cell + reach:
 			var px := x + rng.randf_range(-2.5, 2.5)
 			var pz := z + rng.randf_range(-2.5, 2.5)
-			var kind: Array = TREES[rng.randi_range(0, TREES.size() - 1)]
+			var kind: Array = _theme.trees[rng.randi_range(0, _theme.trees.size() - 1)]
 			var tall := rng.randf_range(kind[1], kind[2])
 			var yaw := rng.randf_range(0.0, TAU)
 			var q := Vector2(px, pz)
@@ -352,8 +354,8 @@ func _fence(hole: HoleData, spot: Vector2) -> void:
 	batch.build(self, _theme)
 
 
-## Two to four small scenes on the lawn beside the play view (research: "story vignettes"): a log
-## pile, a mushroom patch, planters with flowers, or a rock garden. Seeded per hole.
+## Two to four small scenes on the lawn beside the play view (research: "story vignettes"), from
+## the world's list (GolfTheme.vignettes). Seeded per hole.
 func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 	var rng := Rng.make(seed_value * 13 + 5)
 	var big := KitBatch.new()
@@ -379,46 +381,8 @@ func _vignettes(hole: HoleData, seed_value: int, spot: Vector2) -> void:
 		var turn := Basis(Vector3.UP, yaw)
 		var at := func(dx: float, dz: float) -> Vector3:
 			return Vector3(c.x, y, c.y) + turn * Vector3(dx, 0, dz)
-		match placed % 4:
-			0:  # log pile with two stumps
-				big.add(
-					"log_stack", Transform3D(turn.scaled(Vector3.ONE * 2.6), at.call(0, 0)), false
-				)
-				big.add(
-					"stump_round", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(1.4, 0.6))
-				)
-				big.add(
-					"stump_round", Transform3D(turn.scaled(Vector3.ONE * 1.8), at.call(1.1, -1.0))
-				)
-			1:  # mushroom patch in tall grass
-				for m in 4:
-					var model := "mushroom_redGroup" if m % 2 == 0 else "mushroom_tanGroup"
-					var p: Vector3 = at.call(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
-					small.add(model, Transform3D(turn.scaled(Vector3.ONE * 2.0), p), false)
-				for g in 3:
-					var p2: Vector3 = at.call(
-						rng.randf_range(-1.2, 1.2), rng.randf_range(-1.2, 1.2)
-					)
-					small.add("grass_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p2))
-			2:  # two planters with flowers
-				for k in 2:
-					var p3: Vector3 = at.call(k * 1.5 - 0.75, 0)
-					big.add("pot_large", Transform3D(turn.scaled(Vector3.ONE * 2.2), p3), false)
-					for f in 3:
-						var fl: String = ["flower_redA", "flower_yellowB", "flower_purpleA"][f]
-						var fp := (
-							p3 + turn * Vector3(f * 0.35 - 0.35, 0.33, rng.randf_range(-0.15, 0.15))
-						)
-						small.add(fl, Transform3D(turn.scaled(Vector3.ONE * 1.6), fp))
-			3:  # rock garden
-				big.add(
-					"rock_largeA", Transform3D(turn.scaled(Vector3.ONE * 2.2), at.call(0, 0)), false
-				)
-				for r in 3:
-					var p4: Vector3 = at.call(
-						rng.randf_range(-1.6, 1.6), rng.randf_range(-1.6, 1.6)
-					)
-					big.add("rock_smallA", Transform3D(turn.scaled(Vector3.ONE * 1.6), p4), false)
+		var kind: String = _theme.vignettes[placed % _theme.vignettes.size()]
+		_vignette(kind, big, small, rng, turn, at)
 		placed += 1
 	big.build(self, _theme)
 	small.build(self, _theme, false)
@@ -476,108 +440,64 @@ func _multi(
 	add_child(mmi)
 
 
-## Meadow landmark (original design): a tapered stone windmill-tower on a grassy knoll, with a
-## wooden balcony, door and window, a pointed roof and four lattice sails facing the tee. Parts
-## that share a colour are merged, so the whole landmark is five draw calls.
-func _windmill(at: Vector3, view: Vector2) -> void:
-	var base := Node3D.new()
-	base.position = at
-	base.rotation.y = atan2(-view.x, -view.y)  # local +z faces the tee
-	base.scale = Vector3.ONE * LANDMARK_SCALE
-	add_child(base)
-	var knoll := SphereMesh.new()
-	knoll.radial_segments = 12
-	knoll.rings = 6
-	var k := MeshInstance3D.new()
-	k.mesh = knoll
-	k.scale = Vector3(26.0, 6.0, 26.0)
-	k.position.y = -1.6
-	k.material_override = _mat(_theme.lawn.lightened(0.04))
-	base.add_child(k)
-	var foot := 1.35  # knoll height at the tower
-	var tower := CylinderMesh.new()
-	tower.top_radius = 2.0
-	tower.bottom_radius = 3.0
-	tower.height = 12.0
-	tower.radial_segments = 8
-	tower.rings = 1
-	_part(base, tower, _theme.landmark_wall, Vector3(0, foot + 6.0, 0))
-	var roof := CylinderMesh.new()
-	roof.top_radius = 0.0
-	roof.bottom_radius = 2.7
-	roof.height = 3.8
-	roof.radial_segments = 8
-	roof.rings = 1
-	_part(base, roof, _theme.landmark_roof, Vector3(0, foot + 13.9, 0))
-	# Dark wood: balcony ring, door, window, sail hub, and the lattice spars of the sails.
-	var deck := CylinderMesh.new()
-	deck.top_radius = 2.9
-	deck.bottom_radius = 2.9
-	deck.height = 0.3
-	deck.radial_segments = 8
-	deck.rings = 1
-	var door := BoxMesh.new()
-	door.size = Vector3(1.3, 2.2, 0.4)
-	var window := BoxMesh.new()
-	window.size = Vector3(0.9, 1.1, 0.4)
-	var hub := SphereMesh.new()
-	hub.radius = 0.55
-	hub.height = 1.1
-	hub.radial_segments = 8
-	hub.rings = 4
-	var wood := SurfaceTool.new()
-	wood.begin(Mesh.PRIMITIVE_TRIANGLES)
-	wood.append_from(deck, 0, Transform3D(Basis(), Vector3(0, foot + 8.6, 0)))
-	wood.append_from(door, 0, Transform3D(Basis(), Vector3(0, foot + 1.1, 2.85)))
-	wood.append_from(window, 0, Transform3D(Basis(), Vector3(0, foot + 5.2, 2.5)))
-	wood.append_from(hub, 0, Transform3D(Basis(), Vector3(0, foot + 11.0, 2.75)))
-	var wood_mi := MeshInstance3D.new()
-	wood_mi.mesh = wood.commit()
-	wood_mi.material_override = _mat(_theme.landmark_wood)
-	base.add_child(wood_mi)
-	_blades = Node3D.new()
-	_blades.position = Vector3(0, foot + 11.0, 2.95)
-	base.add_child(_blades)
-	var spar := BoxMesh.new()
-	spar.size = Vector3(0.22, 7.6, 0.2)
-	var rail := BoxMesh.new()
-	rail.size = Vector3(0.09, 5.6, 0.12)
-	var slat := BoxMesh.new()
-	slat.size = Vector3(1.5, 0.09, 0.12)
-	var cloth := BoxMesh.new()
-	cloth.size = Vector3(1.4, 5.4, 0.05)
-	var frame := SurfaceTool.new()
-	frame.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var sails := SurfaceTool.new()
-	sails.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for blade in 4:
-		var turn := Basis(Vector3.FORWARD, blade * PI * 0.5)
-		frame.append_from(spar, 0, Transform3D(turn, turn * Vector3(0, 3.8, 0.1)))
-		frame.append_from(rail, 0, Transform3D(turn, turn * Vector3(1.55, 4.7, 0.12)))
-		for s in 6:
-			var y := 2.1 + s * 1.04
-			frame.append_from(slat, 0, Transform3D(turn, turn * Vector3(0.85, y, 0.12)))
-		sails.append_from(cloth, 0, Transform3D(turn, turn * Vector3(0.85, 4.7, 0.04)))
-	var frame_mi := MeshInstance3D.new()
-	frame_mi.mesh = frame.commit()
-	frame_mi.material_override = _mat(_theme.landmark_wood)
-	_blades.add_child(frame_mi)
-	var sails_mi := MeshInstance3D.new()
-	sails_mi.mesh = sails.commit()
-	sails_mi.material_override = _mat(_theme.sail)
-	_blades.add_child(sails_mi)
-
-
-func _mat(col: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = col
-	m.roughness = 0.9
-	return m
-
-
-func _part(parent: Node3D, mesh: Mesh, col: Color, at: Vector3) -> void:
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = _mat(col)
-	mi.position = at
-	parent.add_child(mi)
+## One small scene: logs (pile and stumps), mushrooms (in tall grass), planters (with flowers),
+## rocks (a rock garden), canoe (pulled up with a log), columns (fallen ruins), cactus (a cluster
+## with rocks), campfire (stones and logs, a warm glow).
+func _vignette(
+	kind: String,
+	big: KitBatch,
+	small: KitBatch,
+	rng: RandomNumberGenerator,
+	turn: Basis,
+	at: Callable
+) -> void:
+	var sc := func(s: float) -> Basis: return turn.scaled(Vector3.ONE * s)
+	var jitter := func(r: float) -> Vector3:
+		return at.call(rng.randf_range(-r, r), rng.randf_range(-r, r))
+	match kind:
+		"logs":
+			big.add("log_stack", Transform3D(sc.call(2.6), at.call(0, 0)), false)
+			big.add("stump_round", Transform3D(sc.call(2.2), at.call(1.4, 0.6)))
+			big.add("stump_round", Transform3D(sc.call(1.8), at.call(1.1, -1.0)))
+		"mushrooms":
+			for m in 4:
+				var model := "mushroom_redGroup" if m % 2 == 0 else "mushroom_tanGroup"
+				small.add(model, Transform3D(sc.call(2.0), jitter.call(1.0)), false)
+			for g in 3:
+				small.add("grass_large", Transform3D(sc.call(2.2), jitter.call(1.2)))
+		"planters":
+			for k in 2:
+				var p3: Vector3 = at.call(k * 1.5 - 0.75, 0)
+				big.add("pot_large", Transform3D(sc.call(2.2), p3), false)
+				for f in 3:
+					var fl: String = _theme.flower_models[f % _theme.flower_models.size()]
+					var off := Vector3(f * 0.35 - 0.35, 0.33, rng.randf_range(-0.15, 0.15))
+					small.add(fl, Transform3D(sc.call(1.6), p3 + turn * off))
+		"rocks":
+			big.add("rock_largeA", Transform3D(sc.call(2.2), at.call(0, 0)), false)
+			for r in 3:
+				big.add("rock_smallA", Transform3D(sc.call(1.6), jitter.call(1.6)), false)
+		"canoe":
+			big.add("canoe", Transform3D(sc.call(2.4), at.call(0, 0)))
+			big.add("log", Transform3D(sc.call(2.0), at.call(1.6, 0.8)))
+			big.add("rock_smallA", Transform3D(sc.call(1.8), at.call(-1.4, -0.6)), false)
+		"columns":
+			big.add("statue_column", Transform3D(sc.call(2.4), at.call(0, 0)))
+			var fallen := turn * Basis(Vector3.FORWARD, PI * 0.5)
+			var lying := Transform3D(fallen.scaled(Vector3.ONE * 2.0), at.call(1.8, 0.4))
+			big.add("statue_column", lying)
+			big.add("rock_smallA", Transform3D(sc.call(1.6), at.call(-1.2, 0.8)), false)
+		"cactus":
+			big.add("cactus_tall", Transform3D(sc.call(2.4), at.call(0, 0)))
+			big.add("cactus_short", Transform3D(sc.call(2.0), at.call(1.3, 0.5)))
+			big.add("rock_smallA", Transform3D(sc.call(1.6), at.call(-1.0, 0.9)), false)
+		"campfire":
+			big.add("campfire_stones", Transform3D(sc.call(2.4), at.call(0, 0)), false)
+			big.add("log", Transform3D(sc.call(1.8), at.call(1.5, 0.3)))
+			big.add("log", Transform3D(sc.call(1.8), at.call(-1.3, 0.9)))
+			var ember := OmniLight3D.new()
+			ember.light_color = _theme.glow
+			ember.light_energy = 1.2
+			ember.omni_range = 3.0
+			ember.position = at.call(0, 0) + Vector3(0, 0.6, 0)
+			add_child(ember)
