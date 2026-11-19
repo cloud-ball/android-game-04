@@ -64,7 +64,7 @@ func test_search_budget() -> void:
 	cpu.search(cpu.hole.tee)
 	var ms := (Time.get_ticks_usec() - t0) / 1000.0
 	print("[golf-cpu] %d rollouts in %.0f ms" % [cpu.simulated, ms])
-	assert_int(cpu.simulated).is_less_equal(90)
+	assert_int(cpu.simulated).is_less_equal(110)  # 84 + 16 risk checks
 
 
 func test_easy_scatters_more_than_hard() -> void:
