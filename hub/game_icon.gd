@@ -72,10 +72,12 @@ func _blocks(c: Vector2, u: float) -> void:
 	jewels.append_array([Color("#D9799E"), Color("#E2A840"), Color("#9FE6DC")])
 	var cells := [Vector2(-2.5, 2.4), Vector2(-1.5, 2.4), Vector2(-0.5, 2.4), Vector2(1.5, 2.4)]
 	cells.append_array([Vector2(-2.5, 1.4), Vector2(0.5, 1.4), Vector2(1.5, 1.4)])
+	var gems := GemArt.Batch.new()  # one draw call for the whole icon
 	for i in cells.size():
-		GemArt.draw(self, Rect2(c + cells[i] * u, Vector2(0.96, 0.96) * u), jewels[i % 7])
+		GemArt.add(gems, Rect2(c + cells[i] * u, Vector2(0.96, 0.96) * u), jewels[i % 7])
 	for p in [Vector2(-0.5, -1.6), Vector2(0.5, -1.6), Vector2(0.5, -0.6)]:
-		GemArt.draw(self, Rect2(c + p * u, Vector2(0.96, 0.96) * u), jewels[3])
+		GemArt.add(gems, Rect2(c + p * u, Vector2(0.96, 0.96) * u), jewels[3])
+	GemArt.flush(self, gems)
 
 
 func _chess(c: Vector2, u: float) -> void:
