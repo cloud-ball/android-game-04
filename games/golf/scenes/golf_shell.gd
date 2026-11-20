@@ -161,7 +161,7 @@ func _add_world_picker() -> void:
 	row.add_theme_constant_override("separation", 12)
 	for w: Dictionary in GolfWorlds.WORLDS:
 		var open: bool = w.id in _unlocked
-		var b := UiKit.button(w.name, Color(1, 1, 1, 0.1), Color.WHITE, 32, 90)
+		var b := UiKit.button(w.name, Color(1, 1, 1, 0.1), Color.WHITE, 32, 104)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.disabled = not open
 		var id: String = w.id

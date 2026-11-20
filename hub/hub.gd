@@ -18,7 +18,7 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and Boot.back_once():
 		if _settings != null and _settings.is_open():
 			_settings.close()
 		elif Time.get_ticks_msec() - _last_back_ms < 2000:

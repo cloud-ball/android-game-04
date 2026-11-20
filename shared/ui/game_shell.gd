@@ -213,6 +213,7 @@ func _build_end() -> Control:
 	_end_title = _center(UiKit.label("", 96, Color.WHITE, 900))
 	col.add_child(_end_title)
 	_end_cause = _center(UiKit.label("", 36, UiKit.MUTED, 600))
+	_end_cause.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long causes wrap, not widen
 	col.add_child(_end_cause)
 	_end_stats = _center(UiKit.label("", 40, Color.WHITE, 700))
 	_end_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -225,6 +226,7 @@ func _build_end() -> Control:
 	coins.add_child(_end_coins)
 	col.add_child(coins)
 	_end_daily = _center(UiKit.label("", 36, Color(1.0, 0.7, 0.45), 800))
+	_end_daily.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_end_daily)
 	var again := UiKit.button("PLAY AGAIN", UiKit.GREEN, Color.WHITE, 54, 136)
 	again.pressed.connect(func() -> void: rematch_requested.emit())

@@ -554,6 +554,8 @@ func _notification(what: int) -> void:
 		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
 			_pause()
 		NOTIFICATION_WM_GO_BACK_REQUEST:
+			if not Boot.back_once():
+				return
 			if _hud.settings_open():
 				_hud.close_settings()
 			elif _hud.howto_open():

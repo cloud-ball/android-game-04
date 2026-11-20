@@ -119,7 +119,8 @@ func _build_bar(top: float) -> void:
 		panel.add_child(pips)
 		_pips.append(pips)
 	_pause_btn = UiKit.pause_button(112.0)
-	_pause_btn.position = Vector2(1080 - 24 - 144, top + 10 + (TOP_BAR_H - 144) * 0.5)
+	# Centred on the top bar, but its touch area never starts above the screen.
+	_pause_btn.position = Vector2(1080 - 24 - 144, maxf(0.0, top + 10 + (TOP_BAR_H - 144) * 0.5))
 	_pause_btn.size = Vector2(144, 144)
 	_pause_btn.pressed.connect(
 		func() -> void:

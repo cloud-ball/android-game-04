@@ -146,3 +146,27 @@ func test_blocks_challenges_check_their_stats() -> void:
 	var lines := {"id": "blocks_lines_20", "game": "blocks"}
 	assert_bool(DailyChallenge.is_met(lines, {"game": "blocks", "lines": 21})).is_true()
 	assert_bool(DailyChallenge.is_met(lines, {"game": "snake", "lines": 99})).is_false()
+
+
+## Regression (emulator, 2026-11-20): one Android back press arrived twice 2 ms apart, so the hub
+## quit on a single press. The repeat is ignored; a later press counts again.
+func test_back_press_counts_once() -> void:
+	var boot: Node = auto_free(BootScript.new())
+	assert_bool(boot.back_once()).is_true()
+	assert_bool(boot.back_once()).is_false()
+	boot._last_back_ms -= BootScript.BACK_REPEAT_MS + 1
+	assert_bool(boot.back_once()).is_true()
+
+
+## A full-screen page registered with Boot.push_back (the licences page) takes the back press first.
+func test_back_closes_the_top_page_first() -> void:
+	var boot: Node = auto_free(BootScript.new())
+	var closed := [0]
+	var close := func() -> void: closed[0] += 1
+	boot.push_back(close)
+	assert_bool(boot.back_once()).is_false()  # the page took it
+	assert_int(closed[0]).is_equal(1)
+	boot.pop_back(close)
+	boot._last_back_ms -= BootScript.BACK_REPEAT_MS + 1
+	assert_bool(boot.back_once()).is_true()  # now the screen gets it
+	assert_int(closed[0]).is_equal(1)

@@ -17,17 +17,24 @@ extends Node
 ##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
 ##   --bench=golf         run the golf solver benchmark, print "[golf-bench]" lines and quit
 ##   --bench=golfload     time building every hole of --world=<id>, print "[golf-load]" lines
+##   --uiaudit            walk every screen, check buttons / labels, write user://audit/<w>x<h>/
 ##   --licenses           open the open-source licences page over the hub (screenshot QA)
+
+const BACK_REPEAT_MS := 250  # one back press can be delivered twice; see back_once()
 
 var options: Dictionary = {}
 var bot := false
 
 var _frame := 0
+var _last_back_ms := -100000
+var _back_stack: Array[Callable] = []  # full-screen pages on top: back closes the last one
 var _shots_taken := 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_fit_aspect()
+	get_tree().root.size_changed.connect(_fit_aspect)
 	options = parse_args(OS.get_cmdline_user_args())
 	options.merge(_dev_args_file(), true)
 	bot = options.has("bot")
@@ -46,9 +53,48 @@ func _ready() -> void:
 		if options.has("autostart") or bot:
 			extra["autostart"] = true
 		SceneRouter.open_game.call_deferred(options["game"], extra, true)
+	if options.has("uiaudit"):  # debug only: tools/ is not exported
+		var audit: Variant = load("res://tools/ui_audit.gd")
+		if audit != null:
+			get_tree().root.add_child.call_deferred((audit as GDScript).new())
 	if options.has("licenses"):
 		get_tree().root.add_child.call_deferred(LicensesView.new())
 	set_process(options.has("shot") or options.has("quit-after") or options.has("fps"))
+
+
+## True once per Android back press that the current screen should handle. One press can arrive
+## twice a few ms apart (seen on an Android 16 emulator: the hub quit on a single press, games
+## would pause and resume at once), so a repeat within BACK_REPEAT_MS is ignored. A full-screen
+## page registered with push_back() (the licences page) takes the press first and closes. Every
+## screen's back handler checks this first.
+func back_once() -> bool:
+	var now := Time.get_ticks_msec()
+	if now - _last_back_ms < BACK_REPEAT_MS:
+		return false
+	_last_back_ms = now
+	if not _back_stack.is_empty():
+		_back_stack.back().call()
+		return false
+	return true
+
+
+func push_back(close: Callable) -> void:
+	_back_stack.append(close)
+
+
+func pop_back(close: Callable) -> void:
+	_back_stack.erase(close)
+
+
+## Portrait phones taller than 9:16 get more height (aspect "expand", project setting). A screen
+## wider than 9:16 (a tablet, a foldable unfolded) keeps the 1080 x 1920 layout with bars at the
+## sides instead: the game screens are laid out for a 1080-wide canvas (UI audit, 2026-11-20).
+func _fit_aspect() -> void:
+	var root := get_tree().root
+	var wide := root.size.x * 16 > root.size.y * 9 + root.size.y / 10
+	root.content_scale_aspect = (
+		Window.CONTENT_SCALE_ASPECT_KEEP if wide else Window.CONTENT_SCALE_ASPECT_EXPAND
+	)
 
 
 func _run_bench(which: String) -> void:

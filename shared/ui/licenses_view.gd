@@ -4,6 +4,7 @@ extends CanvasLayer
 ## Godot Engine is MIT-licensed and bundles third-party components under their own licences; their
 ## notices must ship with the app. The text comes from the engine itself (Engine.get_license_text,
 ## get_copyright_info, get_license_info), so it always matches the engine version we ship.
+## Android back closes it (Boot back stack).
 
 
 func _ready() -> void:
@@ -16,7 +17,7 @@ func _ready() -> void:
 	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.offset_left = 40
 	col.offset_right = -40
-	col.offset_top = 60
+	col.offset_top = 60 + UiKit.safe_top(self)  # clear of a notch / status bar
 	col.offset_bottom = -40
 	col.add_theme_constant_override("separation", 24)
 	bg.add_child(col)
@@ -36,6 +37,11 @@ func _ready() -> void:
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(body)
+	Boot.push_back(queue_free)  # Android back closes this page first
+
+
+func _exit_tree() -> void:
+	Boot.pop_back(queue_free)
 
 
 ## The full notice text: the app's own line, Godot's licence, then every bundled component.

@@ -202,6 +202,13 @@ class SpinPanel:
 		_ball.draw.connect(_draw_ball)
 		_ball.gui_input.connect(_ball_input)
 		col.add_child(_ball)
+		# Its own line under the ball (drawn inside the ball's box it sat under the disc's edge).
+		var hint := UiKit.label(
+			"Drag the dot · follow up, draw down, side left/right", 26, Color(1, 1, 1, 0.65), 700
+		)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(hint)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		for p in PRESETS:
@@ -252,15 +259,3 @@ class SpinPanel:
 		_ball.draw_line(c - Vector2(r, 0), c + Vector2(r, 0), Color(0, 0, 0, 0.08), 2.0)
 		_ball.draw_line(c - Vector2(0, r), c + Vector2(0, r), Color(0, 0, 0, 0.08), 2.0)
 		_ball.draw_circle(c + Vector2(side, -top) * r, 34.0, Color(0.85, 0.12, 0.1))
-		var font := UiKit.font(700)
-		var hint := "Drag the dot · follow up, draw down, side left/right"
-		var tw := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-		_ball.draw_string(
-			font,
-			Vector2(c.x - tw * 0.5, _ball.size.y - 2),
-			hint,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			24,
-			Color(1, 1, 1, 0.6)
-		)

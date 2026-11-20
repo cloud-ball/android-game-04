@@ -263,6 +263,14 @@ func _stats_text() -> String:
 	return "Rush wins %d of %d" % [int(_save["wins"]), int(_save["played"])]
 
 
+## Intro card title: the match position in Rush ("HOLE 3 OF 3", as the top bar), else the
+## hole's number in its world.
+func _hole_title() -> String:
+	if _rush != null:
+		return "HOLE %d OF %d" % [_rush.rush.hole_number + 1, _rush.rush.holes.size()]
+	return "HOLE %d" % (_index + 1)
+
+
 ## World hole `i`, built behind the shell's cover (GolfRush moves the match on with this).
 func load_hole(i: int) -> void:
 	_shell.covered(_load_hole.bind(i))
@@ -449,7 +457,7 @@ func _start_hole() -> void:
 	mode = Mode.INTRO
 	_intro_t = 0.0
 	_card.text = (
-		"HOLE %d\n%s\nPar %d" % [_index + 1, str(_spec.get("name", "")).to_upper(), _hole.par]
+		"%s\n%s\nPar %d" % [_hole_title(), str(_spec.get("name", "")).to_upper(), _hole.par]
 	)
 	_card.modulate.a = 1.0
 	_hint.text = "Tap to skip"
@@ -919,6 +927,8 @@ func _notification(what: int) -> void:
 		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
 			_pause()
 		NOTIFICATION_WM_GO_BACK_REQUEST:
+			if not Boot.back_once():
+				return
 			if _shell.settings_open():
 				_shell.close_settings()
 			elif _shell.howto_open():
