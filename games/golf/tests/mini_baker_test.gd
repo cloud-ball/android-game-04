@@ -170,3 +170,14 @@ func test_ball_stopping_near_the_cup_rests_or_drops() -> void:
 		assert_float(b.time).override_failure_message("r %.2f" % r).is_less(5.0)
 		if r <= 0.12:
 			assert_int(b.phase).is_equal(GolfBall.Phase.HOLED)
+
+
+## The fast grid fill (hole loading, 2026-11-20) gives exactly the grids of the point-by-point
+## reference on every hole: same heights to the bit, same surfaces.
+func test_fast_bake_matches_the_reference_on_every_hole() -> void:
+	for p in holes:
+		var s := spec(p)
+		var d := MiniBaker.bake(s)
+		var ref := MiniBaker.reference_grids(s)
+		assert_bool(d.heights == ref[0]).override_failure_message(p + " heights").is_true()
+		assert_bool(d.surface == ref[1]).override_failure_message(p + " surface").is_true()

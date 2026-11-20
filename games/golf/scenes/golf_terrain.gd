@@ -77,7 +77,13 @@ const COLS := [
 	Color(0.62, 0.6, 0.55),
 ]
 
+static var _quads := {}  # Vector2i(w, d) -> index buffer shared by every chunk of that size
+
 var hole: HoleData
+var _ao_grid := PackedFloat32Array()  # rail shading per render vertex (see _ao_near_rails)
+var _ao_w := 0  # render vertices per row
+var _rh := PackedFloat32Array()  # render heights with a one-vertex border (edges clamp like _h)
+var _rh_w := 0
 
 
 ## theme: optional GolfTheme; its lawn / carpet / sand / water replace the default colours.
@@ -87,10 +93,8 @@ func build(h: HoleData, theme: GolfTheme = null) -> void:
 	var sh := Shader.new()
 	sh.code = SHADER
 	mat.shader = sh
-	var img := Image.create(h.nx, h.nz, false, Image.FORMAT_R8)
-	for j in h.nz:
-		for i in h.nx:
-			img.set_pixel(i, j, Color8(h.surface[j * h.nx + i], 0, 0))
+	# The surface grid is already one byte per cell, row by row: exactly an R8 image.
+	var img := Image.create_from_data(h.nx, h.nz, false, Image.FORMAT_R8, h.surface)
 	mat.set_shader_parameter("surf", ImageTexture.create_from_image(img))
 	mat.set_shader_parameter("origin", Vector2(h.x0, h.z0))
 	mat.set_shader_parameter("extent", Vector2(h.nx * h.cell, h.nz * h.cell))
@@ -108,6 +112,8 @@ func build(h: HoleData, theme: GolfTheme = null) -> void:
 	mat.set_shader_parameter("motion", AmbientLife.motion())
 	var rx := h.nx / STEP
 	var rz := h.nz / STEP
+	_ao_near_rails(rx + 1, rz + 1)
+	_render_heights(rx + 1, rz + 1)
 	for cj in range(0, rz, CHUNK):
 		for ci in range(0, rx, CHUNK):
 			var mi := MeshInstance3D.new()
@@ -175,6 +181,48 @@ func _vertex(i: int, j: int) -> Vector3:
 	return Vector3(hole.x0 + pi * hole.cell, hole._h(pi, pj), hole.z0 + pj * hole.cell)
 
 
+## _ao() for every render vertex, visiting only the vertices near each rail (a vertex farther than
+## 0.45 m + the rail half-width from every rail is 1.0 either way). The same distance sums in the
+## same order as _ao(), so the shading is identical (tested) - the per-vertex loop over every rail
+## was most of the terrain's build time.
+func _ao_near_rails(w: int, d: int) -> void:
+	_ao_w = w
+	var best := PackedFloat64Array()
+	best.resize(w * d)
+	best.fill(1e9)
+	var walls := hole.walls
+	var step_m := hole.cell * STEP
+	var reach := 0.45 + hole.wall_half + step_m
+	for o in range(0, walls.size(), 4):
+		var ax := walls[o]
+		var az := walls[o + 1]
+		var dx := walls[o + 2] - ax
+		var dz := walls[o + 3] - az
+		var i0 := maxi(0, int(floorf((minf(ax, ax + dx) - reach - hole.x0) / step_m)))
+		var i1 := mini(w - 1, int(ceilf((maxf(ax, ax + dx) + reach - hole.x0) / step_m)))
+		var j0 := maxi(0, int(floorf((minf(az, az + dz) - reach - hole.z0) / step_m)))
+		var j1 := mini(d - 1, int(ceilf((maxf(az, az + dz) + reach - hole.z0) / step_m)))
+		for j in range(j0, j1 + 1):
+			var pz := _vertex(0, j).z  # rounded through Vector3 like _ao()'s point
+			for i in range(i0, i1 + 1):
+				var px := _vertex(i, 0).x
+				var t := clampf(((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz), 0.0, 1.0)
+				var qx := ax + dx * t - px
+				var qz := az + dz * t - pz
+				var k := j * w + i
+				best[k] = minf(best[k], qx * qx + qz * qz)
+	_ao_grid.resize(w * d)
+	for k in w * d:
+		var dist := sqrt(best[k]) - hole.wall_half
+		_ao_grid[k] = 0.6 + 0.4 * clampf(dist / 0.45, 0.0, 1.0)
+
+
+func _ao_at(i: int, j: int) -> float:
+	if hole.walls.is_empty():
+		return 1.0
+	return _ao_grid[j * _ao_w + i]
+
+
 ## Soft shading where the ground meets a wall rail (0.6 at the rail, 1.0 from 0.45 m out).
 func _ao(p: Vector3) -> float:
 	var w := hole.walls
@@ -194,32 +242,53 @@ func _ao(p: Vector3) -> float:
 	return 0.6 + 0.4 * clampf(d / 0.45, 0.0, 1.0)
 
 
-func _chunk(ci: int, cj: int, w: int, d: int) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var norms := PackedVector3Array()
-	var cols := PackedColorArray()
+## Heights of every render vertex plus a one-vertex border, read once (each vertex's normal
+## needs its four neighbours; reading them through _vertex() five times per vertex was slow).
+func _render_heights(w: int, d: int) -> void:
+	_rh_w = w + 2
+	_rh.resize(_rh_w * (d + 2))
+	for j in range(-1, d + 1):
+		for i in range(-1, w + 1):
+			_rh[(j + 1) * _rh_w + i + 1] = hole._h(i * STEP, j * STEP)
+
+
+## Two triangles per cell, split like the physics grid: (i, j) -> (i+1, j+1); wound to face up
+## (Godot fronts are clockwise seen from the front). Built once per chunk size.
+static func _quad_indices(w: int, d: int) -> PackedInt32Array:
+	var key := Vector2i(w, d)
+	if _quads.has(key):
+		return _quads[key]
 	var idx := PackedInt32Array()
-	var step_m := hole.cell * STEP
-	for j in d + 1:
-		for i in w + 1:
-			var gi := ci + i
-			var gj := cj + j
-			var v := _vertex(gi, gj)
-			verts.append(v)
-			var a := _ao(v)
-			cols.append(Color(a, a, a))
-			var hx := _vertex(gi + 1, gj).y - _vertex(gi - 1, gj).y
-			var hz := _vertex(gi, gj + 1).y - _vertex(gi, gj - 1).y
-			norms.append(Vector3(-hx, 2.0 * step_m, -hz).normalized())
 	for j in d:
 		for i in w:
 			var a := j * (w + 1) + i
 			var b := a + 1
 			var c := a + (w + 1)
 			var e := c + 1
-			# Same split as the physics grid: (i, j) -> (i+1, j+1); wound to face up (Godot fronts
-			# are clockwise seen from the front).
 			idx.append_array([a, b, e, a, e, c])
+	_quads[key] = idx
+	return idx
+
+
+func _chunk(ci: int, cj: int, w: int, d: int) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var cols := PackedColorArray()
+	var step_m := hole.cell * STEP
+	for j in d + 1:
+		var gj := cj + j
+		var row := (gj + 1) * _rh_w + 1
+		var z := hole.z0 + (gj * STEP) * hole.cell
+		for i in w + 1:
+			var gi := ci + i
+			var k := row + gi
+			verts.append(Vector3(hole.x0 + (gi * STEP) * hole.cell, _rh[k], z))
+			var a := _ao_at(gi, gj)
+			cols.append(Color(a, a, a))
+			var hx := _rh[k + 1] - _rh[k - 1]
+			var hz := _rh[k + _rh_w] - _rh[k - _rh_w]
+			norms.append(Vector3(-hx, 2.0 * step_m, -hz).normalized())
+	var idx := _quad_indices(w, d)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts

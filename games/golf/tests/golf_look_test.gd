@@ -120,3 +120,24 @@ func test_forecast_matches_a_full_run_without_a_long_frame() -> void:
 	near.putt(d.pin.x, d.pin.z + 1.0, 0.0, -1.2)
 	near.run_to_rest()
 	assert_int(near.phase).is_equal(GolfBall.Phase.HOLED)
+
+
+## Rail shading near the rails only (hole loading, 2026-11-20) equals the per-vertex scan over
+## every rail, on every vertex of a few holes from each world.
+func test_rail_shading_grid_matches_the_full_scan() -> void:
+	for id in GolfWorlds.ids():
+		for p in GolfWorlds.holes(id).slice(0, 3):
+			var d := MiniBaker.bake(MiniBaker.load_spec(p))
+			var t: GolfTerrain = auto_free(GolfTerrain.new())
+			t.hole = d
+			var w := d.nx / GolfTerrain.STEP + 1
+			var h := d.nz / GolfTerrain.STEP + 1
+			t._ao_near_rails(w, h)
+			# Both end up as a float32 vertex colour: compare them as the mesh stores them.
+			var worst := 0.0
+			for j in h:
+				for i in w:
+					var fast := Color(t._ao_at(i, j), 0, 0).r
+					var full := Color(t._ao(t._vertex(i, j)), 0, 0).r
+					worst = maxf(worst, absf(fast - full))
+			assert_float(worst).override_failure_message(p).is_equal(0.0)

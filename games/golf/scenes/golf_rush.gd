@@ -7,7 +7,7 @@ extends Node
 
 signal finished(info: Dictionary)  # GolfShell.show_end() info, coins already paid
 
-enum Phase { PLAYING, HOLE_CARD, MATCH_OVER }
+enum Phase { LOADING, PLAYING, HOLE_CARD, MATCH_OVER }  # LOADING: until begin_hole()
 
 const HOLE_CARD_TIME := 2.8
 
@@ -126,6 +126,7 @@ func tick(delta: float, steps: int, drop: int) -> void:
 			_t += delta
 			if _t > HOLE_CARD_TIME:
 				if rush.next_hole():
+					_phase = Phase.LOADING  # the hole is built behind a cover; ask once
 					_game.load_hole(rush.holes[rush.hole_number])
 				else:
 					_phase = Phase.MATCH_OVER
@@ -142,7 +143,7 @@ func _new_rules(names: PackedStringArray) -> void:
 	var rng := Rng.make(seed_value)
 	rush = RushMatch.new(names, RushMatch.pick_holes(_holes, RushMatch.HOLES, rng))
 	field.setup(rush, _tier, seed_value)
-	_phase = Phase.PLAYING
+	_phase = Phase.LOADING  # until the first hole's begin_hole()
 
 
 ## Saves the result, pays coins (+ today's challenge), opens the next world on a win; returns

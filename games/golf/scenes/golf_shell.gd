@@ -8,6 +8,8 @@ signal world_changed(world_id: String)
 signal map_pressed
 
 const ACCENT := Color(0.45, 0.9, 0.55)
+const COVER_IN := 0.15  # s: fade to the cover before a hole is built
+const COVER_OUT := 0.3  # s: fade back in on the new hole
 
 var world := "meadow"
 ## Under the overlays: the hole HUD and the Rush strip / cards live here.
@@ -21,8 +23,11 @@ var hint: Label
 var map_btn: Button
 var power_ui: Control
 var wind: WindVane
+## A solid panel over the 3D view and the hole HUD (under the menus) while a hole is built.
+var cover: ColorRect
 
 var _unlocked: Array = ["meadow"]
+var _covering := false
 var _world_buttons: Dictionary = {}
 
 
@@ -46,10 +51,38 @@ func setup(unlocked: Array) -> void:
 	_build_hud()
 	build_shell()
 	_add_world_picker()
+	cover = ColorRect.new()
+	cover.color = Color(0.03, 0.05, 0.09)
+	cover.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cover.mouse_filter = Control.MOUSE_FILTER_STOP  # no stray taps while the hole is built
+	cover.visible = false
+	add_child(cover)
+	move_child(cover, hud.get_index() + 1)
 
 
 func show_hud(on: bool) -> void:
 	hud.visible = on
+
+
+## Fades the cover in, runs `work` (building a hole: a few hundred ms on a phone) while the screen
+## is covered, lets the new hole render two frames, then fades out - a short transition instead of
+## a visible freeze. A second request while one is running is ignored.
+func covered(work: Callable) -> void:
+	if _covering:
+		return
+	_covering = true
+	cover.visible = true
+	var tw := create_tween()
+	tw.tween_property(cover, "modulate:a", 1.0, COVER_IN)
+	await tw.finished
+	work.call()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	tw = create_tween()
+	tw.tween_property(cover, "modulate:a", 0.0, COVER_OUT)
+	await tw.finished
+	cover.visible = false
+	_covering = false
 
 
 func set_world(id: String) -> void:

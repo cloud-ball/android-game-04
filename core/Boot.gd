@@ -16,6 +16,7 @@ extends Node
 ##   --practice           show first-match practice hints even for moves already learned
 ##   --bench=cue          run the pool solver benchmark, print "[cue-bench]" lines and quit
 ##   --bench=golf         run the golf solver benchmark, print "[golf-bench]" lines and quit
+##   --bench=golfload     time building every hole of --world=<id>, print "[golf-load]" lines
 ##   --licenses           open the open-source licences page over the hub (screenshot QA)
 
 var options: Dictionary = {}
@@ -34,7 +35,7 @@ func _ready() -> void:
 		Engine.time_scale = clampf(float(options["time-scale"]), 0.1, 16.0)
 	if options.has("seed"):
 		Rng.session_seed = int(options["seed"])
-	if str(options.get("bench", "")) in ["cue", "golf"]:
+	if str(options.get("bench", "")) in ["cue", "golf", "golfload"]:
 		_run_bench.call_deferred(str(options["bench"]))
 		return
 	if options.has("game"):
@@ -54,6 +55,8 @@ func _run_bench(which: String) -> void:
 	await get_tree().create_timer(0.5).timeout  # let the first frame settle
 	if which == "golf":
 		GolfBench.run()
+	elif which == "golfload":
+		GolfLoadBench.run(self, str(options.get("world", "meadow")))
 	else:
 		CueBench.run()
 	get_tree().quit()

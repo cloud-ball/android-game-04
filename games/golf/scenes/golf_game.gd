@@ -174,10 +174,13 @@ func _show_menu() -> void:
 func _on_world(id: String) -> void:
 	_world_id = id
 	_holes = GolfWorlds.holes(id)
-	_load_hole(0)
-	mode = Mode.MENU
-	_card.text = ""
 	_shell.set_start_stats(_stats_text())
+	_shell.covered(
+		func() -> void:
+			_load_hole(0)
+			mode = Mode.MENU
+			_card.text = ""
+	)
 
 
 func _on_play(d: String, m: String) -> void:
@@ -204,7 +207,7 @@ func _start_match() -> void:
 	if _shell.mode == "tour":
 		_tour = GolfTourCard.new()
 		_total = 0
-		_load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
+		load_hole(int(Boot.options.get("hole", 1)) - 1)  # --hole=<n> for screenshots
 		return
 	_rush = GolfRush.new()
 	add_child(_rush)
@@ -212,7 +215,7 @@ func _start_match() -> void:
 		self, _shell.hud, UiKit.safe_top(self), _difficulty, _world_id, _holes.size(), _save
 	)
 	_rush.finished.connect(_on_finished)
-	_load_hole(_rush.first_hole())
+	load_hole(_rush.first_hole())
 
 
 func _on_finished(info: Dictionary) -> void:
@@ -260,9 +263,9 @@ func _stats_text() -> String:
 	return "Rush wins %d of %d" % [int(_save["wins"]), int(_save["played"])]
 
 
-## World hole `i` (GolfRush moves the match on with this).
+## World hole `i`, built behind the shell's cover (GolfRush moves the match on with this).
 func load_hole(i: int) -> void:
-	_load_hole(i)
+	_shell.covered(_load_hole.bind(i))
 
 
 # --- world ---------------------------------------------------------------------------------------
@@ -442,6 +445,7 @@ func _start_hole() -> void:
 	_prev = _ball_at
 	_aim = _flow_dir(_ball_at)
 	_banner.text = ""
+	_stars.text = ""  # the last hole's rating stays with the last hole
 	mode = Mode.INTRO
 	_intro_t = 0.0
 	_card.text = (
@@ -930,14 +934,14 @@ func _notification(what: int) -> void:
 ## Tour: score the hole, then the next one or the end of the round.
 func _tour_hole_done() -> void:
 	if _tour == null:
-		_load_hole(_index + 1)
+		load_hole(_index + 1)
 		return
 	var hole_id := _holes[_index].get_file().get_basename()
 	var got := _tour.add(hole_id, _hole.par, _strokes, _holed_now)
 	if not Boot.bot:
 		GolfProgress.record_stars(_save, hole_id, got)
 	if _index + 1 < _holes.size():
-		_load_hole(_index + 1)
+		load_hole(_index + 1)
 		return
 	mode = Mode.WATCH
 	var over := _tour.over_par()

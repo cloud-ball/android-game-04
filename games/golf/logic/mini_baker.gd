@@ -34,6 +34,7 @@ const CUP_PULL := 1.6  # beats the carpet's grip within ~18 cm of the cup
 ## at rest never creeps; over a 3 s roll it drifts a ball about a metre.
 const WIND_MAX := 0.12
 const FLOOR := "GTHBSW^v<>"
+const EDGE := -1000000  # _Map._runs: a grid line on a tile edge
 ## Direction each ramp rises towards (its high edge).
 const RAMP_UP := {
 	"^": Vector2i(0, -1), "v": Vector2i(0, 1), ">": Vector2i(1, 0), "<": Vector2i(-1, 0)
@@ -65,12 +66,7 @@ static func bake(spec: Dictionary) -> HoleData:
 	var k := WIND_MAX / wl if wl > WIND_MAX else 1.0
 	d.wind_x = wx * k
 	d.wind_z = wz * k
-	for j in d.nz + 1:
-		for i in d.nx + 1:
-			d.heights[j * (d.nx + 1) + i] = m.height(x0 + i * CELL, z0 + j * CELL)
-	for j in d.nz:
-		for i in d.nx:
-			d.surface[j * d.nx + i] = m.surface(x0 + (i + 0.5) * CELL, z0 + (j + 0.5) * CELL)
+	m.fill_grids(d, x0, z0)
 	m.add_walls(d)
 	for t in m.tiles_of("B"):
 		var c := m.centre(t.x, t.y)
@@ -82,6 +78,24 @@ static func bake(spec: Dictionary) -> HoleData:
 	d.tee = Vector3(tc.x, d.height(tc.x, tc.y), tc.y)
 	d.pin = Vector3(cc.x, d.height(cc.x, cc.y), cc.y)
 	return d
+
+
+## The height and surface grids computed point by point with _Map.height / surface: the slow
+## reference that _Map.fill_grids must match bit for bit (tests). Returns [heights, surface].
+static func reference_grids(spec: Dictionary) -> Array:
+	var m := _Map.new(spec)
+	var d := bake(spec)
+	var heights := PackedFloat32Array()
+	heights.resize(d.heights.size())
+	var surface := PackedByteArray()
+	surface.resize(d.surface.size())
+	for j in d.nz + 1:
+		for i in d.nx + 1:
+			heights[j * (d.nx + 1) + i] = m.height(d.x0 + i * CELL, d.z0 + j * CELL)
+	for j in d.nz:
+		for i in d.nx:
+			surface[j * d.nx + i] = m.surface(d.x0 + (i + 0.5) * CELL, d.z0 + (j + 0.5) * CELL)
+	return [heights, surface]
 
 
 ## Tile-grid distance (metres, through floor tiles) from each tile to the cup tile: a flow field
@@ -266,6 +280,150 @@ class _Map:
 			".":
 				return HoleData.Surface.OUT
 		return HoleData.Surface.GREEN
+
+	## height() and surface() for every grid point at once, bit-identical to calling them point by
+	## point (MiniBaker.reference_grids, tested) but much faster. Everything that depends only on
+	## the column or the row is worked out once; along a grid row, the points between two tile
+	## edges lie in one tile, so a run of them is filled in one go unless the tile is a sideways
+	## ramp. Points on tile edges take the full max-of-touching-tiles path. The nudge is the same
+	## float32-rounded 1e-6 that height() adds through its Vector2 offsets.
+	func fill_grids(d: HoleData, gx0: float, gz0: float) -> void:
+		var kind := PackedInt32Array()  # per tile: -1 no floor, 0 flat, 1 ^, 2 v, 3 >, 4 <
+		var base := PackedFloat64Array()
+		var surf := PackedByteArray()
+		kind.resize(rows * cols)
+		base.resize(rows * cols)
+		surf.resize(rows * cols)
+		for r in rows:
+			for c in cols:
+				var ch := at(c, r)
+				var k := r * cols + c
+				kind[k] = ("^v><".find(ch) + 1) if FLOOR.contains(ch) else -1
+				base[k] = level(c, r) * LEVEL_H
+				surf[k] = surface(x0 + (c + 0.5) * tile, z0 + (r + 0.5) * tile)
+		var e: float = Vector2(1e-6, 0.0).x
+		var cx := _axis(d.nx + 1, gx0, x0, e)  # [tile at x - e, at x + e, at x, u - e, u + e]
+		var rz := _axis(d.nz + 1, gz0, z0, e)
+		var runs := _runs(cx[0], cx[1])
+		var heights := PackedFloat32Array()
+		for j in d.nz + 1:
+			var r0: int = rz[0][j]
+			if r0 != rz[1][j]:  # on a tile edge: every point the full way
+				for i in d.nx + 1:
+					heights.append(_point_h(kind, base, cx, rz, i, j))
+				continue
+			var v: float = rz[3][j]
+			for run: Vector3i in runs:
+				if run.z == EDGE:
+					heights.append(_point_h(kind, base, cx, rz, run.x, j))
+					continue
+				var c := run.z
+				var k := -1 if not inside(c, r0) else kind[r0 * cols + c]
+				if k == 3 or k == 4:  # sideways ramp: height changes along the row
+					for i in range(run.x, run.y):
+						heights.append(_tile_h(kind, base, c, r0, cx[3][i], v))
+				else:
+					var h := _tile_h(kind, base, c, r0, 0.0, v)
+					if h == -INF:
+						h = PIT if inside(c, r0) else LAWN
+					heights.append_array(_filled(run.y - run.x, h))
+		d.heights = heights
+		var sc := PackedInt32Array()
+		for i in d.nx:
+			sc.append(int(floorf((gx0 + (i + 0.5) * CELL - x0) / tile)))
+		var srun := _runs(sc, sc)
+		var surface_grid := PackedByteArray()
+		for j in d.nz:
+			var r := int(floorf((gz0 + (j + 0.5) * CELL - z0) / tile))
+			for run: Vector3i in srun:
+				var code: int = surf[r * cols + run.z] if inside(run.z, r) else HoleData.Surface.OUT
+				var seg := PackedByteArray()
+				seg.resize(run.y - run.x)
+				seg.fill(code)
+				surface_grid.append_array(seg)
+		d.surface = surface_grid
+
+	## The full height() rule at grid point (i, j): the highest floor among the touching tiles,
+	## else the pit inside the map and the lawn outside it.
+	func _point_h(
+		kind: PackedInt32Array, base: PackedFloat64Array, cx: Array, rz: Array, i: int, j: int
+	) -> float:
+		var c0: int = cx[0][i]
+		var c1: int = cx[1][i]
+		var r0: int = rz[0][j]
+		var r1: int = rz[1][j]
+		var h := _tile_h(kind, base, c0, r0, cx[3][i], rz[3][j])
+		if c1 != c0:
+			h = maxf(h, _tile_h(kind, base, c1, r0, cx[4][i], rz[3][j]))
+		if r1 != r0:
+			h = maxf(h, _tile_h(kind, base, c0, r1, cx[3][i], rz[4][j]))
+			if c1 != c0:
+				h = maxf(h, _tile_h(kind, base, c1, r1, cx[4][i], rz[4][j]))
+		if h == -INF:
+			h = PIT if inside(cx[2][i], rz[2][j]) else LAWN
+		return h
+
+	## Runs of grid lines that lie in one tile column: Vector3i(start, end, tile) where lo == hi,
+	## and Vector3i(i, i + 1, EDGE) for a line on a tile edge (lo != hi).
+	func _runs(lo: PackedInt32Array, hi: PackedInt32Array) -> Array[Vector3i]:
+		var out: Array[Vector3i] = []
+		var i := 0
+		while i < lo.size():
+			if lo[i] != hi[i]:
+				out.append(Vector3i(i, i + 1, EDGE))
+				i += 1
+				continue
+			var start := i
+			while i < lo.size() and lo[i] == lo[start] and hi[i] == lo[start]:
+				i += 1
+			out.append(Vector3i(start, i, lo[start]))
+		return out
+
+	static func _filled(count: int, value: float) -> PackedFloat32Array:
+		var a := PackedFloat32Array()
+		a.resize(count)
+		a.fill(value)
+		return a
+
+	## Per grid line along one axis: tile index at p - e, p + e and p, and the position across
+	## the first two tiles (0..1), exactly as tile_at() and tile_height() compute them.
+	func _axis(count: int, g0: float, m0: float, e: float) -> Array:
+		var lo := PackedInt32Array()
+		var hi := PackedInt32Array()
+		var mid := PackedInt32Array()
+		var flo := PackedFloat64Array()
+		var fhi := PackedFloat64Array()
+		for i in count:
+			var p := g0 + i * CELL
+			var a := int(floorf((p + -e - m0) / tile))
+			var b := int(floorf((p + e - m0) / tile))
+			lo.append(a)
+			hi.append(b)
+			mid.append(int(floorf((p - m0) / tile)))
+			flo.append(clampf((p - (m0 + a * tile)) / tile, 0.0, 1.0))
+			fhi.append(clampf((p - (m0 + b * tile)) / tile, 0.0, 1.0))
+		return [lo, hi, mid, flo, fhi]
+
+	## tile_height() from the flat tile arrays; -INF where the tile has no floor.
+	func _tile_h(
+		kind: PackedInt32Array, base: PackedFloat64Array, c: int, r: int, u: float, v: float
+	) -> float:
+		if c < 0 or r < 0 or c >= cols or r >= rows:
+			return -INF
+		var k := r * cols + c
+		var h := -INF
+		match kind[k]:
+			0:
+				h = base[k]
+			1:
+				h = base[k] + LEVEL_H * (1.0 - v)
+			2:
+				h = base[k] + LEVEL_H * v
+			3:
+				h = base[k] + LEVEL_H * u
+			4:
+				h = base[k] + LEVEL_H * (1.0 - u)
+		return h
 
 	## Edge between tiles a and b (4-neighbours) is a wall if one side has no floor, or if the
 	## floor heights along the shared edge differ.
