@@ -76,7 +76,7 @@ func _build_hud() -> void:
 	hud_info.position = Vector2(28, 76)
 	panel.add_child(hud_info)
 	var pause := UiKit.pause_button(112.0)
-	pause.position = Vector2(1080 - 24 - 112, top + 24)
+	pause.position = Vector2(1080 - 24 - UiKit.PAUSE_HIT, top + 10)  # same spot as the other games
 	pause.pressed.connect(func() -> void: pause_requested.emit())
 	hud.add_child(pause)
 	shot_banner = _outlined(88, UiKit.GOLD, 18)

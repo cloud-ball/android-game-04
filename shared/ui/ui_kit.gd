@@ -11,6 +11,7 @@ const GOLD := Color(1.0, 0.79, 0.29)
 const GREEN := Color(0.24, 0.78, 0.38)
 const NEON_GREEN := Color(0.4, 1.0, 0.6)
 const MAGENTA := Color(1.0, 0.4, 0.88)
+const PAUSE_HIT := 144.0  # pause button touch area (design px), well over 48 dp
 
 static var _fonts: Dictionary = {}
 
@@ -83,9 +84,11 @@ static func coin(size := 36.0) -> Control:
 
 
 ## In-game pause button shared by the games: a dark disc with two drawn bars, centred in a
-## larger invisible touch area (set the button's size to the hit area, >= 48 dp).
+## larger invisible touch area, PAUSE_HIT square by default (callers may resize it). Without a size
+## an empty button is 0 x 0 and cannot be tapped (Cup Dash pause, 2026-11-20).
 static func pause_button(disc := 112.0) -> Button:
 	var b := Button.new()
+	b.size = Vector2(PAUSE_HIT, PAUSE_HIT)
 	b.focus_mode = Control.FOCUS_NONE
 	for st in ["normal", "hover", "pressed", "focus"]:
 		b.add_theme_stylebox_override(st, StyleBoxEmpty.new())
