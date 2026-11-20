@@ -3,7 +3,7 @@ extends RefCounted
 ## Cup Dash physical constants and aerodynamic coefficients (SI units). Pure; no nodes.
 ## Sources and reasoning: docs/research/Cup Dash golf game design.md (ball physics notes).
 ## The coefficient curves are polynomial / piecewise-linear on purpose: no pow / exp in the solver
-## hot path (cross-device determinism, the golf rules).
+## hot path (cross-device determinism).
 
 ## Drag-crisis table (see cd()): logistic blend at Re 50,000 + 5,000 * i.
 const CRISIS_RE0 := 50000.0

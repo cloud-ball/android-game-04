@@ -5,7 +5,7 @@ Head-to-head: every pairing of a CPU tier's plays with the baseline's plays on t
 first ball in wins (then fewer strokes), neither in = no winner. Rush: bootstrapped 3-hole matches,
 the baseline ("you") against three CPU golfers of one tier, with RushMatch's rules (hole: first in,
 then fewer strokes, then player order; match: most holes, then fewest total strokes, else draw).
-Targets : CPU vs baseline Easy ~25 %, Medium ~50 %, Hard ~70 %.
+Targets: CPU vs baseline Easy ~25 %, Medium ~50 %, Hard ~70 %.
 
 Usage: python3 tools/golf_selfplay_report.py <dir with sp_<who>.csv> [matches]
 """

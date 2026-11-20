@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## Golden-master break (see the cue-sim rules): the fixed break must end bit-identically.
+## Golden-master break: the fixed break must end bit-identically.
 ## Any physics change that moves it needs games/pool/data/golden_break.json regenerated with a
 ## written justification in the commit. The phone build prints the same hash (Boot --bench=cue).
 

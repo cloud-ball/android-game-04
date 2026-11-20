@@ -111,7 +111,7 @@ var _bot_rng := Rng.make(0xb07)
 
 
 func _ready() -> void:
-	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see the project rules
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # moves itself in _process
 	_save = SaveService.game(
 		"golf", GolfProgress.SCHEMA, GolfProgress.DEFAULTS, GolfProgress.migrate
 	)

@@ -75,7 +75,7 @@ static func migrate_save(old: Dictionary, from: int, _to: int) -> Dictionary:
 
 
 func _ready() -> void:
-	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see the project rules
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # moves itself in _process
 	_save = SaveService.game("blocks", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
 	_practice = PracticePlan.new(PRACTICE, _save["learned"], Boot.options.has("practice"))
 	difficulty = str(SceneRouter.params.get("difficulty", _save["difficulty"]))

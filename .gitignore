@@ -3,7 +3,6 @@ build/
 *.keystore
 *.jks
 export_credentials.cfg
-.claude/settings.local.json
 android/
 *.apk
 *.aab
@@ -11,3 +10,8 @@ android/
 addons/gdUnit4/reports/
 reports/
 .mcp.json
+
+# Local only (kept on this machine, never pushed): plans, research, notes and tool settings
+/docs/
+/CLAUDE.*
+/.claude/

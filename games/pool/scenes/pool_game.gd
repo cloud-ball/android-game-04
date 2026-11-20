@@ -34,7 +34,7 @@ var _view: PoolView
 var _hud: PoolHud
 var _save: Dictionary
 var _rng: RandomNumberGenerator
-## Cosmetic randomness (sound pitch), seeded so it never touches the global RNG (the project rules).
+## Cosmetic randomness (sound pitch), seeded so it never touches the global RNG.
 var _fx_rng := Rng.make(0x51ed)
 var _side := 0.0
 var _top := 0.0
@@ -58,7 +58,7 @@ static func migrate_save(old: Dictionary, _from: int, _to: int) -> Dictionary:
 
 
 func _ready() -> void:
-	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # see the project rules
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # moves itself in _process
 	get_viewport().msaa_3d = Viewport.MSAA_2X  # thin aim lines and ball edges (research default)
 	tree_exiting.connect(func() -> void: get_viewport().msaa_3d = Viewport.MSAA_DISABLED)
 	_save = SaveService.game("pool", SAVE_SCHEMA, SAVE_DEFAULTS, migrate_save)
